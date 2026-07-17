@@ -505,6 +505,13 @@
   .m-main.hide,.m-guia.hide{display:none;}
   .m-guia .g-img{display:block;max-width:100%;max-height:60vh;width:auto;margin:0 auto;border-radius:10px;border:1px solid var(--line-soft);}
 
+  /* Línea de ayuda de selfie (fuera del dropzone) */
+  .up-tip{display:flex;align-items:flex-start;gap:8px;font-size:11.8px;color:var(--text-gray);margin:10px 2px 0;line-height:1.4;}
+  .up-tip svg{width:14px;height:14px;color:var(--info-blue);flex-shrink:0;margin-top:1px;}
+  /* Botón "Subir" habilitado: conserva la clase base para no deformarse en mobile */
+  .btn-primary-disabled.ready{background:var(--winland-orange);color:#fff;cursor:pointer;transition:.3s;}
+  .btn-primary-disabled.ready:hover{filter:brightness(1.1);opacity:.8;}
+
   /* ── Interacciones v2 ── */
   /* Zonas de carga clickeables (simulan la selección de archivo) */
   .upload-box{cursor:pointer;transition:border-color .15s var(--ease), background .15s var(--ease);}
@@ -1167,10 +1174,9 @@ interrumpida: () => `
       <div class="upload-grid">
         <div class="upload-box">${I.upload}Frontal</div>
         <div class="upload-box">${I.upload}Reverso</div>
-        <div class="upload-box full">${I.selfie}Selfie con documento
-          <a class="up-help" onclick="event.stopPropagation();openGuia(this,'guia-selfie.jpg','Cómo tomar tu selfie con identificación')">Ver ejemplo de selfie</a>
-        </div>
+        <div class="upload-box full">${I.selfie}Selfie con documento</div>
       </div>
+      <div class="up-tip">${I.info}<span>¿Cómo tomar tu selfie con la identificación? <a class="faq-link" onclick="openGuia(this,'guia-selfie.jpg','Cómo tomar tu selfie con identificación')">Ver ejemplo</a></span></div>
 
       <div class="modal-footnote" style="text-align:left;">Formatos: JPG, PNG, PDF · Máx. 5MB</div>
       <div class="modal-faq-line">¿Dudas con este documento? <a class="faq-link" onclick="render('faq')">Consulta las preguntas frecuentes</a></div>
@@ -1411,10 +1417,8 @@ function wireDemo(state){
     const FILES=[['Frontal','ine_frontal.jpg'],['Reverso','ine_reverso.jpg'],['Selfie','selfie_con_ine.jpg'],['Estado de cuenta','estado_de_cuenta.pdf'],['Comprobante','comprobante_cfe.pdf']];
     function habilitar(){
       if(!boxes.every(b=>b.classList.contains('loaded'))) return;
-      subir.classList.remove('btn-primary-disabled');
-      subir.className='btn-white';
-      subir.style.flex='1';
-      subir.addEventListener('click',()=>render('docs-validacion'));
+      subir.classList.add('ready');
+      subir.addEventListener('click',()=>render('docs-validacion'), {once:true});
     }
     boxes.forEach(b=>{
       b.addEventListener('click',()=>{
