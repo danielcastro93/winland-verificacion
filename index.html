@@ -936,23 +936,32 @@ const altAccordion = (open, identityState, emailRestricted=false) => `
 `;
 
 function docGrid(identityState, docsState='pending', showHelp=false){
+  const idDoneLabel = idMethod==='manual' ? 'Validado manualmente' : 'Validado por Truora';
   const idMap={
     pending: ['pending','0 de 3 documentos subidos'],
     blocked: ['blocked','Deshabilitada temporalmente · biometría en proceso (~5 min)'],
-    done:    ['verified','Validado por Truora'],
+    done:    ['verified', idDoneLabel],
     rejected:['rejected','Documento rechazado — vuelve a subirlo'],
     progress:['blocked','Bloqueado temporalmente · validación biométrica en proceso (~5 min)'],
   };
   const [idStatus,idSub]=idMap[identityState];
+  const idDone = identityState==='done';
   const done = docsState==='done';
   const dSt = done?'verified':'pending';
   const dSub = done?'Validado':'Pendiente de subir';
+  /* Cuenta bancaria y domicilio permanecen bloqueados hasta validar la identidad (por Truora o manual) */
+  const bankRow = idDone
+    ? mkRow('bank','Cuenta bancaria',dSt,dSub,{help:showHelp&&!done})
+    : mkRow('bank','Cuenta bancaria','blocked','Disponible después de validar tu identidad');
+  const homeRow = idDone
+    ? mkRow('home','Domicilio',dSt,dSub,{help:showHelp&&!done})
+    : mkRow('home','Domicilio','blocked','Disponible después de validar tu identidad');
   return `
   <div class="doc-grid">
     ${mkRow('email','Email','verified','Verificado')}
     ${mkRow('identity','Identidad',idStatus,idSub)}
-    ${mkRow('bank','Cuenta bancaria',dSt,dSub,{help:showHelp&&!done})}
-    ${mkRow('home','Domicilio',dSt,dSub,{help:showHelp&&!done})}
+    ${bankRow}
+    ${homeRow}
   </div>`;
 }
 
@@ -1076,7 +1085,7 @@ confirmando: () => `
       <div style="width:54px;height:54px;border-radius:50%;background:var(--success-bg);color:var(--success-green);display:flex;align-items:center;justify-content:center;margin:4px auto 16px;">${I.check}</div>
       <h3 style="padding-right:0;">¡Validación biométrica exitosa!</h3>
       <p class="lead">Tu identidad ha sido confirmada. Para completar el nivel de verificación de tu cuenta, por favor adjunta los dos últimos documentos requeridos: comprobante de domicilio y estado de cuenta bancario.</p>
-      <button class="btn-white" style="width:100%;" onclick="render('validada')">Adjuntar documentos</button>
+      <button class="btn-white" style="width:100%;" onclick="idMethod='truora';render('validada')">Adjuntar documentos</button>
     </div>
   </div>
 `,
@@ -1085,9 +1094,9 @@ validada: () => `
   ${headerHTML('Identidad validada correctamente','Ya completaste la validación de identidad. Ahora sube tu cuenta bancaria y comprobante de domicilio para finalizar tu verificación.')}
   <div class="status-banner success">
     <div class="ic">${I.check}</div>
-    <div><div class="t">Identidad validada con Truora</div><div class="s">Continúa con los documentos pendientes para activar tus retiros.</div></div>
+    <div><div class="t">Identidad validada ${idMethod==='manual'?'manualmente':'con Truora'}</div><div class="s">Continúa con los documentos pendientes para activar tus retiros.</div></div>
   </div>
-  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'current',s:'Pendiente de subir'},{cls:'current',s:'Pendiente de subir'})}
+  ${tracker({cls:'done',s:idMethod==='manual'?'Validada manualmente':'Validada por Truora'},{cls:'current',s:'Pendiente de subir'},{cls:'current',s:'Pendiente de subir'})}
   ${docGrid('done','pending')}
 
     ${faqHint}
@@ -1176,7 +1185,8 @@ interrumpida: () => `
         <div class="upload-box">${I.upload}Reverso</div>
         <div class="upload-box full">${I.selfie}Selfie con documento</div>
       </div>
-      <div class="up-tip">${I.info}<span>¿Cómo tomar tu selfie con la identificación? <a class="faq-link" onclick="openGuia(this,'guia-selfie.jpg','Cómo tomar tu selfie con identificación')">Ver ejemplo</a></span></div>
+
+      ${guiaVisual('guia-selfie.jpg','Cómo tomar tu selfie con la identificación')}
 
       <div class="modal-footnote" style="text-align:left;">Formatos: JPG, PNG, PDF · Máx. 5MB</div>
       <div class="modal-faq-line">¿Dudas con este documento? <a class="faq-link" onclick="render('faq')">Consulta las preguntas frecuentes</a></div>
@@ -1335,6 +1345,7 @@ const TOUR = [
 const TOUR_STEPS = TOUR.filter(x=>x.s);
 
 let currentState='inicial';
+let idMethod='truora'; /* 'truora' | 'manual' — cómo se validó la identidad */
 let returnState='inicial'; /* última pantalla NO modal: para regresar al cancelar */
 function render(stateKey){
   if(!stateKey.startsWith('modal-') && !currentState.startsWith('modal-')) returnState=currentState;
@@ -1418,7 +1429,10 @@ function wireDemo(state){
     function habilitar(){
       if(!boxes.every(b=>b.classList.contains('loaded'))) return;
       subir.classList.add('ready');
-      subir.addEventListener('click',()=>render('docs-validacion'), {once:true});
+      const submitTarget = state==='modal-identidad'
+        ? ()=>{ idMethod='manual'; render('validada'); }
+        : ()=>render('docs-validacion');
+      subir.addEventListener('click', submitTarget, {once:true});
     }
     boxes.forEach(b=>{
       b.addEventListener('click',()=>{
