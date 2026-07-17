@@ -505,6 +505,28 @@
   .m-main.hide,.m-guia.hide{display:none;}
   .m-guia .g-img{display:block;max-width:100%;max-height:60vh;width:auto;margin:0 auto;border-radius:10px;border:1px solid var(--line-soft);}
 
+  /* ── Interacciones v2 ── */
+  /* Zonas de carga clickeables (simulan la selección de archivo) */
+  .upload-box{cursor:pointer;transition:border-color .15s var(--ease), background .15s var(--ease);}
+  .upload-box:hover{border-color:var(--winland-orange);background:#FFFBF8;}
+  .upload-box.loaded{border-style:solid;border-color:var(--success-green);background:var(--success-bg);cursor:default;}
+  .upload-box.loaded > svg{color:var(--success-green);}
+  .upload-box .file-name{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--success-green);margin-top:5px;}
+  .upload-box .file-name svg{width:12px;height:12px;}
+  .modal-actions .btn-white{flex:1;}
+  /* Destello de atención en advertencias y rechazos */
+  @keyframes pulseRed{0%{box-shadow:0 0 0 0 rgba(197,48,31,.5);}70%{box-shadow:0 0 0 10px rgba(197,48,31,0);}100%{box-shadow:0 0 0 0 rgba(197,48,31,0);}}
+  @keyframes pulseWarn{0%{box-shadow:0 0 0 0 rgba(232,91,17,.5);}70%{box-shadow:0 0 0 10px rgba(232,91,17,0);}100%{box-shadow:0 0 0 0 rgba(232,91,17,0);}}
+  .doc-ic.st-rejected{animation:pulseRed 1.6s ease-out infinite;}
+  .status-banner.error .ic{animation:pulseRed 1.6s ease-out infinite;}
+  .status-banner.warn .ic{animation:pulseWarn 1.6s ease-out infinite;}
+  /* Pasos del tracker como botones cuando tienen acción */
+  .step.clickable{cursor:pointer;transition:transform .12s var(--ease), box-shadow .15s var(--ease);}
+  .step.clickable:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(20,20,22,.08);}
+  /* Fila de documento rechazado: toda la card invita al clic */
+  .doc-row.row-alert{cursor:pointer;animation:none;}
+  .doc-row.row-alert:hover{border-color:var(--error-red);}
+
   /* FAQ hint footer */
   .faq-hint{
     margin-top:28px;padding-top:18px;border-top:1px solid var(--line-soft);
@@ -591,7 +613,7 @@
   }
 
   /* Navegador de estados flotante (demo, no entregable) */
-  #stateNav{position:fixed;right:16px;bottom:16px;z-index:90;display:flex;align-items:center;gap:4px;
+  #stateNav{position:fixed;right:16px;bottom:16px;z-index:400;display:flex;align-items:center;gap:4px;
     background:rgba(16,18,22,.92);border-radius:999px;padding:5px 6px;box-shadow:0 8px 24px rgba(0,0,0,.3);}
   #stateNav button{width:34px;height:34px;border:none;border-radius:50%;background:transparent;color:#fff;
     font-size:20px;line-height:1;cursor:pointer;font-family:inherit;}
@@ -1355,17 +1377,58 @@ function wireDemo(state){
   }
   if(state==='confirmando') byText('Actualizar estado','a').forEach(a=>go(a,'exito-biometria'));
   if(state==='exito-biometria') c.querySelectorAll('.modal .close').forEach(x=>go(x,'validada'));
+
+  /* Filas de documentos → su modal (pendientes y rechazadas) */
   c.querySelectorAll('.doc-row:not(.disabled)').forEach(r=>{
     const t=r.textContent;
-    if(/identidad/i.test(t) && !/correo/i.test(t) && !/validado/i.test(t)) go(r,'modal-identidad');
-    else if(/bancaria/i.test(t) && /pendiente/i.test(t)) go(r,'modal-bancaria');
-    else if(/domicilio/i.test(t) && /pendiente/i.test(t)) go(r,'modal-domicilio');
+    const rejected=/Rechazado/i.test(t);
+    if(rejected) r.classList.add('row-alert');
+    if(/Identidad/i.test(t) && !/correo/i.test(t) && !/Validado/i.test(t)) go(r,'modal-identidad');
+    else if(/bancaria/i.test(t) && (/Pendiente/i.test(t)||rejected)) go(r,'modal-bancaria');
+    else if(/Domicilio/i.test(t) && (/Pendiente/i.test(t)||rejected)) go(r,'modal-domicilio');
   });
+
+  /* Pasos del tracker como accesos directos cuando tienen acción pendiente */
+  c.querySelectorAll('.step').forEach(st=>{
+    const t=st.textContent;
+    const accionable=/Pendiente|pendiente|Requiere acción/.test(t) && !/Disponible después/i.test(t);
+    if(!accionable) return;
+    st.classList.add('clickable');
+    if(/Identidad/.test(t)) go(st,'truora-modal');
+    else if(/Cuenta bancaria/.test(t)) go(st,'modal-bancaria');
+    else if(/Domicilio/.test(t)) go(st,'modal-domicilio');
+  });
+
+  /* Rechazado: "Subir de nuevo" abre el modal del documento rechazado */
+  if(state==='rechazado') byText('Subir de nuevo','a').forEach(a=>go(a,'modal-domicilio'));
+
+  /* Modales de carga: zonas clickeables que habilitan "Subir" */
   if(state.startsWith('modal-')){
     c.querySelectorAll('.modal .close').forEach(x=>go(x,returnState));
     byText('Cancelar','button').forEach(b=>go(b,returnState));
-    byText('Subir documento','button').forEach(b=>go(b,'docs-validacion'));
-    byText('Subir comprobante','button').forEach(b=>go(b,'docs-validacion'));
+    const boxes=[...c.querySelectorAll('.upload-box')];
+    const subir=[...c.querySelectorAll('button')].find(b=>/Subir/.test(b.textContent));
+    const FILES=[['Frontal','ine_frontal.jpg'],['Reverso','ine_reverso.jpg'],['Selfie','selfie_con_ine.jpg'],['Estado de cuenta','estado_de_cuenta.pdf'],['Comprobante','comprobante_cfe.pdf']];
+    function habilitar(){
+      if(!boxes.every(b=>b.classList.contains('loaded'))) return;
+      subir.classList.remove('btn-primary-disabled');
+      subir.className='btn-white';
+      subir.style.flex='1';
+      subir.addEventListener('click',()=>render('docs-validacion'));
+    }
+    boxes.forEach(b=>{
+      b.addEventListener('click',()=>{
+        if(b.classList.contains('loaded')) return;
+        const par=FILES.find(f=>b.textContent.includes(f[0]));
+        const fname=par?par[1]:'documento.pdf';
+        b.classList.add('loaded');
+        const tag=document.createElement('span');
+        tag.className='file-name';
+        tag.innerHTML=I.check+fname+' · cargado';
+        b.appendChild(tag);
+        habilitar();
+      });
+    });
   }
   byText('Probar Truora','a').forEach(a=>go(a,'truora-modal'));
 }
