@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+  WINLAND · MÓDULO DE VERIFICACIÓN DE CUENTA (KYC) — Propuesta UX/UI v1
+  ═══════════════════════════════════════════════════════════════════════════
+
+  QUÉ ES ESTE ARCHIVO
+  Prototipo funcional y spec de implementación del rediseño del panel
+  Mi cuenta → Verificación. Un solo archivo HTML autocontenible con los
+  13 estados del flujo, navegables e interactivos.
+
+  CÓMO NAVEGARLO
+  · Los botones ‹ › (abajo-derecha) o las flechas ←/→ del teclado recorren
+    los 13 estados en orden de presentación.
+  · Toda la UI del módulo es funcional al clic: CTA de Truora, canales,
+    modales de carga, acordeones, FAQ, etc.
+
+  GUÍA DE INTEGRACIÓN (Calímaco)
+  · Stack destino: Next.js + React + Material UI, clases utilitarias clmc-*
+    y variables CSS de client_custom.css. Los design-tokens de este archivo
+    (:root) están mapeados 1:1 a los de producción:
+      --winland-orange  ≡ --clmc-color-primary (#e85b10)
+      radios 8px        ≡ --clmc-border-radius-small
+      botón primario    ≡ .clmc-btn-primary (hover: brightness(1.1)+opacity .8;
+                          disabled: #d1d1d1 / #adadad)
+      botón outline     ≡ .clmc-btn-primary-white
+  · HEADER y FOOTER incluidos aquí son RÉPLICA VISUAL para presentar en
+    contexto — NO se implementan: usar los componentes reales del sitio.
+  · Lo que SÍ se implementa es el bloque marcado como "MÓDULO ENTREGABLE"
+    (contenedor .w-body/.w-card, equivalente a .privateLayout /
+    .privateLayout-content: fondo #fff, padding 40px, radius 16px, sombra).
+  · Cada estado del objeto `states` (JS, abajo) equivale a una vista/estado
+    de React. El diccionario TOUR documenta la intención de cada uno.
+
+  PUNTOS DE CONEXIÓN A BACKEND (buscar "API:" en el código)
+  · Estado de verificación del usuario  → decide qué estado renderizar
+  · "Iniciar verificación"              → crear sesión Truora
+  · Envío de enlace WhatsApp/SMS        → teléfono registrado del usuario
+                                          (mostrado precargado y editable)
+  · Código QR                           → QR real de la sesión Truora
+                                          (el actual es maqueta ilustrativa)
+  · "Actualizar estado"                 → re-consultar estado de la validación
+  · Zonas de carga de documentos        → upload + validación de archivos
+  · Estados bloqueado/parcial           → regla de negocio: mientras la
+                                          biometría está en proceso, carga
+                                          manual de identidad deshabilitada;
+                                          correo solo domicilio + edo. cuenta
+
+  ASSETS
+  · assets/produccion/   → extraídos del sitio real (logo, iconos, fuente)
+  · assets/infografias/  → guías visuales de Marketing (la de domicilio
+                           contiene un error reportado; al corregirse solo
+                           se sobrescribe guia-domicilio-tipos.jpg)
+  · Ver docs/OBSERVACIONES.md para hallazgos reportados al cliente.
+═══════════════════════════════════════════════════════════════════════════ -->
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Winland — Centro de verificación (Propuesta UX/UI)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Fuente real de producción (Denim INK VF — misma que winland.com.mx) */
+  @font-face{
+    font-family:'winland';
+    src:url('assets/produccion/winland-font.ttf') format('truetype');
+  }
+  :root{
+    --winland-orange:#E85B10;
+    --orange-dark:#C2480C;
+    --orange-tint:#FCE9DD;
+    --ink:#15171B;
+    --white:#FFFFFF;
+    --page-bg:#F4F6F7;
+    --surface:#FFFFFF;
+    --line:#E4E7EA;
+    --line-soft:#ECEEF0;
+    --mid-gray:#A6ACB3;
+    --text-gray:#5B6470;
+    --text-faint:#8A9099;
+    --success-green:#1E7A34;
+    --success-bg:#E7F5EA;
+    --warning-bg:#FFF1E5;
+    --error-red:#C5301F;
+    --error-bg:#FBEAE8;
+    --info-blue:#1D5FA8;
+    --info-bg:#E9F1FB;
+    --radius-lg:18px;
+    --radius:12px;
+    --radius-sm:10px;
+    --shadow-card:0 1px 2px rgba(20,20,22,.04), 0 8px 24px rgba(20,20,22,.05);
+    --shadow-pop:0 24px 60px rgba(15,15,18,.28);
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{-webkit-font-smoothing:antialiased;}
+  body{
+    font-family:'winland','Inter',-apple-system,sans-serif;
+    background:#dde1e4;
+    color:var(--ink);
+    font-size:14px;
+  }
+  h1,h2,h3,.font-display{font-family:'winland','Manrope',sans-serif;letter-spacing:-0.01em;}
+  svg{display:block;}
+  .icon{width:1em;height:1em;flex-shrink:0;}
+
+  /* ===== Header — réplica 1:1 producción (MuiAppBar 60px #e85b10) ===== */
+  .w-header{
+    background:var(--winland-orange);color:#fff;display:flex;align-items:center;
+    justify-content:space-between;height:60px;padding:0 32px;
+    box-shadow:rgba(0,0,0,.2) 0 2px 4px -1px, rgba(0,0,0,.14) 0 4px 5px 0, rgba(0,0,0,.12) 0 1px 10px 0;
+    position:relative;z-index:5;
+  }
+  .w-balance{white-space:nowrap;}
+  .w-header .left{display:flex;align-items:center;gap:0;}
+  .w-burger{margin-right:41px;cursor:pointer;display:flex;align-items:center;}
+  .w-burger img{width:24px;height:24px;display:block;}
+  .w-logo{display:flex;align-items:center;}
+  .w-logo img{width:100px;display:block;}
+  .w-nav{display:flex;align-items:center;font-size:16px;font-weight:400;font-family:'winland',sans-serif;}
+  .w-nav span{padding:0 12px;margin:0 8px;opacity:.8;cursor:pointer;white-space:nowrap;position:relative;}
+  .w-nav span:hover{opacity:1;}
+  .w-header .right{display:flex;align-items:center;gap:8px;}
+  /* Botones réplica 1:1 producción: pill blanco, borde naranja, texto negro */
+  .w-deposit{
+    background:#fff;color:#000;border:1px solid var(--winland-orange);border-radius:8px;
+    height:40px;min-width:100px;padding:6px 12px;font-weight:400;font-size:14px;font-family:'winland',sans-serif;
+    display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;
+  }
+  .w-deposit img{width:20px;height:20px;display:block;}
+  .w-balance{
+    background:#fff;color:#000;border:1px solid var(--winland-orange);border-radius:8px;
+    height:40px;min-width:100px;padding:6px 10px;font-size:14px;font-weight:400;font-family:'winland',sans-serif;
+    display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;
+  }
+  .w-balance svg{width:14px;height:14px;stroke:#000;}
+  .w-circle{
+    width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.3);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+    transition:background .15s var(--ease);
+  }
+  .w-circle:hover{background:rgba(255,255,255,.45);}
+  .w-circle img{display:block;}
+
+  /* ===== Contenedor del módulo — medidas EXACTAS de producción (.privateLayout) ===== */
+  .w-body{background:#fff;padding:40px;}
+  /* Tarjeta del módulo — .privateLayout-content de producción: radius 16, shadow sutil */
+  .w-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px 0 rgba(0,0,0,.12);}
+  /* Tabs (Mi cuenta / Historial / Bonos / Juego responsable) — réplica producción */
+  .w-tabs{display:flex;background:#f4f6f7;align-items:stretch;}
+  .w-tab{
+    padding:12px 20px;font-weight:600;font-size:16px;color:#000;font-family:'winland',sans-serif;
+    cursor:default;display:flex;align-items:center;transition:background .15s var(--ease);
+  }
+  #miCuentaTab,#faqTab,#verifSub{cursor:pointer;}
+  .w-tab:not(.active):hover{background:rgba(0,0,0,.06);}
+  .w-tab.active{background:#e05f22;color:#fff;}
+
+  /* Subtabs (Cuenta / Verificación / Contraseña) — réplica producción */
+  .w-subtabs{display:flex;gap:0;padding:0 12px;border-bottom:1px solid #8a8a8a;background:transparent;
+    font-size:12px;font-weight:600;color:#8a8a8a;letter-spacing:.02em;text-transform:uppercase;font-family:'winland',sans-serif;}
+  .w-subtabs .sub{padding:0 16px;min-height:48px;display:flex;align-items:center;cursor:default;position:relative;transition:background .15s var(--ease);}
+  .w-subtabs .sub:hover{background:rgba(0,0,0,.04);}
+  .w-subtabs .sub.active{color:#000;background:rgba(255,255,255,.8);}
+  .w-subtabs .sub.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--winland-orange);}
+
+  .w-content{padding:32px;}
+
+  /* ===== Verification module ===== */
+  .vh-title{font-size:22px;font-weight:800;color:var(--ink);margin-bottom:6px;letter-spacing:-0.015em;}
+  .vh-sub{font-size:13.5px;color:var(--text-gray);margin-bottom:26px;max-width:none;line-height:1.55;white-space:nowrap;}
+
+  /* progress tracker */
+  .tracker{display:flex;gap:12px;margin-bottom:26px;}
+  .step{
+    flex:1;background:var(--page-bg);border-radius:var(--radius-sm);padding:14px 15px;
+    display:flex;align-items:center;gap:12px;border:1px solid var(--line-soft);
+  }
+  .step .num{
+    width:28px;height:28px;border-radius:50%;background:#fff;color:var(--mid-gray);border:1.5px solid var(--mid-gray);
+    font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Manrope',sans-serif;
+  }
+  .step.done{border-color:var(--success-green);background:var(--success-bg);}
+  .step.done .num{background:var(--success-green);border-color:var(--success-green);color:#fff;}
+  .step.current{border-color:var(--winland-orange);background:var(--orange-tint);}
+  .step.current .num{background:var(--winland-orange);border-color:var(--winland-orange);color:#fff;}
+  .step .meta{flex:1;min-width:0;}
+  .step .meta .t{font-size:12.8px;font-weight:700;color:var(--ink);}
+  .step .meta .s{font-size:11px;color:var(--text-gray);margin-top:3px;line-height:1.35;}
+  .step .num svg{width:14px;height:14px;}
+
+  /* truora hero card */
+  .truora-card{
+    background:#fff;
+    border:1.5px solid var(--winland-orange);
+    border-radius:var(--radius-lg);padding:24px;color:var(--ink);margin-bottom:24px;position:relative;
+    box-shadow:0 1px 3px rgba(232,91,16,.06);
+  }
+  .truora-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+  .truora-id{display:flex;align-items:center;gap:12px;}
+  /* Igual que producción: caja blanca cuadrada, icono Truora negro */
+  .truora-icon{
+    width:38px;height:38px;border-radius:8px;background:#fff;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    border:1px solid rgba(0,0,0,.08);
+  }
+  .truora-icon svg{width:18px;height:18px;}
+  .truora-name{font-size:16.5px;font-weight:800;letter-spacing:-0.005em;color:var(--ink);}
+  .truora-tagline{font-size:11.5px;color:var(--text-faint);margin-top:3px;}
+  .truora-card .badge{
+    display:inline-flex;align-items:center;gap:5px;background:var(--winland-orange);color:#fff;
+    border-radius:20px;padding:5px 12px 5px 10px;font-size:11px;font-weight:700;letter-spacing:.02em;flex-shrink:0;
+  }
+  .truora-card .badge svg{width:11px;height:11px;}
+  .truora-card h2{font-size:18px;font-weight:800;margin-bottom:9px;letter-spacing:-0.01em;color:var(--ink);}
+  .truora-card p{font-size:13.3px;color:var(--text-gray);line-height:1.6;max-width:none;margin-bottom:16px;white-space:nowrap;}
+  .truora-benefits{display:flex;flex-direction:column;gap:10px;margin:0 0 22px;}
+  .truora-benefits span{font-size:13px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:9px;}
+  .truora-benefits svg{width:16px;height:16px;color:var(--success-green);flex-shrink:0;}
+  /* Botón primario — espec producción (.clmc-btn-primary): hover brightness+opacity, disabled #d1d1d1 */
+  .btn-white{
+    background:var(--winland-orange);color:#fff;border:none;border-radius:8px;
+    height:40px;min-width:100px;padding:0 40px;font-weight:600;font-size:14px;cursor:pointer;width:auto;
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    font-family:inherit;letter-spacing:-0.005em;
+    transition:.3s;line-height:16px;
+  }
+  .btn-white:hover:not(:disabled){filter:brightness(1.1);opacity:.8;}
+  .btn-white:disabled{background:#d1d1d1;color:#adadad;cursor:default;filter:none;opacity:1;}
+
+  .alt-toggle{
+    display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:10px;
+    padding:15px 17px;background:var(--page-bg);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:#3a4047;
+    border:1px solid var(--line-soft);transition:background .15s var(--ease);
+  }
+  .alt-toggle:hover{background:#EEF1F2;}
+  .alt-toggle svg.chev-down{width:16px;height:16px;color:var(--text-faint);flex-shrink:0;transition:transform .2s var(--ease);}
+  .alt-toggle.open svg.chev-down{transform:rotate(180deg);}
+  .alt-panel{
+    margin-top:10px;border:1px solid var(--line-soft);border-radius:var(--radius-sm);padding:18px;
+    display:flex;flex-direction:column;gap:12px;background:#FAFBFB;
+  }
+  .alt-note{font-size:12px;color:var(--text-gray);line-height:1.5;margin-bottom:4px;}
+
+  .doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .doc-row{
+    display:flex;align-items:center;gap:13px;background:var(--surface);
+    border-radius:var(--radius-sm);padding:16px;border:1px solid var(--line-soft);
+  }
+  .doc-row.disabled{opacity:.55;}
+  .doc-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .doc-ic svg{width:18px;height:18px;}
+  /* Recuadro del ícono por estado (homologado) */
+  .doc-ic.email,.doc-ic.st-verified{background:var(--success-bg);color:var(--success-green);}
+  .doc-ic.st-pending,.doc-ic.st-progress{background:var(--orange-tint);color:var(--winland-orange);}
+  .doc-ic.st-rejected{background:var(--error-bg);color:var(--error-red);}
+  .doc-ic.st-blocked{background:var(--page-bg);color:var(--text-faint);}
+  .doc-meta{flex:1;min-width:0;}
+  .doc-meta .t{font-size:13px;font-weight:700;color:var(--ink);line-height:1.3;}
+  .doc-meta .s{font-size:11.5px;margin-top:4px;line-height:1.4;}
+  .s-pending{color:var(--text-gray);}
+  .s-verified{color:var(--success-green);}
+  .s-progress{color:var(--winland-orange);}
+  .s-rejected{color:var(--error-red);}
+  .s-blocked{color:var(--text-faint);}
+  .doc-row.disabled{opacity:.7;background:var(--page-bg);border-style:dashed;}
+  .chev{color:var(--mid-gray);width:16px;height:16px;flex-shrink:0;}
+
+  .email-box{
+    margin-top:8px;background:var(--surface);border-radius:var(--radius-sm);padding:18px 20px;
+    display:flex;justify-content:space-between;align-items:center;gap:16px;border:1px solid var(--line-soft);
+  }
+  .email-box .t{font-size:13.5px;font-weight:700;margin-bottom:6px;display:flex;align-items:flex-start;gap:7px;line-height:1.4;}
+  .email-box .t svg{width:14px;height:14px;color:var(--text-faint);flex-shrink:0;margin-top:2px;}
+  .email-box.restricted{background:var(--warning-bg);border-color:#F0D9C4;}
+  .email-box .s{font-size:12.3px;color:var(--text-gray);line-height:1.6;}
+  /* Botón outline — espec producción (.clmc-btn-primary-white) */
+  .btn-outline{
+    border:1px solid var(--winland-orange);color:var(--winland-orange);background:#fff;
+    border-radius:8px;padding:10px 18px;font-weight:600;font-size:12.8px;cursor:pointer;white-space:nowrap;
+    font-family:inherit;display:flex;align-items:center;gap:7px;justify-content:center;
+    transition:.3s;
+  }
+  .btn-outline:hover{filter:brightness(1.1);opacity:.8;}
+  .btn-outline svg{width:15px;height:15px;}
+
+  .status-banner{
+    border-radius:var(--radius-sm);padding:16px 18px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start;
+  }
+  .status-banner .ic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .status-banner .ic svg{width:18px;height:18px;}
+  .status-banner .t{font-weight:700;font-size:13.5px;margin-bottom:5px;color:var(--ink);}
+  .status-banner .s{font-size:12.3px;line-height:1.6;color:var(--text-gray);}
+  .status-banner.warn{background:var(--warning-bg);} .status-banner.warn .ic{background:#FFE3C7;color:var(--orange-dark);}
+  .status-banner.success{background:var(--success-bg);} .status-banner.success .ic{background:#CFEAD6;color:var(--success-green);}
+  .status-banner.error{background:var(--error-bg);} .status-banner.error .ic{background:#F6D2CD;color:var(--error-red);}
+  .status-banner.info{background:var(--info-bg);} .status-banner.info .ic{background:#CFE0F4;color:var(--info-blue);}
+  .status-banner .cta{margin-top:10px;}
+  .status-banner .cta a{color:var(--winland-orange);font-weight:700;font-size:12.3px;cursor:pointer;}
+
+  /* FAQ */
+  .faq-cats{display:flex;gap:9px;margin-bottom:34px;flex-wrap:wrap;}
+  .faq-cat{padding:9px 16px;border-radius:20px;font-size:12.3px;font-weight:700;background:var(--page-bg);color:#3a4047;cursor:default;border:1px solid transparent;}
+  .faq-cat.active{background:var(--winland-orange);color:#fff;}
+  .faq-item{border-bottom:1px solid var(--line-soft);padding:19px 4px;}
+  .faq-item:first-child{padding-top:0;}
+  .faq-q{font-size:13.3px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--ink);padding-right:8px;}
+  .faq-q svg{width:15px;height:15px;color:var(--text-faint);flex-shrink:0;}
+  .faq-a{font-size:12.8px;color:var(--text-gray);margin-top:9px;line-height:1.65;padding-right:48px;}
+
+  /* Modal */
+  /* Modales a pantalla completa (sobre todo el sitio, no solo el módulo) */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(12,12,14,.6);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+    backdrop-filter:blur(2px);z-index:200;
+  }
+  .modal{
+    background:#fff;border-radius:12px;max-width:480px;width:100%;padding:28px;position:relative;
+    max-height:88%;overflow-y:auto;box-shadow:0 30px 70px rgba(0,0,0,.35);
+  }
+  /* Modales de documento: layout horizontal en escritorio */
+  .modal.doc-modal{max-width:820px;}
+  .doc-modal{max-height:92%;}
+  /* Línea de requisitos: discreta, escaneable, una sola línea */
+  .req-line{
+    display:flex;align-items:flex-start;gap:8px;background:var(--page-bg);border-radius:8px;
+    padding:11px 14px;margin-bottom:14px;font-size:12.5px;color:var(--text-gray);line-height:1.5;
+  }
+  .req-line svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;margin-top:1px;}
+  .req-line b{color:var(--ink);}
+  .modal .close{
+    position:absolute;top:18px;right:18px;width:30px;height:30px;border-radius:50%;background:var(--page-bg);
+    display:flex;align-items:center;justify-content:center;color:#555;cursor:pointer;
+  }
+  .modal .close svg{width:14px;height:14px;}
+  .modal h3{font-size:18px;font-weight:800;margin-bottom:12px;padding-right:30px;color:var(--ink);letter-spacing:-0.01em;}
+  .modal .lead{font-size:13px;color:var(--text-gray);margin-bottom:20px;line-height:1.65;}
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .upload-box{
+    border:1.5px dashed var(--mid-gray);border-radius:var(--radius-sm);padding:18px 10px;text-align:center;font-size:12px;
+    color:var(--text-gray);font-weight:600;display:flex;flex-direction:column;align-items:center;gap:7px;
+  }
+  .upload-box svg{width:18px;height:18px;color:var(--text-faint);}
+  .upload-box.full{grid-column:1/-1;}
+  /* Modal Truora: lista de canales limpia */
+  .modal-truora-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-right:34px;}
+  .modal-truora-head .truora-icon{border:1px solid var(--line);}
+  .channel-list{border-top:1px solid var(--line-soft);}
+  .channel-list .ch{
+    display:flex;align-items:center;gap:14px;padding:15px 4px;border-bottom:1px solid var(--line-soft);
+    cursor:pointer;transition:background .12s var(--ease);border-radius:6px;
+  }
+  .channel-list .ch:hover{background:var(--page-bg);}
+  .channel-list .ch-ic{
+    width:38px;height:38px;border-radius:8px;background:var(--orange-tint);color:var(--winland-orange);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .channel-list .ch-ic svg{width:18px;height:18px;}
+  .channel-list .ch-meta{flex:1;min-width:0;}
+  .channel-list .ch-meta .t{font-size:13.5px;font-weight:700;color:var(--ink);}
+  .channel-list .ch-meta .s{font-size:12px;color:var(--text-gray);margin-top:3px;line-height:1.4;}
+  .channel-list .ch > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
+  .modal-footnote{font-size:11.5px;color:var(--text-faint);margin-top:16px;text-align:center;line-height:1.55;}
+
+  .modal-actions{display:flex;gap:10px;}
+  .modal-actions .btn-outline{flex:1;}
+  .btn-primary-disabled{
+    flex:1;background:#d1d1d1;color:#adadad;border:none;border-radius:8px;font-weight:600;font-size:12.8px;cursor:default;font-family:inherit;
+  }
+
+  /* ===== Footer — réplica 1:1 producción (.clmc-footer-dark) ===== */
+  .w-footer{background:#000;color:#fff;font-family:'winland',sans-serif;}
+  .wf-inner{max-width:1180px;margin:0 auto;padding:32px 24px;}
+  .wf-divider{height:1px;background:#242424;width:100%;}
+  /* Cinta de logos de métodos de pago (marquee) */
+  .wf-logos{overflow:hidden;padding:28px 0;}
+  .wf-logos-track{display:flex;gap:56px;align-items:center;width:max-content;animation:wfMarquee 70s linear infinite;}
+  .wf-logos-track img{height:32px;width:auto;filter:grayscale(100%) brightness(1.4);opacity:.85;}
+  @keyframes wfMarquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+  /* Grid de 3 columnas */
+  .wf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;}
+  .wf-col{display:flex;flex-direction:column;gap:10px;}
+  .wf-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;}
+  .wf-link{color:#adadad;text-decoration:none;font-weight:600;font-size:14px;cursor:pointer;}
+  .wf-link:hover{color:var(--winland-orange);}
+  .wf-mail{color:var(--winland-orange);font-size:14px;text-decoration:underline;cursor:pointer;}
+  .wf-select{
+    background:#3a3a3a;color:#aeaeae;border:none;border-radius:10px;padding:10px 40px 10px 12px;
+    font-size:14px;font-weight:600;font-family:inherit;appearance:none;cursor:pointer;width:100%;max-width:220px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23aeaeae' stroke-width='2' fill='none'/></svg>");
+    background-repeat:no-repeat;background-position:right 12px center;
+  }
+  /* Más información (details) */
+  .wf-details{border:none;}
+  .wf-summary{list-style:none;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:16px;cursor:pointer;color:#fff;}
+  .wf-summary::-webkit-details-marker{display:none;}
+  .wf-caret{font-size:18px;color:#b8b8b8;transform:translateY(-2px);transition:transform .2s;}
+  .wf-details:not([open]) .wf-caret{transform:rotate(180deg);}
+  .wf-info{margin-top:16px;display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.6;color:#cfcfcf;}
+  /* Bottom: social + badges */
+  .wf-bottom{margin-top:28px;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;}
+  .wf-social{display:flex;gap:12px;align-items:center;}
+  .wf-social a{
+    width:36px;height:36px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:background .2s;
+  }
+  .wf-social a svg{width:20px;height:20px;fill:#adadad;}
+  .wf-social a:hover{background:var(--winland-orange);}
+  .wf-social a:hover svg{fill:#fff;}
+  .wf-badges{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  .wf-badges img{max-height:52px;display:block;}
+  .wf-legal{margin-top:18px;font-size:11px;line-height:1.6;color:#9f9f9f;}
+  .wf-legal a{color:#9f9f9f;text-decoration:underline;}
+
+  /* Bottom nav mobile — réplica 1:1 producción */
+  .w-bottomnav{display:none;}
+  .w-bottomnav .bn-item{display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex:1;}
+  .w-bottomnav .bn-item img{width:24px;height:24px;display:block;}
+  .w-bottomnav .bn-item span{
+    font-size:9px;font-weight:700;color:#7f7f7f;text-transform:uppercase;margin-top:8px;
+    text-align:center;letter-spacing:.02em;font-family:'winland',sans-serif;
+  }
+
+  /* FAQ funcional: acordeón, categorías clickeables, interlinks */
+  .faq-cat{cursor:pointer;transition:background .15s var(--ease);}
+  .faq-cat:not(.active):hover{background:#e8ebed;}
+  .faq-q{cursor:pointer;}
+  .faq-item .faq-a{display:none;}
+  .faq-item.open .faq-a{display:block;}
+  .faq-item.open .faq-q svg{transform:rotate(45deg);}
+  .faq-q svg{transition:transform .18s var(--ease);flex-shrink:0;}
+  .faq-group.hide{display:none;}
+  .faq-link{color:var(--winland-orange);font-weight:700;cursor:pointer;}
+  .faq-link:hover{text-decoration:underline;}
+
+  
+
+  /* Visor de infografías en FAQ (overlay ligero, no saca al usuario) */
+  .faq-visor-overlay{position:fixed;inset:0;background:rgba(12,12,14,.65);z-index:210;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);}
+  .faq-visor{background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90%;overflow-y:auto;padding:18px;}
+  .fv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:14.5px;}
+  .fv-close{width:30px;height:30px;border-radius:50%;background:var(--page-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .fv-close svg{width:13px;height:13px;}
+  .faq-visor img{width:100%;display:block;border-radius:8px;}
+  @media (max-width:768px){ .faq-visor-overlay{padding:12px;} }
+
+  /* Flujo Truora multi-paso */
+  .t-step.hide{display:none;}
+  .t-back{
+    display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--text-gray);
+    cursor:pointer;margin:-4px 0 22px;width:fit-content;padding:4px 8px 4px 0;
+  }
+  .t-back svg{width:13px;height:13px;transform:rotate(180deg);}
+  .t-back:hover{color:var(--ink);}
+  .channel-list .ch.selected{background:var(--orange-tint);border-radius:8px;}
+  .t-phone{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:16px;}
+  .t-phone.hide{display:none;}
+  .tp-label{font-size:12.8px;color:var(--text-gray);margin-bottom:10px;}
+  .tp-row{display:flex;align-items:center;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px;}
+  .tp-row:focus-within{border-color:var(--winland-orange);}
+  .tp-flag{padding:12px 12px;background:var(--page-bg);font-size:13.5px;font-weight:600;border-right:1px solid var(--line-soft);white-space:nowrap;}
+  .tp-row input{flex:1;border:none;outline:none;padding:12px 14px;font-size:14.5px;font-family:inherit;color:var(--ink);letter-spacing:.03em;}
+  .tp-hint{font-size:11.3px;color:var(--text-faint);line-height:1.45;margin-bottom:16px;}
+  .t-checklist{display:flex;flex-direction:column;gap:11px;margin:6px 0 20px;}
+  .t-checklist span{display:flex;align-items:center;gap:9px;font-size:12.8px;color:var(--text-gray);}
+  .t-checklist svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;}
+  .qr-box{width:190px;height:190px;margin:6px auto 10px;padding:12px;border:1px solid var(--line-soft);border-radius:12px;background:#fff;}
+  .qr-box svg{width:100%;height:100%;display:block;}
+
+  /* Checkbox de consentimiento (modal Truora) */
+  .consent-check{display:flex;gap:10px;align-items:flex-start;font-size:12.8px;color:var(--text-gray);line-height:1.55;margin:8px 0 20px;cursor:pointer;}
+  .consent-check input{width:17px;height:17px;margin:1px 0 0;accent-color:var(--winland-orange);flex-shrink:0;cursor:pointer;}
+  .consent-check b{color:var(--ink);}
+
+  /* Modal de documentos v2: selector, guía visual, línea FAQ */
+  .doc-select{margin-bottom:16px;}
+  .doc-select label{display:block;font-size:12.3px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+  .doc-select select{
+    width:100%;border:1.5px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px;
+    font-family:inherit;color:var(--ink);background:#fff;appearance:none;cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%235B6470' stroke-width='2' fill='none'/></svg>");
+    background-repeat:no-repeat;background-position:right 14px center;
+  }
+  .doc-select select:focus{outline:none;border-color:var(--winland-orange);}
+  /* Tarjeta de guía visual: abre lightbox — misma UI en desktop y mobile */
+  .guia-cta{
+    display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:10px;
+    padding:10px 14px 10px 10px;cursor:pointer;background:#fff;margin-bottom:14px;
+    transition:border-color .15s var(--ease), background .15s var(--ease);
+  }
+  .guia-cta:hover{border-color:var(--winland-orange);background:#FFFBF8;}
+  .guia-thumb{width:52px;height:44px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--line-soft);flex-shrink:0;}
+  .guia-cta span{flex:1;display:flex;flex-direction:column;gap:2px;line-height:1.3;}
+  .guia-cta span b{font-size:12.8px;color:var(--ink);}
+  .guia-cta span small{font-size:11.3px;color:var(--text-faint);}
+  .guia-cta > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
+  .up-help{display:block;font-size:11.5px;font-weight:700;color:var(--winland-orange);cursor:pointer;margin-top:6px;}
+  .up-help:hover{text-decoration:underline;}
+  .modal-faq-line{font-size:12.5px;color:var(--text-gray);margin:14px 0 16px;}
+  .modal-actions{display:flex;gap:10px;}
+
+  /* Vista de guía interna del modal */
+  .m-main.hide,.m-guia.hide{display:none;}
+  .m-guia .g-img{display:block;max-width:100%;max-height:60vh;width:auto;margin:0 auto;border-radius:10px;border:1px solid var(--line-soft);}
+
+  /* FAQ hint footer */
+  .faq-hint{
+    margin-top:28px;padding-top:18px;border-top:1px solid var(--line-soft);
+    display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;
+  }
+  .faq-hint svg{width:15px;height:15px;color:var(--text-faint);flex-shrink:0;}
+  .faq-hint span{font-size:14px;color:var(--text-gray);}
+  .faq-hint a{
+    color:var(--winland-orange);font-weight:700;cursor:pointer;text-decoration:none;
+  }
+  .faq-hint a:hover{text-decoration:underline;}
+
+  .hide{display:none !important;}
+
+  /* ═══════════ RESPONSIVE REAL (media queries) ═══════════ */
+  @media (max-width:768px){
+    .w-header{padding:0 12px;}
+    .w-burger{margin-right:12px;}
+    .w-logo img{width:88px;}
+    .w-nav{display:none;}
+    .w-deposit{min-width:0;height:36px;padding:6px 10px;font-size:12.5px;}
+    .w-balance{min-width:0;height:36px;padding:6px 8px;font-size:12.5px;}
+    .w-circle{width:36px;height:36px;}
+    .w-body{padding:0;}
+    .w-card{border-radius:0;box-shadow:none;}
+    .w-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .w-tabs::-webkit-scrollbar{display:none;}
+    .w-tab{font-size:13px;padding:12px 14px;white-space:nowrap;flex-shrink:0;}
+    .w-subtabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 8px;}
+    .w-subtabs::-webkit-scrollbar{display:none;}
+    .w-subtabs .sub{white-space:nowrap;flex-shrink:0;padding:0 12px;}
+    .w-content{padding:18px;}
+    .vh-sub{white-space:normal;}
+    .vh-title{font-size:18px;}
+    .tracker{flex-direction:column;gap:6px;margin-bottom:18px;}
+    .step{padding:9px 12px;gap:9px;border-radius:9px;}
+    .step .num{width:22px;height:22px;font-size:10.5px;}
+    .step .num svg{width:11px;height:11px;}
+    .step .meta .t{font-size:11.5px;}
+    .step .meta .s{display:none;}
+    .step.current .meta .s{display:block;font-size:10px;}
+    .truora-card p{white-space:normal;}
+    .btn-white{width:100%;}
+    .doc-grid{grid-template-columns:1fr;}
+    .email-box{flex-direction:column;align-items:stretch;gap:12px;}
+    .email-box .btn-outline{width:100%;}
+    .modal{padding:20px;}
+    .wf-grid{grid-template-columns:1fr;}
+    .wf-inner{padding:24px 16px;}
+    .w-footer{padding-bottom:70px;}
+    .w-bottomnav{
+    display:flex;background:#000;justify-content:space-around;align-items:center;
+    height:70px;position:sticky;bottom:0;box-shadow:0 -4px 10px rgba(0,0,0,.2);z-index:20;
+  }
+    /* Categorías de FAQ: scroll horizontal, una sola línea */
+    .faq-cats{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:26px;padding-bottom:0;}
+    .faq-cats::-webkit-scrollbar{display:none;}
+    .faq-cat{white-space:nowrap;flex-shrink:0;}
+    .faq-a{padding-right:24px;}
+    /* Acciones de modal apiladas: primario arriba, ancho completo */
+    .modal-actions{flex-direction:column-reverse;gap:9px;}
+    .modal-actions .btn-outline,.modal-actions .btn-primary-disabled{width:100%;flex:none;padding-top:12px;padding-bottom:12px;}
+    /* Mobile producción: sin hamburguesa (pasa al bottom-nav), sin menú superior */
+    .w-burger{display:none;}
+    .w-nav{display:none;}
+    /* Header mobile idéntico a producción: logo + Depositar + saldo + UN avatar (MyBets se oculta) */
+    .w-header .right{gap:6px;}
+    .w-header .right .w-circle:last-child{display:none;}
+    .w-deposit{padding:0 10px;gap:5px;}
+    .w-deposit img{width:18px;height:18px;}
+    .w-balance{padding:0 8px;}
+    /* Texto de dudas/preguntas alineado a la izquierda en mobile */
+    .faq-hint{justify-content:flex-start;text-align:left;}
+    /* Bottom-nav SIEMPRE fijo abajo */
+    .w-bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;}
+    body{padding-bottom:70px;}
+    /* Modales cortos (confirmación, selector de canal): centrados con margen */
+    .modal-overlay{padding:16px;align-items:center;}
+    .modal{max-width:100%;width:100%;max-height:90%;border-radius:14px;}
+    .modal .close{top:16px;right:16px;}
+    /* Modales de carga de documentos (largos): full-screen tipo hoja, como producción */
+    .modal-overlay:has(.doc-modal){padding:0;align-items:stretch;}
+    .doc-modal{max-width:100%;width:100%;height:100%;max-height:100%;border-radius:0;padding:20px 18px 32px;}
+  }
+
+  /* Navegador de estados flotante (demo, no entregable) */
+  #stateNav{position:fixed;right:16px;bottom:16px;z-index:90;display:flex;align-items:center;gap:4px;
+    background:rgba(16,18,22,.92);border-radius:999px;padding:5px 6px;box-shadow:0 8px 24px rgba(0,0,0,.3);}
+  #stateNav button{width:34px;height:34px;border:none;border-radius:50%;background:transparent;color:#fff;
+    font-size:20px;line-height:1;cursor:pointer;font-family:inherit;}
+  #stateNav button:hover:not(:disabled){background:rgba(255,255,255,.15);}
+  #stateNav button:disabled{opacity:.3;cursor:default;}
+  #stateNav .sn-label{color:#c7ccd2;font-size:11.5px;font-weight:700;min-width:44px;text-align:center;font-family:'Inter',sans-serif;}
+  @media (max-width:768px){ #stateNav{bottom:82px;} }
+</style>
+</head>
+<body>
+<div id="device">
+
+      <!-- Header recreado del screenshot -->
+      <!-- ═══════════════════════════════════════════════════════════════
+           HEADER DE PRODUCCIÓN — NO IMPLEMENTAR / SOLO REFERENCIA VISUAL
+           Réplica del <header> real (clmc MuiAppBar). El equipo de dev debe
+           usar el header existente de producción tal cual; aquí solo se
+           reproduce para presentar el módulo en su contexto.
+           ═══════════════════════════════════════════════════════════════ -->
+      <div class="w-header">
+        <div class="left">
+          <div class="w-burger"><img src="assets/produccion/Menu.svg" alt=""></div>
+          <div class="w-logo"><img src="assets/produccion/logo_winland_white.png" alt="Winland"></div>
+        </div>
+        <div class="w-nav">
+          <span>Fiesta futbolera</span><span>Deportes</span><span>En vivo</span><span>Casino</span><span>Casino en vivo</span><span>Virtuales</span><span>Promociones</span>
+        </div>
+        <div class="right">
+          <div class="w-deposit"><img src="assets/produccion/header/wallet.svg" alt="">Depositar</div>
+          <div class="w-balance">$100.00 MXN <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="w-circle"><img src="assets/produccion/header/Profile.svg" alt="Perfil" width="24" height="24"></div>
+          <div class="w-circle"><img src="assets/produccion/header/MyBets.svg" alt="Mis apuestas" width="17" height="17"></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           ▼▼▼ MÓDULO ENTREGABLE — ESTO ES LO QUE SE IMPLEMENTA ▼▼▼
+           Contenedor con medidas de producción (.privateLayout: fondo #fff,
+           padding 40px; .privateLayout-content: border-radius 16px + sombra).
+           El equipo de dev inserta este bloque dentro del layout privado.
+           ═══════════════════════════════════════════════════════════════ -->
+      <div class="w-body">
+        <div class="w-card">
+          <div class="w-tabs">
+            <div class="w-tab active" id="miCuentaTab" onclick="render('inicial')">Mi cuenta</div>
+            <div class="w-tab">Historial</div>
+            <div class="w-tab">Bonos</div>
+            <div class="w-tab">Juego responsable</div>
+            <div class="w-tab" id="faqTab" onclick="render('faq')">Preguntas frecuentes</div>
+          </div>
+          <div class="w-subtabs" id="subtabsRow">
+            <div class="sub" data-sub="cuenta">Cuenta</div>
+            <div class="sub active" data-sub="verificacion" id="verifSub" onclick="render('inicial')">Verificación</div>
+            <div class="sub" data-sub="contrasena">Contraseña</div>
+          </div>
+
+          <div class="w-content" style="position:relative;" id="content">
+            <!-- injected per state -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           FOOTER DE PRODUCCIÓN — NO IMPLEMENTAR / SOLO REFERENCIA VISUAL
+           Réplica del footer real (.clmc-footer). El equipo de dev debe usar
+           el footer existente de producción; aquí solo es contexto visual.
+           ═══════════════════════════════════════════════════════════════ -->
+      <!-- Footer réplica 1:1 producción -->
+      <div class="w-footer">
+        <div class="wf-logos">
+          <div class="wf-logos-track"><img src="assets/produccion/footer/metodo_de_pago17_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago18_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago19_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago2_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago1_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago3_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago4_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago5_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago6_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago7_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago8_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago9_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago10_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago11_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago12_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago13_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago14_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago15_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago16_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago17_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago18_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago19_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago2_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago1_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago3_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago4_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago5_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago6_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago7_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago8_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago9_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago10_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago11_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago12_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago13_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago14_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago15_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago16_footer.png" alt=""></div>
+        </div>
+        <div class="wf-divider"></div>
+        <div class="wf-inner">
+          <div class="wf-grid">
+            <div class="wf-col">
+              <div class="wf-title">¿Necesitas ayuda?</div>
+              <span class="wf-link">Chat de soporte</span>
+              <span class="wf-mail">clientes@winland.com.mx</span>
+              <span class="wf-link">Reglas</span>
+            </div>
+            <div class="wf-col">
+              <div class="wf-title">Legales</div>
+              <span class="wf-link">Aviso de privacidad</span>
+              <span class="wf-link">Términos y condiciones</span>
+              <span class="wf-link">Juego responsable</span>
+              <span class="wf-link">Política de cookies</span>
+            </div>
+            <div class="wf-col">
+              <div class="wf-title">Ajustes</div>
+              <select class="wf-select"><option>Americano</option><option>Decimal</option><option>Fraccional</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="wf-divider"></div>
+        <div class="wf-inner">
+          <details class="wf-details">
+            <summary class="wf-summary">Más información sobre Winland<span class="wf-caret">⌃</span></summary>
+            <div class="wf-info">
+              <p>Winland Online: La Casa de Apuestas</p>
+              <p>Deportivas y Casino en Línea más Segura de México</p>
+              <p>Experiencia y Trayectoria En Winland Casino, somos una empresa consolidada en el sector del entretenimiento en México, con una sólida trayectoria en la creación de experiencias de juego de alta calidad. Nuestra plataforma, Winland Online, representa la evolución natural de nuestro compromiso con la innovación, llevando la emoción del mundo físico a tu dispositivo móvil.</p>
+              <p>Las Mejores Apuestas Deportivas Nuestro Sportsbook está diseñado para el aficionado mexicano. Ofrecemos los momios más competitivos para tus deportes favoritos: desde la pasión de la Liga MX y el fútbol internacional (Champions League, La Liga), hasta la intensidad de la NFL, NBA, MLB y Boxeo. Disfruta de nuestra plataforma de Apuestas En Vivo con estadísticas en tiempo real para jugar minuto a minuto.</p>
+              <p>Casino en Línea y Juegos en Vivo Nuestro portafolio incluye una amplia gama de opciones de entretenimiento. Vive la adrenalina en nuestro Casino en Vivo con crupieres reales en Ruleta, Blackjack y Baccarat, o explora cientos de Slots (Tragamonedas), Jackpots y juegos virtuales con tecnología de última generación</p>
+              <p>Seguridad, Regulación y Confianza A través de Winland Online, ofrecemos un entorno digital seguro y 100% regulado por la SEGOB. Nos enfocamos en brindar valor y confianza, facilitando depósitos rápidos y seguros vía SPEI, tarjetas bancarias y efectivo en tiendas de conveniencia (como 7-Eleven y Walmart), garantizando el pago de tus premios. Nuestra misión es consolidar a Winland como el referente del entretenimiento responsable, transparente y orientado al cliente en México.</p>
+            </div>
+          </details>
+          <div class="wf-divider" style="margin-top:24px;"></div>
+          <div class="wf-bottom">
+            <div class="wf-social">
+              <a aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.25-1.5 1.55-1.5h1.65V3.6c-.3-.04-1.3-.13-2.45-.13-2.4 0-4.05 1.47-4.05 4.17v2.33H7.5V13h2.7v8h3.3z"/></svg></a>
+              <a aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 4.3c2.5 0 2.8 0 3.8.06 1 .04 1.5.2 1.85.34.47.18.8.4 1.15.75s.57.68.75 1.15c.13.35.3.86.34 1.85.05 1 .06 1.3.06 3.8s0 2.8-.06 3.8c-.04 1-.2 1.5-.34 1.85-.18.47-.4.8-.75 1.15s-.68.57-1.15.75c-.35.13-.86.3-1.85.34-1 .05-1.3.06-3.8.06s-2.8 0-3.8-.06c-1-.04-1.5-.2-1.85-.34a3.1 3.1 0 0 1-1.15-.75 3.1 3.1 0 0 1-.75-1.15c-.13-.35-.3-.86-.34-1.85-.05-1-.06-1.3-.06-3.8s0-2.8.06-3.8c.04-1 .2-1.5.34-1.85.18-.47.4-.8.75-1.15s.68-.57 1.15-.75c.35-.13.86-.3 1.85-.34 1-.05 1.3-.06 3.8-.06M12 2.6c-2.55 0-2.87 0-3.87.06-1 .05-1.68.2-2.28.44-.62.24-1.14.56-1.66 1.08S3.35 5.23 3.1 5.85c-.23.6-.39 1.28-.44 2.28C2.6 9.13 2.6 9.45 2.6 12s0 2.87.06 3.87c.05 1 .2 1.68.44 2.28.24.62.56 1.14 1.08 1.66s1.04.84 1.66 1.08c.6.23 1.28.39 2.28.44 1 .05 1.32.06 3.87.06s2.87 0 3.87-.06c1-.05 1.68-.2 2.28-.44a4.6 4.6 0 0 0 1.66-1.08 4.6 4.6 0 0 0 1.08-1.66c.23-.6.39-1.28.44-2.28.05-1 .06-1.32.06-3.87s0-2.87-.06-3.87c-.05-1-.2-1.68-.44-2.28a4.6 4.6 0 0 0-1.08-1.66 4.6 4.6 0 0 0-1.66-1.08c-.6-.23-1.28-.39-2.28-.44-1-.05-1.32-.06-3.87-.06zm0 4.57a4.83 4.83 0 1 0 0 9.66 4.83 4.83 0 0 0 0-9.66zm0 7.96a3.13 3.13 0 1 1 0-6.26 3.13 3.13 0 0 1 0 6.26zm6.15-8.15a1.13 1.13 0 1 1-2.26 0 1.13 1.13 0 0 1 2.26 0z"/></svg></a>
+            </div>
+            <div class="wf-badges">
+              <img src="assets/produccion/footer/juego-responsable.png" alt="18+ Juego responsable">
+              <img src="assets/produccion/footer/ssl_certified.webp" alt="SSL certificado">
+            </div>
+          </div>
+          <div class="wf-legal">
+            <a>www.winland.com.mx</a> es operado en México por Operadora de Salas Fortune de México, S.A. de C.V., operador autorizado conforme al oficio No. DGJS/682/2018, bajo el Permiso Federal No.DGJS/DGAAD/DCRCA/P-01/2017 otorgado a Operadora de Coincidencias Numéricas, S.A. de C.V., y cuenta con la autorización específica del sitio mediante el oficio No.DGJS/DCRCA/0149/2023 de fecha 9 de febrero de 2023. Juega responsablemente. El juego con apuesta está prohibido para menores de 18 años. Su finalidad es el entretenimiento; juega con moderación y dentro de tus límites.
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom nav mobile réplica 1:1 producción -->
+      <div class="w-bottomnav">
+        <div class="bn-item"><img src="assets/produccion/mobilenav/menu.svg" alt=""><span>Menú</span></div>
+        <div class="bn-item"><img src="assets/produccion/mobilenav/deportes.svg" alt=""><span>Deportes</span></div>
+        <div class="bn-item"><img src="assets/produccion/mobilenav/envivo.svg" alt=""><span>En vivo</span></div>
+        <div class="bn-item"><img src="assets/produccion/mobilenav/misApuestas.svg" alt=""><span>Mis apuestas</span></div>
+        <div class="bn-item"><img src="assets/produccion/mobilenav/casino.svg" alt=""><span>Casino</span></div>
+      </div>
+</div>
+
+<script>
+/* ===== Icon system: inline SVG, stroke-based (no emoji) ===== */
+const I = {
+  star:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8-5.1-4.7 6.9-.8L12 2z"/></svg>`,
+  check:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12.5l5 5L19 7"/></svg>`,
+  mail:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>`,
+  clock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>`,
+  alertTriangle:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><rect x="11" y="6.5" width="2" height="7.5" rx="1" fill="#fff"/><circle cx="12" cy="17" r="1.35" fill="#fff"/></svg>`,
+  lock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/></svg>`,
+  upload:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V5M8 9l4-4 4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>`,
+  selfie:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3"/><path d="M8 6l1-2h6l1 2"/></svg>`,
+  x:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
+  chevronRight:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>`,
+  chevronDown:`<svg class="icon chev-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>`,
+  plus:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>`,
+  whatsapp:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.74-.86-2-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.15-.17.2-.34.22-.63.08-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.05-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.66-1.6-.9-2.18-.24-.57-.48-.5-.66-.5l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.63.71.22 1.36.2 1.87.12.57-.08 1.74-.71 1.98-1.4.25-.68.25-1.27.17-1.4-.07-.12-.27-.2-.57-.34zM12.05 21.5h-.02a9.4 9.4 0 0 1-4.8-1.32l-.34-.2-3.57.93.96-3.48-.22-.36a9.4 9.4 0 0 1-1.44-5.02c0-5.19 4.23-9.42 9.44-9.42 2.52 0 4.89.98 6.67 2.77a9.35 9.35 0 0 1 2.76 6.66c0 5.2-4.23 9.43-9.44 9.43zm8.03-17.46A11.32 11.32 0 0 0 12.05.7C5.8.7.72 5.78.72 12.02c0 2 .52 3.95 1.52 5.68L.62 23.3l5.73-1.5a11.28 11.28 0 0 0 5.7 1.45h.01c6.24 0 11.32-5.08 11.32-11.32 0-3.03-1.18-5.87-3.32-8.01z"/></svg>`,
+  message:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H8.5L4 21.5A1 1 0 0 1 2.3 20.8L2.3 5A2 2 0 0 1 4 3z"/><circle cx="8" cy="10.5" r="1.3" fill="#fff"/><circle cx="12" cy="10.5" r="1.3" fill="#fff"/><circle cx="16" cy="10.5" r="1.3" fill="#fff"/></svg>`,
+  qr:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3"/></svg>`,
+  monitor:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
+  partyPopper:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l5-13 4 4-13 5z"/><path d="M14 4l1 3M19 9l-3 1M19 4l-3 3M11 1l1 3"/></svg>`,
+};
+
+/* ═══ Flujo Truora multi-paso (réplica del widget real con diseño Winland) ═══ */
+function truoraStep(n){
+  document.querySelectorAll('.t-step').forEach(st=>st.classList.toggle('hide', st.dataset.step!=String(n)));
+  const box=document.getElementById('tPhoneBox'); if(box) box.classList.add('hide');
+  document.querySelectorAll('.channel-list .ch.selected').forEach(c=>c.classList.remove('selected'));
+  if(n===3) qrStart();
+}
+function truoraChannel(row, name){
+  document.querySelectorAll('.channel-list .ch').forEach(c=>c.classList.toggle('selected', c===row));
+  document.getElementById('tChannelName').textContent=name;
+  document.getElementById('tPhoneBox').classList.remove('hide');
+}
+/* QR de maqueta (patrón ilustrativo) + cuenta regresiva en vivo */
+function qrMockSVG(){
+  let r=42, rects='';
+  const rnd=()=>{ r=(r*1103515245+12345)%2147483648; return r/2147483648; };
+  for(let y=0;y<21;y++)for(let x=0;x<21;x++){
+    const finder=(x<7&&y<7)||(x>13&&y<7)||(x<7&&y>13);
+    if(finder) continue;
+    if(rnd()>.52) rects+=`<rect x="${x*8}" y="${y*8}" width="8" height="8"/>`;
+  }
+  const f=(ox,oy)=>`<rect x="${ox}" y="${oy}" width="56" height="56"/><rect x="${ox+8}" y="${oy+8}" width="40" height="40" fill="#fff"/><rect x="${ox+16}" y="${oy+16}" width="24" height="24"/>`;
+  return `<svg viewBox="0 0 168 168" xmlns="http://www.w3.org/2000/svg" fill="#15171B">${rects}${f(0,0)}${f(112,0)}${f(0,112)}</svg>`;
+}
+function qrStart(){
+  const box=document.getElementById('qrBox');
+  if(box && !box.innerHTML) box.innerHTML=qrMockSVG();
+  clearInterval(window.__qrInt);
+  let t=300;
+  window.__qrInt=setInterval(()=>{
+    const el=document.getElementById('qrTimer');
+    if(!el){ clearInterval(window.__qrInt); return; }
+    t--; if(t<0){ clearInterval(window.__qrInt); return; }
+    el.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+  },1000);
+}
+
+/* ═══ Filas de documento homologadas: íconos de producción + estados consistentes ═══ */
+const DOCICON={email:['email_verified','email_pending'],identity:['identify_verified','identify_pending'],bank:['bank_verified','bank_pending'],home:['other_verified','other_pending']};
+function docIcon(type,status){
+  if(status==='rejected') return I.alertTriangle;
+  if(status==='blocked')  return I.lock;
+  const [v,p]=DOCICON[type];
+  return `<img src="assets/produccion/${status==='verified'?v:p}.svg" alt="" style="width:17px;height:17px;display:block;">`;
+}
+function mkRow(type,title,status,sub,opts={}){
+  const scMap={verified:'s-verified',pending:'s-pending',progress:'s-progress',rejected:'s-rejected',blocked:'s-blocked'};
+  const noChev = status==='verified' || status==='blocked' || opts.chev===false;
+  const chev = noChev ? '' : `<div class="chev">${I.chevronRight}</div>`;
+  const help = '';
+  return `<div class="doc-row ${status==='blocked'?'disabled':''}"><div class="doc-ic st-${status}">${docIcon(type,status)}</div><div class="doc-meta"><div class="t">${title}</div><div class="s ${scMap[status]}">${sub}</div>${help}</div>${chev}</div>`;
+}
+
+/* Guía visual del modal: imagen inline en desktop, tarjeta que abre visor en mobile */
+const guiaVisual = (img, titulo) => `
+  <div class="guia-cta" onclick="openGuia(this,'${img}','${titulo}')">
+    <img class="guia-thumb" src="assets/infografias/${img}" alt="">
+    <span><b>${titulo}</b><small>Consulta la guía visual antes de subir</small></span>
+    ${I.chevronRight}
+  </div>
+`;
+/* Vista de guía DENTRO del mismo modal (sin apilar modales) */
+function openGuia(el,img,titulo){
+  const m=el.closest('.modal');
+  m.querySelector('.m-main').classList.add('hide');
+  const g=m.querySelector('.m-guia');
+  g.querySelector('.g-title').textContent=titulo;
+  g.querySelector('img').src='assets/infografias/'+img;
+  g.classList.remove('hide');
+  m.scrollTop=0;
+}
+function closeGuia(el){
+  const m=el.closest('.modal');
+  m.querySelector('.m-guia').classList.add('hide');
+  m.querySelector('.m-main').classList.remove('hide');
+}
+/* FAQ: item con acordeón. Los interlinks van embebidos en la redacción con <a> */
+const faqItem = (q, a) => `
+  <div class="faq-item">
+    <div class="faq-q" onclick="faqOpen(this.parentElement)">${q} ${I.plus}</div>
+    <div class="faq-a">${a}</div>
+  </div>
+`;
+/* Acordeón exclusivo: solo una respuesta abierta a la vez */
+function faqOpen(item){
+  const wasOpen=item.classList.contains('open');
+  item.closest('.faq-group').querySelectorAll('.faq-item.open').forEach(i=>i.classList.remove('open'));
+  if(!wasOpen) item.classList.add('open');
+}
+/* Visor de infografía dentro de FAQ: informa sin sacar al usuario de la sección */
+function faqInfo(img, titulo){
+  const ov=document.createElement('div');
+  ov.className='faq-visor-overlay';
+  ov.innerHTML=`<div class="faq-visor"><div class="fv-head"><b>${titulo}</b><div class="fv-close">${I.x}</div></div><img src="assets/infografias/${img}" alt="${titulo}"></div>`;
+  ov.addEventListener('click', e=>{ if(e.target===ov||e.target.closest('.fv-close')) ov.remove(); });
+  document.body.appendChild(ov);
+}
+function faqCat(el){
+  document.querySelectorAll('#faqCats .faq-cat').forEach(c=>c.classList.toggle('active', c===el));
+  document.querySelectorAll('.faq-group').forEach(g=>g.classList.toggle('hide', g.dataset.cat!==el.dataset.cat));
+}
+
+const headerHTML = (title, sub) => `
+  <div class="vh-title">${title}</div>
+  <div class="vh-sub">${sub}</div>
+`;
+
+const tracker = (a,b,c) => `
+  <div class="tracker">
+    <div class="step ${a.cls}"><div class="num">${a.cls==='done'?I.check:'1'}</div><div class="meta"><div class="t">Paso 1 — Identidad</div><div class="s">${a.s}</div></div></div>
+    <div class="step ${b.cls}"><div class="num">${b.cls==='done'?I.check:'2'}</div><div class="meta"><div class="t">Paso 2 — Cuenta bancaria</div><div class="s">${b.s}</div></div></div>
+    <div class="step ${c.cls}"><div class="num">${c.cls==='done'?I.check:'3'}</div><div class="meta"><div class="t">Paso 3 — Domicilio</div><div class="s">${c.s}</div></div></div>
+  </div>
+`;
+
+/* Icono real de Truora tal como lo sirve producción */
+const TRUORA_MARK = `<img src="assets/produccion/truora-icon-black.svg" alt="Truora" style="width:20px;height:20px;display:block;">`;
+
+const truoraHero = (ctaLabel) => `
+  <div class="truora-card">
+    <div class="truora-head">
+      <div class="truora-id">
+        <div class="truora-icon">${TRUORA_MARK}</div>
+        <div>
+          <div class="truora-name">Truora</div>
+          <div class="truora-tagline">Verificación instantánea en 2 minutos</div>
+        </div>
+      </div>
+      <span class="badge">${I.star}Recomendado</span>
+    </div>
+    <h2>Verificación rápida con Truora</h2>
+    <p>Valida tu identidad desde tu celular en pocos minutos mediante un proceso guiado y seguro.</p>
+    <div class="truora-benefits">
+      <span>${I.check}Proceso 100% digital, sin visita física</span><span>${I.check}Resultado disponible en minutos</span><span>${I.check}Seguridad certificada</span>
+    </div>
+    <button class="btn-white">${ctaLabel || 'Iniciar verificación'}</button>
+  </div>
+`;
+
+const altAccordion = (open, identityState, emailRestricted=false) => `
+  <div class="alt-toggle ${open?'open':''}" onclick="this.classList.toggle('open');document.getElementById('altPanel').classList.toggle('hide')">
+    <span>¿No puedes completar tu verificación con Truora? Ver opciones alternativas</span>${I.chevronDown}
+  </div>
+  <div class="alt-panel ${open?'':'hide'}" id="altPanel">
+    <div class="alt-note">También puedes usar la verificación manual o enviar tus documentos por correo. Estos métodos pueden tardar más tiempo en revisarse.</div>
+    ${docGrid(identityState)}
+    ${emailRestricted ? `
+    <div class="email-box restricted">
+      <div><div class="t">${I.lock}Verificación por correo · disponible parcialmente</div><div class="s">Tu identidad se está validando con Truora, así que por ahora <b>solo puedes enviar comprobante de domicilio y estado de cuenta bancario</b> por este medio.</div></div>
+      <button class="btn-outline">${I.mail}Enviar domicilio y edo. de cuenta</button>
+    </div>` : `
+    <div class="email-box">
+      <div><div class="t">Verificación por correo electrónico</div><div class="s">Manda tu documentación por email y recibirás respuesta en 24–48 horas.</div></div>
+      <button class="btn-outline">${I.mail}Abrir email</button>
+    </div>`}
+  </div>
+`;
+
+function docGrid(identityState, docsState='pending', showHelp=false){
+  const idMap={
+    pending: ['pending','0 de 3 documentos subidos'],
+    blocked: ['blocked','Deshabilitada temporalmente · biometría en proceso (~5 min)'],
+    done:    ['verified','Validado por Truora'],
+    rejected:['rejected','Documento rechazado — vuelve a subirlo'],
+    progress:['blocked','Bloqueado temporalmente · validación biométrica en proceso (~5 min)'],
+  };
+  const [idStatus,idSub]=idMap[identityState];
+  const done = docsState==='done';
+  const dSt = done?'verified':'pending';
+  const dSub = done?'Validado':'Pendiente de subir';
+  return `
+  <div class="doc-grid">
+    ${mkRow('email','Email','verified','Verificado')}
+    ${mkRow('identity','Identidad',idStatus,idSub)}
+    ${mkRow('bank','Cuenta bancaria',dSt,dSub,{help:showHelp&&!done})}
+    ${mkRow('home','Domicilio',dSt,dSub,{help:showHelp&&!done})}
+  </div>`;
+}
+
+const faqHint = `
+  <div class="faq-hint">
+    <span>¿Tienes dudas sobre el proceso? <a onclick="render('faq')">Consulta las preguntas frecuentes</a></span>
+  </div>
+`;
+
+const states = {
+
+inicial: () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad, cuenta bancaria y domicilio para activar tus retiros de forma segura.')}
+  ${tracker({cls:'current',s:'Pendiente'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
+  ${truoraHero()}
+  ${altAccordion(false,'pending')}
+
+    ${faqHint}
+  `,
+
+'truora-modal': () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad, cuenta bancaria y domicilio para activar tus retiros de forma segura.')}
+  ${tracker({cls:'current',s:'Iniciando verificación...'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
+  ${truoraHero()}
+  ${altAccordion(false,'blocked')}
+  ${faqHint}
+
+  <div class="modal-overlay">
+    <div class="modal">
+      <div class="close">${I.x}</div>
+
+      <!-- Paso 1 · Consentimiento (equivalente al "Autorizo datos biométricos" de Truora) -->
+      <div class="t-step" data-step="1">
+        <div class="modal-truora-head">
+          <div class="truora-icon">${TRUORA_MARK}</div>
+          <div>
+            <h3 style="margin-bottom:2px;">Verificaremos tu identidad</h3>
+            <p class="lead" style="margin-bottom:0;">Proceso guiado y seguro con Truora · toma ~2 minutos</p>
+          </div>
+        </div>
+        <p class="lead">Capturaremos fotos de tu identificación oficial y una prueba de vida. Para continuar necesitamos tu autorización.</p>
+        <label class="consent-check">
+          <input type="checkbox" onchange="document.getElementById('tConsentBtn').disabled=!this.checked">
+          <span>Autorizo el uso de mis <b>datos biométricos</b> para verificar mi identidad.</span>
+        </label>
+        <button class="btn-white" id="tConsentBtn" style="width:100%;" disabled onclick="truoraStep(2)">Continuar</button>
+        <div class="modal-footnote">Consulta nuestra <a class="faq-link">política de privacidad</a> · Impulsado por Truora</div>
+      </div>
+
+      <!-- Paso 2 · Canal: enlace al celular (número registrado precargado), QR o este dispositivo -->
+      <div class="t-step hide" data-step="2">
+        <h3>Verifica tu identidad desde tu celular</h3>
+        <p class="lead">Te recomendamos continuar en tu celular para tomar fotos con mejor calidad. Elige cómo recibir el enlace:</p>
+        <div class="channel-list">
+          <div class="ch" onclick="truoraChannel(this,'WhatsApp')"><div class="ch-ic">${I.whatsapp}</div><div class="ch-meta"><div class="t">WhatsApp</div><div class="s">Te enviamos un enlace a tu WhatsApp</div></div>${I.chevronRight}</div>
+          <div class="ch" onclick="truoraChannel(this,'SMS')"><div class="ch-ic">${I.message}</div><div class="ch-meta"><div class="t">SMS</div><div class="s">Recibe el enlace por mensaje de texto</div></div>${I.chevronRight}</div>
+          <div class="ch" onclick="truoraStep(3)"><div class="ch-ic">${I.qr}</div><div class="ch-meta"><div class="t">Código QR</div><div class="s">Escanéalo con la cámara de tu celular</div></div>${I.chevronRight}</div>
+          <div class="ch" onclick="truoraStep(4)"><div class="ch-ic">${I.monitor}</div><div class="ch-meta"><div class="t">Este dispositivo</div><div class="s">Continúa aquí mismo, sin cambiar de equipo</div></div>${I.chevronRight}</div>
+        </div>
+        <div class="t-phone hide" id="tPhoneBox">
+          <div class="tp-label">Enviaremos el enlace por <b id="tChannelName">WhatsApp</b> a tu número registrado:</div>
+          <div class="tp-row">
+            <span class="tp-flag">🇲🇽 +52</span>
+            <input type="tel" value="55 1234 5678" aria-label="Número de celular">
+          </div>
+          <div class="tp-hint">Es el número de tu cuenta Winland. Puedes editarlo si lo necesitas.</div>
+          <!-- API: enviar enlace de verificación Truora al teléfono indicado -->
+          <button class="btn-white" style="width:100%;" onclick="render('confirmando')">Enviar enlace</button>
+        </div>
+      </div>
+
+      <!-- Paso 3 · Código QR -->
+      <div class="t-step hide" data-step="3">
+        <div class="t-back" onclick="truoraStep(2)">${I.chevronRight}Regresar</div>
+        <h3 style="text-align:center;">Escanea el código QR desde tu celular</h3>
+        <p class="lead" style="text-align:center;">Válido por <b id="qrTimer">05:00</b> min</p>
+        <div class="qr-box" id="qrBox"></div>
+        <div class="modal-footnote">Al escanearlo, el proceso continúa en tu celular y esta pantalla se actualizará sola.<br><a class="faq-link" onclick="render('confirmando')">Simular escaneo (demo)</a></div>
+      </div>
+
+      <!-- Paso 4 · Este dispositivo -->
+      <div class="t-step hide" data-step="4">
+        <div class="t-back" onclick="truoraStep(2)">${I.chevronRight}Regresar</div>
+        <h3>Continúa en este dispositivo</h3>
+        <p class="lead">Usaremos la cámara de este equipo para capturar tu identificación y tu prueba de vida. Antes de comenzar, asegúrate de:</p>
+        <div class="t-checklist">
+          <span>${I.check}Tener tu INE, pasaporte o forma migratoria a la mano</span>
+          <span>${I.check}Contar con cámara disponible en este equipo</span>
+          <span>${I.check}Estar en un lugar bien iluminado</span>
+        </div>
+        <button class="btn-white" style="width:100%;" onclick="render('confirmando')">Comenzar verificación</button>
+        <div class="modal-footnote">Si cierras esta ventana antes de terminar, deberás reiniciar el proceso.</div>
+      </div>
+
+    </div>
+  </div>
+`,
+
+confirmando: () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad, cuenta bancaria y domicilio para activar tus retiros de forma segura.')}
+  <div class="status-banner info">
+    <div class="ic">${I.clock}</div>
+    <div><div class="t">Estamos confirmando tu identidad</div><div class="s">Tu proceso con Truora finalizó y estamos actualizando tu estado. Esto puede tardar unos minutos.</div>
+    <!-- API: re-consultar estado de la validación biométrica --><div class="cta"><a>Actualizar estado</a></div></div>
+  </div>
+  ${tracker({cls:'current',s:'Verificación en proceso'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
+  ${altAccordion(false,'progress',true)}
+
+    ${faqHint}
+  `,
+
+'exito-biometria': () => `
+  ${headerHTML('Identidad validada correctamente','Ahora sube tu cuenta bancaria y comprobante de domicilio para finalizar tu verificación.')}
+  ${tracker({cls:'done',s:'Validada con Truora'},{cls:'current',s:'Pendiente'},{cls:'',s:'Pendiente'})}
+  ${docGrid('done')}
+  ${faqHint}
+
+  <div class="modal-overlay">
+    <div class="modal" style="text-align:center;">
+      <div class="close">${I.x}</div>
+      <div style="width:54px;height:54px;border-radius:50%;background:var(--success-bg);color:var(--success-green);display:flex;align-items:center;justify-content:center;margin:4px auto 16px;">${I.check}</div>
+      <h3 style="padding-right:0;">¡Validación biométrica exitosa!</h3>
+      <p class="lead">Tu identidad ha sido confirmada. Para completar el nivel de verificación de tu cuenta, por favor adjunta los dos últimos documentos requeridos: comprobante de domicilio y estado de cuenta bancario.</p>
+      <button class="btn-white" style="width:100%;" onclick="render('validada')">Adjuntar documentos</button>
+    </div>
+  </div>
+`,
+
+validada: () => `
+  ${headerHTML('Identidad validada correctamente','Ya completaste la validación de identidad. Ahora sube tu cuenta bancaria y comprobante de domicilio para finalizar tu verificación.')}
+  <div class="status-banner success">
+    <div class="ic">${I.check}</div>
+    <div><div class="t">Identidad validada con Truora</div><div class="s">Continúa con los documentos pendientes para activar tus retiros.</div></div>
+  </div>
+  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'current',s:'Pendiente de subir'},{cls:'current',s:'Pendiente de subir'})}
+  ${docGrid('done','pending')}
+
+    ${faqHint}
+  `,
+
+'docs-validacion': () => `
+  ${headerHTML('Estamos revisando tus documentos','Tu cuenta bancaria y comprobante de domicilio están en revisión. Te avisaremos cuando estén listos.')}
+  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'current',s:'En revisión'},{cls:'current',s:'En revisión'})}
+  <div class="doc-grid">
+    ${mkRow('email','Email','verified','Verificado')}
+    ${mkRow('identity','Identidad','verified','Validado por Truora')}
+    ${mkRow('bank','Cuenta bancaria','progress','En revisión',{chev:false})}
+    ${mkRow('home','Domicilio','progress','En revisión',{chev:false})}
+  </div>
+
+    ${faqHint}
+  `,
+
+rechazado: () => `
+  ${headerHTML('Hay un documento que requiere acción','Uno de tus documentos no pudo validarse. Corrígelo para continuar con tu verificación.')}
+  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'current',s:'Requiere acción'},{cls:'current',s:'En revisión'})}
+  <div class="status-banner error">
+    <div class="ic">${I.alertTriangle}</div>
+    <div><div class="t">Comprobante de domicilio rechazado</div><div class="s">El documento estaba ilegible. Sube nuevamente un comprobante claro, no mayor a 3 meses.</div>
+    <div class="cta"><a>Subir de nuevo</a></div></div>
+  </div>
+  <div class="doc-grid">
+    ${mkRow('email','Email','verified','Verificado')}
+    ${mkRow('identity','Identidad','verified','Validado por Truora')}
+    ${mkRow('bank','Cuenta bancaria','progress','En revisión',{chev:false})}
+    ${mkRow('home','Domicilio','rejected','Rechazado — requiere acción')}
+  </div>
+
+    ${faqHint}
+  `,
+
+verificada: () => `
+  ${headerHTML('Tu cuenta está verificada','Ya puedes retirar tus fondos sin restricciones.')}
+  ${tracker({cls:'done',s:'Validada'},{cls:'done',s:'Validada'},{cls:'done',s:'Validada'})}
+  <div class="status-banner success">
+    <div class="ic">${I.partyPopper}</div>
+    <div><div class="t">Cuenta verificada</div><div class="s">Identidad, cuenta bancaria y domicilio fueron validados correctamente.</div></div>
+  </div>
+  ${docGrid('done','done')}
+
+    ${faqHint}
+  `,
+
+interrumpida: () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad, cuenta bancaria y domicilio para activar tus retiros de forma segura.')}
+  <div class="status-banner error">
+    <div class="ic">${I.alertTriangle}</div>
+    <div><div class="t">Verificación interrumpida</div><div class="s">Cerraste el proceso de Truora. Para continuar con tu validación de identidad, inicia nuevamente.</div></div>
+  </div>
+  ${tracker({cls:'current',s:'Reiniciar proceso'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
+  ${truoraHero('Reiniciar verificación')}
+  ${altAccordion(false,'pending')}
+
+    ${faqHint}
+  `,
+
+'modal-identidad': () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad, cuenta bancaria y domicilio para activar tus retiros de forma segura.')}
+  ${tracker({cls:'current',s:'Pendiente'},{cls:'',s:''},{cls:'',s:''})}
+  ${truoraHero()}
+  ${faqHint}
+
+  <div class="modal-overlay">
+    <div class="modal doc-modal">
+      <div class="close">${I.x}</div>
+      <div class="m-main">
+      <h3>Verificación manual de identidad</h3>
+      <p class="lead">Sube tu identificación oficial por ambos lados y una selfie sosteniéndola a la altura de la barbilla.</p>
+
+      <div class="doc-select">
+        <label>Selecciona el tipo de documento</label>
+        <select><option>INE / IFE</option><option>Pasaporte</option><option>Forma migratoria</option></select>
+      </div>
+
+      <div class="req-line">${I.check}<span><b>Requisitos:</b> Vigente · Legible, sin reflejos · Sin alteraciones · Las 4 esquinas visibles</span></div>
+
+      ${guiaVisual('guia-identidad-tipos.jpg','Documentos de identificación aceptados')}
+
+      <div class="upload-grid">
+        <div class="upload-box">${I.upload}Frontal</div>
+        <div class="upload-box">${I.upload}Reverso</div>
+        <div class="upload-box full">${I.selfie}Selfie con documento
+          <a class="up-help" onclick="event.stopPropagation();openGuia(this,'guia-selfie.jpg','Cómo tomar tu selfie con identificación')">Ver ejemplo de selfie</a>
+        </div>
+      </div>
+
+      <div class="modal-footnote" style="text-align:left;">Formatos: JPG, PNG, PDF · Máx. 5MB</div>
+      <div class="modal-faq-line">¿Dudas con este documento? <a class="faq-link" onclick="render('faq')">Consulta las preguntas frecuentes</a></div>
+      <div class="modal-actions">
+        <button class="btn-outline">Cancelar</button>
+        <button class="btn-primary-disabled">Subir documentos</button>
+      </div>
+      </div><!-- /m-main -->
+
+      <div class="m-guia hide">
+        <div class="t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
+        <h3 class="g-title" style="margin-bottom:14px;"></h3>
+        <img src="" alt="" class="g-img">
+        <button class="btn-white" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+      </div>
+    </div>
+  </div>
+`,
+
+'modal-bancaria': () => `
+  ${headerHTML('Identidad validada correctamente','Sube tu cuenta bancaria y comprobante de domicilio para finalizar tu verificación.')}
+  ${tracker({cls:'done',s:'Validada'},{cls:'current',s:'pendiente'},{cls:'current',s:'pendiente'})}
+  ${docGrid('done')}
+  ${faqHint}
+
+  <div class="modal-overlay">
+    <div class="modal doc-modal">
+      <div class="close">${I.x}</div>
+      <div class="m-main">
+      <h3>Estado de cuenta bancario</h3>
+      <p class="lead">Documento oficial de una institución bancaria tradicional, a nombre del titular de la cuenta en Winland.</p>
+
+      <div class="req-line">${I.check}<span><b>Requisitos:</b> Banco tradicional (no fintech) · A tu nombre · Máx. 3 meses · Completo, sin recortes</span></div>
+
+      ${guiaVisual('guia-bancaria.jpg','Estados de cuenta aceptados')}
+
+      <div class="upload-grid"><div class="upload-box full">${I.upload}Estado de cuenta</div></div>
+
+      <div class="modal-footnote" style="text-align:left;">Formato: PDF · Máx. 5MB · Puedes ocultar tus saldos si lo prefieres</div>
+      <div class="modal-faq-line">¿Dudas con este documento? <a class="faq-link" onclick="render('faq')">Consulta las preguntas frecuentes</a></div>
+      <div class="modal-actions">
+        <button class="btn-outline">Cancelar</button>
+        <button class="btn-primary-disabled">Subir documento</button>
+      </div>
+      </div><!-- /m-main -->
+
+      <div class="m-guia hide">
+        <div class="t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
+        <h3 class="g-title" style="margin-bottom:14px;"></h3>
+        <img src="" alt="" class="g-img">
+        <button class="btn-white" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+      </div>
+    </div>
+  </div>
+`,
+
+'modal-domicilio': () => `
+  ${headerHTML('Identidad validada correctamente','Sube tu cuenta bancaria y comprobante de domicilio para finalizar tu verificación.')}
+  ${tracker({cls:'done',s:'Validada'},{cls:'current',s:'pendiente'},{cls:'current',s:'pendiente'})}
+  ${docGrid('done')}
+  ${faqHint}
+
+  <div class="modal-overlay">
+    <div class="modal doc-modal">
+      <div class="close">${I.x}</div>
+      <div class="m-main">
+      <h3>Comprobante de domicilio</h3>
+      <p class="lead">Recibo de luz (CFE), gas natural o teléfono/internet (Telmex, Izzi, Totalplay, Megacable), con antigüedad máxima de 3 meses.</p>
+
+      <div class="req-line">${I.check}<span><b>Requisitos:</b> Luz, gas o teléfono/internet · Máx. 3 meses · Dirección y titular legibles</span></div>
+
+      ${guiaVisual('guia-domicilio-tipos.jpg','Comprobantes de domicilio aceptados')}
+
+      <div class="upload-grid"><div class="upload-box full">${I.upload}Comprobante de domicilio</div></div>
+
+      <div class="modal-footnote" style="text-align:left;">Formato: PDF · Máx. 5MB</div>
+      <div class="modal-faq-line">¿Dudas con este documento? <a class="faq-link" onclick="render('faq')">Consulta las preguntas frecuentes</a></div>
+      <div class="modal-actions">
+        <button class="btn-outline">Cancelar</button>
+        <button class="btn-primary-disabled">Subir comprobante</button>
+      </div>
+      </div><!-- /m-main -->
+
+      <div class="m-guia hide">
+        <div class="t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
+        <h3 class="g-title" style="margin-bottom:14px;"></h3>
+        <img src="" alt="" class="g-img">
+        <button class="btn-white" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+      </div>
+    </div>
+  </div>
+`,
+
+faq: () => `
+  ${headerHTML('Preguntas frecuentes','Resuelve tus dudas sin salir de tu cuenta. Elige un tema.')}
+  <div class="faq-cats" id="faqCats">
+    <div class="faq-cat active" data-cat="verificacion" onclick="faqCat(this)">Verificación</div>
+    <div class="faq-cat" data-cat="retiros" onclick="faqCat(this)">Retiros</div>
+    <div class="faq-cat" data-cat="depositos" onclick="faqCat(this)">Depósitos</div>
+    <div class="faq-cat" data-cat="bonos" onclick="faqCat(this)">Bonos</div>
+  </div>
+
+  <div class="faq-group" data-cat="verificacion">
+    ${faqItem('¿Cómo verifico mi cuenta en Winland?','La forma más rápida es <a class="faq-link" onclick="event.stopPropagation();render(&quot;inicial&quot;)">verificarte con Truora</a>: validas tu identidad desde tu celular en unos 2 minutos y después solo adjuntas tu comprobante de domicilio y estado de cuenta bancario.')}
+    ${faqItem('¿Cuánto tarda la verificación de mi cuenta?','La validación de identidad con Truora toma solo unos minutos. La revisión del comprobante de domicilio y el estado de cuenta puede tardar hasta 24–48 horas.')}
+    ${faqItem('¿Qué documentos necesito para verificarme?','Necesitas una <a class="faq-link" onclick="event.stopPropagation();faqInfo(&quot;guia-identidad-tipos.jpg&quot;,&quot;Identificaciones aceptadas&quot;)">identificación oficial vigente</a> (INE/IFE, pasaporte o forma migratoria), un comprobante de domicilio no mayor a 3 meses y un estado de cuenta bancario a tu nombre.')}
+    ${faqItem('¿Por qué fue rechazado mi documento?','Las causas más comunes son documento vencido, foto borrosa o con reflejos, datos cubiertos o recortados, comprobantes con más de 3 meses o estados de cuenta de apps fintech. Puedes corregirlo y volver a subirlo desde la sección de Verificación; ahí verás el motivo exacto del rechazo.')}
+    ${faqItem('¿Qué comprobantes de domicilio aceptan?','Recibos de luz (CFE), gas natural o teléfono/internet (Telmex, Izzi, Totalplay, Megacable) con antigüedad máxima de 3 meses. Antes de subir el tuyo, revisa los <a class="faq-link" onclick="event.stopPropagation();faqInfo(&quot;guia-domicilio-tipos.jpg&quot;,&quot;Comprobantes de domicilio aceptados&quot;)">ejemplos de comprobantes válidos</a>. No se aceptan predial, contratos de arrendamiento ni escrituras.')}
+    ${faqItem('¿Por qué no puedo subir mis documentos manualmente?','Si iniciaste tu validación biométrica con Truora, la carga manual de identidad se bloquea temporalmente (~5 minutos) para evitar documentos duplicados. Se libera automáticamente al terminar el proceso.')}
+    ${faqItem('¿Truora es seguro? ¿Qué hace con mis datos?','Sí. Truora es un proveedor certificado de verificación biométrica que solo valida tu identidad; tus datos se tratan conforme al aviso de privacidad de Winland.')}
+  </div>
+
+  <div class="faq-group hide" data-cat="retiros">
+    ${faqItem('¿Por qué no puedo retirar mi dinero?','La causa más común es que tu cuenta aún no está verificada por completo. Para activar los retiros necesitas <a class="faq-link" onclick="event.stopPropagation();render(&quot;inicial&quot;)">completar tu verificación</a>: identidad, comprobante de domicilio y cuenta bancaria.')}
+    ${faqItem('¿Cómo hago un retiro?','Con tu cuenta verificada, entra a tu saldo y elige Retirar. El pago se envía por SPEI a la cuenta bancaria que registraste a tu nombre.')}
+    ${faqItem('¿Cuánto tarda en llegar mi retiro?','Los retiros vía SPEI suelen procesarse el mismo día hábil una vez aprobados.')}
+    ${faqItem('¿Puedo retirar a una cuenta que no está a mi nombre?','No. Por seguridad y normativa, los retiros solo se procesan a cuentas bancarias a nombre del titular registrado en Winland.')}
+    ${faqItem('Gané un premio, ¿necesito hacer algo más?','Para premios relevantes puede requerirse la firma de un formulario antes de procesar el pago. Te avisaremos en tu cuenta cuando aplique.')}
+  </div>
+
+  <div class="faq-group hide" data-cat="depositos">
+    ${faqItem('¿Cómo puedo depositar en Winland?','Puedes depositar vía SPEI, con tarjetas bancarias o en efectivo en tiendas de conveniencia como 7-Eleven y Walmart.')}
+    ${faqItem('¿Cuánto tarda en reflejarse mi depósito?','Los depósitos por SPEI y tarjeta suelen reflejarse en minutos. Los depósitos en efectivo pueden tardar un poco más según la tienda.')}
+    ${faqItem('¿Necesito estar verificado para depositar?','Puedes depositar antes de verificarte, pero necesitarás la verificación completa para retirar tus ganancias. Te recomendamos <a class="faq-link" onclick="event.stopPropagation();render(&quot;inicial&quot;)">verificarte desde el inicio</a> para no tener contratiempos.')}
+  </div>
+
+  <div class="faq-group hide" data-cat="bonos">
+    ${faqItem('¿Cómo activo un bono?','Los bonos disponibles aparecen en la pestaña Bonos de tu cuenta. Revisa los términos de cada promoción antes de activarlo.')}
+    ${faqItem('¿Dónde veo el avance de mi bono?','En la pestaña Bonos puedes consultar tus bonos activos, su vigencia y los requisitos de apuesta pendientes.')}
+    ${faqItem('¿Puedo retirar el dinero de un bono?','El saldo de bono se convierte en saldo retirable al cumplir los requisitos de apuesta indicados en los términos de la promoción.')}
+  </div>
+`,
+
+};
+
+/* ===== Recorrido guiado: historia en orden de presentación ===== */
+const TOUR = [
+  {g:'El flujo feliz (así se presenta)'},
+  {s:'inicial',        t:'El usuario llega sin verificar',           n:'Truora al frente como opción recomendada. Lo manual y el correo viven colapsados abajo para no distraer (Fase 1 del documento).'},
+  {s:'truora-modal',   t:'Toca "Iniciar verificación"',              n:'Elige por dónde continuar: WhatsApp, SMS, QR o este dispositivo. Sale al flujo seguro de Truora.'},
+  {s:'confirmando',    t:'Regresa de la biometría',                  n:'Mientras Truora confirma, el panel muestra estado "en proceso" y bloquea la carga manual para no duplicar datos.'},
+  {s:'exito-biometria',t:'Pop-up: ¡biometría exitosa!',              n:'Fase 2 del documento: el sistema celebra el éxito y pide los 2 documentos restantes.'},
+  {s:'validada',       t:'Se revelan los documentos pendientes',     n:'Solo hasta ahora aparecen domicilio y estado de cuenta, justo debajo. Carga cognitiva mínima.'},
+  {s:'docs-validacion',t:'Documentos enviados: en revisión',         n:'Feedback claro de qué está en revisión y tiempos estimados.'},
+  {s:'rechazado',      t:'Un documento fue rechazado',               n:'Se le dice exactamente cuál, por qué y cómo volver a subirlo.'},
+  {s:'verificada',     t:'Cuenta 100% verificada',                   n:'Cierre del flujo: retiros activos.'},
+  {g:'Caminos alternos (si algo sale mal)'},
+  {s:'interrumpida',   t:'Cerró Truora a medias',                    n:'Puede retomar donde se quedó, sin regaños.'},
+  {g:'Detalle de cada documento (modales)'},
+  {s:'modal-identidad',t:'Modal: identidad + prueba de vida',        n:'Infografía Do’s & Don’ts, incluye selfie con documento (sección 5 del documento, copys sujetos a Legal).'},
+  {s:'modal-bancaria', t:'Modal: estado de cuenta bancario',         n:'Sin capturas de neobancos, titular igual al de la cuenta, máx. 3 meses.'},
+  {s:'modal-domicilio',t:'Modal: comprobante de domicilio',          n:'Vigencia máx. 3 meses, legible y completo.'},
+  {g:'Nuevas secciones'},
+  {s:'faq',            t:'Pestaña: Preguntas frecuentes',            n:'FAQ dentro del perfil para no sacar al usuario del embudo.'},
+];
+const TOUR_STEPS = TOUR.filter(x=>x.s);
+
+let currentState='inicial';
+let returnState='inicial'; /* última pantalla NO modal: para regresar al cancelar */
+function render(stateKey){
+  if(!stateKey.startsWith('modal-') && !currentState.startsWith('modal-')) returnState=currentState;
+  if(!stateKey.startsWith('modal-')) returnState=stateKey;
+  currentState=stateKey;
+  const idx = TOUR_STEPS.findIndex(x=>x.s===stateKey);
+  document.getElementById('content').innerHTML = states[stateKey]();
+  document.getElementById('faqTab').classList.toggle('active', stateKey==='faq');
+  document.getElementById('miCuentaTab').classList.toggle('active', stateKey!=='faq');
+  document.getElementById('subtabsRow').style.display = stateKey==='faq' ? 'none' : 'flex';
+  document.querySelectorAll('#subtabsRow .sub').forEach(s=>{
+    s.classList.toggle('active', s.dataset.sub==='verificacion');
+  });
+  const nav=document.getElementById('stateNav');
+  if(nav){
+    nav.querySelector('.sn-label').textContent = idx>=0 ? (idx+1)+' / '+TOUR_STEPS.length : '';
+    nav.querySelector('.sn-prev').disabled = idx<=0;
+    nav.querySelector('.sn-next').disabled = idx===TOUR_STEPS.length-1;
+  }
+  wireDemo(stateKey);
+}
+
+/* ═══ Navegación de estados — AYUDA DE DEMO (no forma parte del módulo) ═══ */
+function tourGo(delta){
+  const idx = TOUR_STEPS.findIndex(x=>x.s===currentState);
+  const next = TOUR_STEPS[idx+delta];
+  if(next) render(next.s);
+}
+document.addEventListener('keydown', e=>{
+  if(e.target.matches('input,textarea,select')) return;
+  if(e.key==='ArrowRight') tourGo(1);
+  if(e.key==='ArrowLeft') tourGo(-1);
+});
+
+/* Interacción del prototipo (clic para avanzar el flujo) */
+function byText(txt, sel){
+  return [...document.getElementById('content').querySelectorAll(sel||'button,a,div')]
+    .filter(e=>e.textContent.trim().toLowerCase().includes(txt.toLowerCase()));
+}
+function go(el, state){ if(el){ el.style.cursor='pointer'; el.addEventListener('click', e=>{e.stopPropagation(); render(state);}); } }
+function wireDemo(state){
+  const c=document.getElementById('content');
+  c.querySelectorAll('.btn-white').forEach(b=>{ if(!b.closest('.modal') && b.textContent.match(/verificaci/i)) go(b,'truora-modal'); });
+  if(state==='truora-modal'){
+    c.querySelectorAll('.modal .close').forEach(x=>go(x,'interrumpida'));
+  }
+  if(state==='confirmando') byText('Actualizar estado','a').forEach(a=>go(a,'exito-biometria'));
+  if(state==='exito-biometria') c.querySelectorAll('.modal .close').forEach(x=>go(x,'validada'));
+  c.querySelectorAll('.doc-row:not(.disabled)').forEach(r=>{
+    const t=r.textContent;
+    if(/identidad/i.test(t) && !/correo/i.test(t) && !/validado/i.test(t)) go(r,'modal-identidad');
+    else if(/bancaria/i.test(t) && /pendiente/i.test(t)) go(r,'modal-bancaria');
+    else if(/domicilio/i.test(t) && /pendiente/i.test(t)) go(r,'modal-domicilio');
+  });
+  if(state.startsWith('modal-')){
+    c.querySelectorAll('.modal .close').forEach(x=>go(x,returnState));
+    byText('Cancelar','button').forEach(b=>go(b,returnState));
+    byText('Subir documento','button').forEach(b=>go(b,'docs-validacion'));
+    byText('Subir comprobante','button').forEach(b=>go(b,'docs-validacion'));
+  }
+  byText('Probar Truora','a').forEach(a=>go(a,'truora-modal'));
+}
+
+/* Control flotante para recorrer los estados (solo demo) */
+(function(){
+  const nav=document.createElement('div');
+  nav.id='stateNav';
+  nav.innerHTML='<button class="sn-prev" aria-label="Estado anterior">&#8249;</button><span class="sn-label"></span><button class="sn-next" aria-label="Siguiente estado">&#8250;</button>';
+  document.body.appendChild(nav);
+  nav.querySelector('.sn-prev').addEventListener('click',()=>tourGo(-1));
+  nav.querySelector('.sn-next').addEventListener('click',()=>tourGo(1));
+})();
+
+render('inicial');
+</script>
+
+</body>
+</html>
