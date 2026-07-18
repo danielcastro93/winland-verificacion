@@ -17,9 +17,40 @@
   GUÍA DE INTEGRACIÓN (Calímaco)
   · Stack destino: Next.js + React + Material UI, clases utilitarias clmc-*
     y variables CSS de client_custom.css. Los design-tokens de este archivo
-    (:root) están mapeados 1:1 a los de producción:
-      --winland-orange  ≡ --clmc-color-primary (#e85b10)
-      radios 8px        ≡ --clmc-border-radius-small
+    (:root) están mapeados a los de producción:
+
+    COLOR                        ≡ PRODUCCIÓN
+      --winland-orange #E85B10   ≡ --clmc-color-primary
+      --ink #1F1F1F              ≡ near-black de components.css (#1f1f1f/#212121)
+      --mid-gray #ADADAD         ≡ --clmc-color-quinary
+      --text-faint #8A8A8A       ≡ gris de apoyo de profile.css
+      --success-green #2E7D32    ≡ --clmc-bg-color-success
+      --error-red #D32F2F        ≡ --clmc-bg-color-error
+      --info-blue #0288D1        ≡ --clmc-bg-color-info
+      --text-gray #5B6470        → PROPUESTO (producción usa #7a7a7a; se
+                                   oscurece para cumplir contraste AA en 12-13px)
+      --orange-tint #FCE9DD      → PROPUESTO (producción tiene --clmc-bg-quinary
+                                   #ffc6a7, demasiado saturado como fondo de card)
+      Los fondos suaves *-bg (success/error/warning/info) son tintes derivados
+      de los colores semánticos de producción.
+
+    RADIOS                       ≡ PRODUCCIÓN
+      --radius-sm 8px            ≡ --clmc-border-radius-small
+      --radius 12px              ≡ --clmc-border-radius-large
+      --radius-lg 16px           ≡ contenedor privateLayout
+
+    TIPOGRAFÍA — fuente 'winland' (Denim INK, VARIABLE 300-900: declarar
+    font-weight:300 900 en el @font-face para pesos reales).
+      Escala (px):  12 · 13 · 14 · 16 · 18 · 20 · 22   (todo entero)
+        12 ≡ --clmc-text-xsmall   → meta, subtextos, chips
+        14 ≡ --clmc-text-small    → cuerpo, títulos de fila, preguntas FAQ
+        16 ≡ --clmc-text-medium   → nombre de proveedor, leads destacados
+        13 / 18 / 20 / 22         → intermedios usados también por producción
+                                    (aparecen en profile.css / components.css)
+      Pesos: 700 solo títulos · 600 subtítulos/etiquetas/links · 400 cuerpo.
+      Mínimo móvil: 11px (solo micro-metadatos).
+
+    BOTONES
       botón primario    ≡ .clmc-btn-primary (hover: brightness(1.1)+opacity .8;
                           disabled: #d1d1d1 / #adadad)
       botón outline     ≡ .clmc-btn-primary-white
@@ -45,6 +76,31 @@
                                           manual de identidad deshabilitada;
                                           correo solo domicilio + edo. cuenta
 
+  LÓGICA DE MÉTODO DE IDENTIDAD Y BLOQUEO SECUENCIAL
+  · La identidad es el ancla del KYC: cuenta bancaria y domicilio se validan
+    CONTRA la identidad confirmada (el nombre del titular debe coincidir).
+    Por eso ambos permanecen BLOQUEADOS hasta que el Paso 1 quede validado,
+    sin importar la vía. En el código lo controla `docGrid()`: si la
+    identidad no está en estado 'done', banco y domicilio se pintan con
+    candado ("Disponible después de validar tu identidad") y no son
+    accionables. Al validarse la identidad se desbloquean automáticamente.
+  · La identidad admite DOS vías, rastreadas por la variable global `idMethod`:
+      'truora'  → biométrica (síncrona, ~5 min). Flujo: truora-modal →
+                  confirmando → exito-biometria → validada.
+      'manual'  → carga de INE + selfie por el acordeón de alternativas.
+                  Flujo: modal-identidad → validada.
+    `idMethod` hace que TODA la pantalla de resultado y los fondos de los
+    modales se adapten: banner, tracker y fila de identidad dicen
+    "validada por Truora" o "validada manualmente" según corresponda.
+    API: en producción la vía manual NO es instantánea (revisión humana);
+    aquí se muestra resuelta al momento solo para poder demostrar el flujo.
+    Recomendación UX (ver OBSERVACIONES.md): avisar por correo cuando la
+    identidad manual quede aprobada, para que el usuario regrese a terminar.
+  · Cierre de modales: cerrar un modal de documentos (identidad/banco/
+    domicilio) regresa a la pantalla previa. Solo cerrar el modal biométrico
+    de Truora lleva a "Verificación interrumpida" (ahí sí se abandonó el
+    proceso en curso).
+
   ASSETS
   · assets/produccion/   → extraídos del sitio real (logo, iconos, fuente)
   · assets/infografias/  → guías visuales de Marketing (la de domicilio
@@ -65,30 +121,31 @@
   @font-face{
     font-family:'winland';
     src:url('assets/produccion/winland-font.ttf') format('truetype');
+    font-weight:300 900; /* fuente variable: habilita Regular/Medium/SemiBold/Bold reales */
   }
   :root{
     --winland-orange:#E85B10;
     --orange-dark:#C2480C;
     --orange-tint:#FCE9DD;
-    --ink:#15171B;
+    --ink:#1F1F1F;              /* ≡ near-black de producción (components.css) */
     --white:#FFFFFF;
     --page-bg:#F4F6F7;
     --surface:#FFFFFF;
     --line:#E4E7EA;
     --line-soft:#ECEEF0;
-    --mid-gray:#A6ACB3;
+    --mid-gray:#ADADAD;         /* ≡ --clmc-color-quinary */
     --text-gray:#5B6470;
-    --text-faint:#8A9099;
-    --success-green:#1E7A34;
+    --text-faint:#8A8A8A;       /* ≡ gris de apoyo de producción (profile.css) */
+    --success-green:#2E7D32;    /* ≡ --clmc-bg-color-success */
     --success-bg:#E7F5EA;
     --warning-bg:#FFF1E5;
-    --error-red:#C5301F;
+    --error-red:#D32F2F;        /* ≡ --clmc-bg-color-error */
     --error-bg:#FBEAE8;
-    --info-blue:#1D5FA8;
+    --info-blue:#0288D1;        /* ≡ --clmc-bg-color-info */
     --info-bg:#E9F1FB;
-    --radius-lg:18px;
-    --radius:12px;
-    --radius-sm:10px;
+    --radius-lg:16px;           /* contenedor del módulo (privateLayout) */
+    --radius:12px;              /* ≡ --clmc-border-radius-large */
+    --radius-sm:8px;            /* ≡ --clmc-border-radius-small */
     --shadow-card:0 1px 2px rgba(20,20,22,.04), 0 8px 24px rgba(20,20,22,.05);
     --shadow-pop:0 24px 60px rgba(15,15,18,.28);
     --ease:cubic-bezier(.16,1,.3,1);
@@ -101,7 +158,7 @@
     color:var(--ink);
     font-size:14px;
   }
-  h1,h2,h3,.font-display{font-family:'winland','Manrope',sans-serif;letter-spacing:-0.01em;}
+  h1,h2,h3{font-family:'winland','Manrope',sans-serif;letter-spacing:-0.01em;}
   svg{display:block;}
   .icon{width:1em;height:1em;flex-shrink:0;}
 
@@ -168,8 +225,8 @@
   .w-content{padding:32px;}
 
   /* ===== Verification module ===== */
-  .vh-title{font-size:22px;font-weight:800;color:var(--ink);margin-bottom:6px;letter-spacing:-0.015em;}
-  .vh-sub{font-size:13.5px;color:var(--text-gray);margin-bottom:26px;max-width:none;line-height:1.55;white-space:nowrap;}
+  .vh-title{font-size:22px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:-0.015em;}
+  .vh-sub{font-size:14px;color:var(--text-gray);margin-bottom:26px;max-width:none;line-height:1.55;white-space:nowrap;}
 
   /* progress tracker */
   .tracker{display:flex;gap:12px;margin-bottom:26px;}
@@ -184,10 +241,13 @@
   .step.done{border-color:var(--success-green);background:var(--success-bg);}
   .step.done .num{background:var(--success-green);border-color:var(--success-green);color:#fff;}
   .step.current{border-color:var(--winland-orange);background:var(--orange-tint);}
+  .step.alert{border-color:var(--error-red);background:var(--error-bg);}
+  .step.alert .num{background:var(--error-red);border-color:var(--error-red);color:#fff;}
+  .step.alert .meta .s{color:var(--error-red);}
   .step.current .num{background:var(--winland-orange);border-color:var(--winland-orange);color:#fff;}
   .step .meta{flex:1;min-width:0;}
-  .step .meta .t{font-size:12.8px;font-weight:700;color:var(--ink);}
-  .step .meta .s{font-size:11px;color:var(--text-gray);margin-top:3px;line-height:1.35;}
+  .step .meta .t{font-size:13px;font-weight:600;color:var(--ink);}
+  .step .meta .s{font-size:12px;color:var(--text-gray);margin-top:3px;line-height:1.35;}
   .step .num svg{width:14px;height:14px;}
 
   /* truora hero card */
@@ -206,17 +266,27 @@
     border:1px solid rgba(0,0,0,.08);
   }
   .truora-icon svg{width:18px;height:18px;}
-  .truora-name{font-size:16.5px;font-weight:800;letter-spacing:-0.005em;color:var(--ink);}
-  .truora-tagline{font-size:11.5px;color:var(--text-faint);margin-top:3px;}
+  .truora-name{font-size:16px;font-weight:700;letter-spacing:-0.005em;color:var(--ink);}
+  .truora-tagline{font-size:12px;color:var(--text-faint);margin-top:3px;}
   .truora-card .badge{
     display:inline-flex;align-items:center;gap:5px;background:var(--winland-orange);color:#fff;
-    border-radius:20px;padding:5px 12px 5px 10px;font-size:11px;font-weight:700;letter-spacing:.02em;flex-shrink:0;
+    border-radius:20px;padding:5px 12px 5px 10px;font-size:12px;font-weight:700;letter-spacing:.02em;flex-shrink:0;
+    position:relative;overflow:hidden;
   }
   .truora-card .badge svg{width:11px;height:11px;}
-  .truora-card h2{font-size:18px;font-weight:800;margin-bottom:9px;letter-spacing:-0.01em;color:var(--ink);}
-  .truora-card p{font-size:13.3px;color:var(--text-gray);line-height:1.6;max-width:none;margin-bottom:16px;white-space:nowrap;}
+  /* Destello que recorre el chip cada ~3s + estrella que titila, para atraer la vista al canal recomendado */
+  .truora-card .badge::after{
+    content:'';position:absolute;top:0;bottom:0;left:-60%;width:45%;
+    background:linear-gradient(105deg,transparent,rgba(255,255,255,.55),transparent);
+    transform:skewX(-20deg);animation:badgeShine 3.2s ease-in-out infinite;
+  }
+  @keyframes badgeShine{0%,55%{left:-60%}80%,100%{left:130%}}
+  .truora-card .badge svg{animation:starTwinkle 3.2s ease-in-out infinite;transform-origin:center;}
+  @keyframes starTwinkle{0%,50%,86%,100%{transform:scale(1) rotate(0deg)}64%{transform:scale(1.4) rotate(20deg)}}
+  .truora-card h2{font-size:18px;font-weight:700;margin-bottom:9px;letter-spacing:-0.01em;color:var(--ink);}
+  .truora-card p{font-size:14px;color:var(--text-gray);line-height:1.6;max-width:none;margin-bottom:16px;white-space:nowrap;}
   .truora-benefits{display:flex;flex-direction:column;gap:10px;margin:0 0 22px;}
-  .truora-benefits span{font-size:13px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:9px;}
+  .truora-benefits span{font-size:14px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:9px;}
   .truora-benefits svg{width:16px;height:16px;color:var(--success-green);flex-shrink:0;}
   /* Botón primario — espec producción (.clmc-btn-primary): hover brightness+opacity, disabled #d1d1d1 */
   .btn-white{
@@ -231,7 +301,7 @@
 
   .alt-toggle{
     display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:10px;
-    padding:15px 17px;background:var(--page-bg);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:#3a4047;
+    padding:15px 17px;background:var(--page-bg);border-radius:var(--radius-sm);font-size:14px;font-weight:600;color:var(--text-gray);
     border:1px solid var(--line-soft);transition:background .15s var(--ease);
   }
   .alt-toggle:hover{background:#EEF1F2;}
@@ -257,8 +327,8 @@
   .doc-ic.st-rejected{background:var(--error-bg);color:var(--error-red);}
   .doc-ic.st-blocked{background:var(--page-bg);color:var(--text-faint);}
   .doc-meta{flex:1;min-width:0;}
-  .doc-meta .t{font-size:13px;font-weight:700;color:var(--ink);line-height:1.3;}
-  .doc-meta .s{font-size:11.5px;margin-top:4px;line-height:1.4;}
+  .doc-meta .t{font-size:14px;font-weight:600;color:var(--ink);line-height:1.3;}
+  .doc-meta .s{font-size:12px;margin-top:4px;line-height:1.4;}
   .s-pending{color:var(--text-gray);}
   .s-verified{color:var(--success-green);}
   .s-progress{color:var(--winland-orange);}
@@ -271,14 +341,14 @@
     margin-top:8px;background:var(--surface);border-radius:var(--radius-sm);padding:18px 20px;
     display:flex;justify-content:space-between;align-items:center;gap:16px;border:1px solid var(--line-soft);
   }
-  .email-box .t{font-size:13.5px;font-weight:700;margin-bottom:6px;display:flex;align-items:flex-start;gap:7px;line-height:1.4;}
+  .email-box .t{font-size:14px;font-weight:600;margin-bottom:6px;display:flex;align-items:flex-start;gap:7px;line-height:1.4;}
   .email-box .t svg{width:14px;height:14px;color:var(--text-faint);flex-shrink:0;margin-top:2px;}
   .email-box.restricted{background:var(--warning-bg);border-color:#F0D9C4;}
-  .email-box .s{font-size:12.3px;color:var(--text-gray);line-height:1.6;}
+  .email-box .s{font-size:13px;color:var(--text-gray);line-height:1.6;}
   /* Botón outline — espec producción (.clmc-btn-primary-white) */
   .btn-outline{
     border:1px solid var(--winland-orange);color:var(--winland-orange);background:#fff;
-    border-radius:8px;padding:10px 18px;font-weight:600;font-size:12.8px;cursor:pointer;white-space:nowrap;
+    border-radius:8px;padding:10px 18px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;
     font-family:inherit;display:flex;align-items:center;gap:7px;justify-content:center;
     transition:.3s;
   }
@@ -290,24 +360,23 @@
   }
   .status-banner .ic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .status-banner .ic svg{width:18px;height:18px;}
-  .status-banner .t{font-weight:700;font-size:13.5px;margin-bottom:5px;color:var(--ink);}
-  .status-banner .s{font-size:12.3px;line-height:1.6;color:var(--text-gray);}
-  .status-banner.warn{background:var(--warning-bg);} .status-banner.warn .ic{background:#FFE3C7;color:var(--orange-dark);}
+  .status-banner .t{font-weight:600;font-size:14px;margin-bottom:5px;color:var(--ink);}
+  .status-banner .s{font-size:13px;line-height:1.6;color:var(--text-gray);}
   .status-banner.success{background:var(--success-bg);} .status-banner.success .ic{background:#CFEAD6;color:var(--success-green);}
   .status-banner.error{background:var(--error-bg);} .status-banner.error .ic{background:#F6D2CD;color:var(--error-red);}
   .status-banner.info{background:var(--info-bg);} .status-banner.info .ic{background:#CFE0F4;color:var(--info-blue);}
   .status-banner .cta{margin-top:10px;}
-  .status-banner .cta a{color:var(--winland-orange);font-weight:700;font-size:12.3px;cursor:pointer;}
+  .status-banner .cta a{color:var(--winland-orange);font-weight:600;font-size:13px;cursor:pointer;}
 
   /* FAQ */
   .faq-cats{display:flex;gap:9px;margin-bottom:34px;flex-wrap:wrap;}
-  .faq-cat{padding:9px 16px;border-radius:20px;font-size:12.3px;font-weight:700;background:var(--page-bg);color:#3a4047;cursor:default;border:1px solid transparent;}
+  .faq-cat{padding:9px 16px;border-radius:20px;font-size:13px;font-weight:600;background:var(--page-bg);color:#3a4047;cursor:default;border:1px solid transparent;}
   .faq-cat.active{background:var(--winland-orange);color:#fff;}
   .faq-item{border-bottom:1px solid var(--line-soft);padding:19px 4px;}
   .faq-item:first-child{padding-top:0;}
-  .faq-q{font-size:13.3px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--ink);padding-right:8px;}
+  .faq-q{font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--ink);padding-right:8px;}
   .faq-q svg{width:15px;height:15px;color:var(--text-faint);flex-shrink:0;}
-  .faq-a{font-size:12.8px;color:var(--text-gray);margin-top:9px;line-height:1.65;padding-right:48px;}
+  .faq-a{font-size:13px;color:var(--text-gray);margin-top:9px;line-height:1.65;padding-right:48px;}
 
   /* Modal */
   /* Modales a pantalla completa (sobre todo el sitio, no solo el módulo) */
@@ -323,20 +392,56 @@
   /* Modales de documento: layout horizontal en escritorio */
   .modal.doc-modal{max-width:820px;}
   .doc-modal{max-height:92%;}
+  /* Modal de Truora: ancho homologado; canales a 2 columnas en escritorio */
+  .modal.truora-wide{max-width:640px;}
+  /* ═══ HEADER GLASS HOMOLOGADO ═══
+     Todos los modales con barra reservan una zona superior FIJA vía padding-top
+     (barra 64px + gap 20px). El primer contenido siempre arranca en el mismo
+     punto: cero márgenes por caso. Desktop: 84px · Mobile: 82px. */
+  /* El modal NO scrollea: el scroll vive en el cuerpo (.m-main/.m-guia/.t-step).
+     Así el header (✕, Regresar, barra) es absoluto y queda fijo sin trucos. */
+  .modal.doc-modal,.modal.truora-wide{
+    overflow:hidden;display:flex;flex-direction:column;
+    padding:84px 0 0; /* 64 barra + 20 gap; laterales los da el cuerpo */
+  }
+  .doc-modal .m-main,.doc-modal .m-guia,.truora-wide .t-step{
+    overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;padding:0 28px 28px;
+    scrollbar-width:none; /* scrollbar overlay estilo app: la clásica roba ancho y
+                             provoca scroll horizontal cuando el contenido calza exacto */
+  }
+  .doc-modal .m-main::-webkit-scrollbar,.doc-modal .m-guia::-webkit-scrollbar,
+  .truora-wide .t-step::-webkit-scrollbar{display:none;}
+  .doc-modal .m-main{padding-bottom:0;} /* su respiro inferior lo da la franja de acciones */
+  .doc-modal .close::before,.truora-wide .close::before{
+    content:'';position:absolute;top:-17px;right:-28px;width:100vw;height:64px;
+    background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(0,0,0,.05);z-index:-1;pointer-events:none;
+  }
+  .modal.doc-modal .close,.modal.truora-wide .close{
+    position:absolute;top:17px;right:28px;margin:0;box-shadow:none;
+  }
+  /* El gap lo da el padding del modal: el primer contenido no aporta margen propio */
+  .doc-modal .m-main > :first-child,.doc-modal .m-guia > :first-child,
+  .truora-wide .t-step > :first-child,.t-back + *{margin-top:0 !important;}
+  .modal-truora-head h3{margin-top:0;}
+  @media (min-width:769px){
+    .truora-wide .channel-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  }
   /* Línea de requisitos: discreta, escaneable, una sola línea */
   .req-line{
     display:flex;align-items:flex-start;gap:8px;background:var(--page-bg);border-radius:8px;
-    padding:11px 14px;margin-bottom:14px;font-size:12.5px;color:var(--text-gray);line-height:1.5;
+    padding:11px 14px;margin-bottom:14px;font-size:13px;color:var(--text-gray);line-height:1.5;
   }
   .req-line svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;margin-top:1px;}
   .req-line b{color:var(--ink);}
   .modal .close{
-    position:absolute;top:18px;right:18px;width:30px;height:30px;border-radius:50%;background:var(--page-bg);
+    position:sticky;top:0;margin-left:auto;margin-bottom:-30px;width:30px;height:30px;border-radius:50%;background:var(--page-bg);
     display:flex;align-items:center;justify-content:center;color:#555;cursor:pointer;
+    z-index:6;box-shadow:0 0 0 4px #fff; /* halo para leerse sobre contenido al hacer scroll */
   }
   .modal .close svg{width:14px;height:14px;}
-  .modal h3{font-size:18px;font-weight:800;margin-bottom:12px;padding-right:30px;color:var(--ink);letter-spacing:-0.01em;}
-  .modal .lead{font-size:13px;color:var(--text-gray);margin-bottom:20px;line-height:1.65;}
+  .modal h3{font-size:18px;font-weight:700;margin:22px 0 14px;padding-right:44px;color:var(--ink);letter-spacing:-0.01em;}
+  .modal .lead{font-size:14px;color:var(--text-gray);margin-bottom:20px;line-height:1.65;}
   .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
   .upload-box{
     border:1.5px dashed var(--mid-gray);border-radius:var(--radius-sm);padding:18px 10px;text-align:center;font-size:12px;
@@ -359,15 +464,21 @@
   }
   .channel-list .ch-ic svg{width:18px;height:18px;}
   .channel-list .ch-meta{flex:1;min-width:0;}
-  .channel-list .ch-meta .t{font-size:13.5px;font-weight:700;color:var(--ink);}
+  .channel-list .ch-meta .t{font-size:14px;font-weight:600;color:var(--ink);}
   .channel-list .ch-meta .s{font-size:12px;color:var(--text-gray);margin-top:3px;line-height:1.4;}
   .channel-list .ch > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
-  .modal-footnote{font-size:11.5px;color:var(--text-faint);margin-top:16px;text-align:center;line-height:1.55;}
+  .modal-footnote{font-size:12px;color:var(--text-faint);margin-top:16px;text-align:center;line-height:1.55;}
 
-  .modal-actions{display:flex;gap:10px;}
+    /* Acciones fijas al fondo: siempre a la mano aunque el contenido tenga scroll */
+  .modal-actions{
+    display:flex;gap:10px;position:sticky;bottom:0;z-index:4;
+    margin:18px -28px 0;padding:14px 28px 18px;
+    background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-top:1px solid rgba(0,0,0,.06);
+  }
   .modal-actions .btn-outline{flex:1;}
   .btn-primary-disabled{
-    flex:1;background:#d1d1d1;color:#adadad;border:none;border-radius:8px;font-weight:600;font-size:12.8px;cursor:default;font-family:inherit;
+    flex:1;background:#d1d1d1;color:#adadad;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:default;font-family:inherit;
   }
 
   /* ===== Footer — réplica 1:1 producción (.clmc-footer-dark) ===== */
@@ -432,7 +543,7 @@
   .faq-item.open .faq-q svg{transform:rotate(45deg);}
   .faq-q svg{transition:transform .18s var(--ease);flex-shrink:0;}
   .faq-group.hide{display:none;}
-  .faq-link{color:var(--winland-orange);font-weight:700;cursor:pointer;}
+  .faq-link{color:var(--winland-orange);font-weight:600;cursor:pointer;}
   .faq-link:hover{text-decoration:underline;}
 
   
@@ -440,45 +551,53 @@
   /* Visor de infografías en FAQ (overlay ligero, no saca al usuario) */
   .faq-visor-overlay{position:fixed;inset:0;background:rgba(12,12,14,.65);z-index:210;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);}
   .faq-visor{background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90%;overflow-y:auto;padding:18px;}
-  .fv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:14.5px;}
+  .fv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:14px;}
   .fv-close{width:30px;height:30px;border-radius:50%;background:var(--page-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .fv-close svg{width:13px;height:13px;}
   .faq-visor img{width:100%;display:block;border-radius:8px;}
-  @media (max-width:768px){ .faq-visor-overlay{padding:12px;} }
+  @media (max-width:768px){
+    .faq-visor-overlay{padding:12px;}
+    .faq-item{padding:22px 2px;}
+    .faq-q{gap:14px;line-height:1.45;}
+    .faq-a{margin-top:11px;padding-right:14px;}
+  }
 
   /* Flujo Truora multi-paso */
   .t-step.hide{display:none;}
   .t-back{
-    display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--text-gray);
-    cursor:pointer;margin:-4px 0 22px;width:fit-content;padding:4px 8px 4px 0;
+    position:absolute;top:20px;left:28px;z-index:7;margin:0;padding:0;
+    display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--text-gray);
+    cursor:pointer;width:fit-content;
   }
   .t-back svg{width:13px;height:13px;transform:rotate(180deg);}
   .t-back:hover{color:var(--ink);}
   .channel-list .ch.selected{background:var(--orange-tint);border-radius:8px;}
   .t-phone{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:16px;}
   .t-phone.hide{display:none;}
-  .tp-label{font-size:12.8px;color:var(--text-gray);margin-bottom:10px;}
+  .tp-label{font-size:13px;color:var(--text-gray);margin-bottom:10px;}
   .tp-row{display:flex;align-items:center;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px;}
   .tp-row:focus-within{border-color:var(--winland-orange);}
-  .tp-flag{padding:12px 12px;background:var(--page-bg);font-size:13.5px;font-weight:600;border-right:1px solid var(--line-soft);white-space:nowrap;}
-  .tp-row input{flex:1;border:none;outline:none;padding:12px 14px;font-size:14.5px;font-family:inherit;color:var(--ink);letter-spacing:.03em;}
-  .tp-hint{font-size:11.3px;color:var(--text-faint);line-height:1.45;margin-bottom:16px;}
+  .tp-flag{padding:12px 12px;background:var(--page-bg);font-size:14px;font-weight:600;border-right:1px solid var(--line-soft);white-space:nowrap;}
+  .tp-row input{flex:1;border:none;outline:none;padding:12px 14px;font-size:14px;font-family:inherit;color:var(--ink);letter-spacing:.03em;}
+  .tp-hint{font-size:12px;color:var(--text-faint);line-height:1.45;margin-bottom:16px;}
   .t-checklist{display:flex;flex-direction:column;gap:11px;margin:6px 0 20px;}
-  .t-checklist span{display:flex;align-items:center;gap:9px;font-size:12.8px;color:var(--text-gray);}
+  .t-checklist span{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text-gray);}
   .t-checklist svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;}
+  .qr-title,.qr-lead{text-align:center;}
+  @media (max-width:768px){ .qr-title,.qr-lead{text-align:left;} }
   .qr-box{width:190px;height:190px;margin:6px auto 10px;padding:12px;border:1px solid var(--line-soft);border-radius:12px;background:#fff;}
   .qr-box svg{width:100%;height:100%;display:block;}
 
   /* Checkbox de consentimiento (modal Truora) */
-  .consent-check{display:flex;gap:10px;align-items:flex-start;font-size:12.8px;color:var(--text-gray);line-height:1.55;margin:8px 0 20px;cursor:pointer;}
+  .consent-check{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--text-gray);line-height:1.55;margin:8px 0 20px;cursor:pointer;}
   .consent-check input{width:17px;height:17px;margin:1px 0 0;accent-color:var(--winland-orange);flex-shrink:0;cursor:pointer;}
   .consent-check b{color:var(--ink);}
 
   /* Modal de documentos v2: selector, guía visual, línea FAQ */
   .doc-select{margin-bottom:16px;}
-  .doc-select label{display:block;font-size:12.3px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+  .doc-select label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px;}
   .doc-select select{
-    width:100%;border:1.5px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px;
+    width:100%;border:1.5px solid var(--line);border-radius:8px;padding:12px 14px;font-size:14px;
     font-family:inherit;color:var(--ink);background:#fff;appearance:none;cursor:pointer;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%235B6470' stroke-width='2' fill='none'/></svg>");
     background-repeat:no-repeat;background-position:right 14px center;
@@ -493,21 +612,16 @@
   .guia-cta:hover{border-color:var(--winland-orange);background:#FFFBF8;}
   .guia-thumb{width:52px;height:44px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--line-soft);flex-shrink:0;}
   .guia-cta span{flex:1;display:flex;flex-direction:column;gap:2px;line-height:1.3;}
-  .guia-cta span b{font-size:12.8px;color:var(--ink);}
-  .guia-cta span small{font-size:11.3px;color:var(--text-faint);}
+  .guia-cta span b{font-size:13px;color:var(--ink);}
+  .guia-cta span small{font-size:12px;color:var(--text-faint);}
   .guia-cta > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
-  .up-help{display:block;font-size:11.5px;font-weight:700;color:var(--winland-orange);cursor:pointer;margin-top:6px;}
-  .up-help:hover{text-decoration:underline;}
-  .modal-faq-line{font-size:12.5px;color:var(--text-gray);margin:14px 0 16px;}
-  .modal-actions{display:flex;gap:10px;}
+  .modal-faq-line{font-size:13px;color:var(--text-gray);margin:14px 0 16px;}
 
   /* Vista de guía interna del modal */
   .m-main.hide,.m-guia.hide{display:none;}
   .m-guia .g-img{display:block;max-width:100%;max-height:60vh;width:auto;margin:0 auto;border-radius:10px;border:1px solid var(--line-soft);}
 
   /* Línea de ayuda de selfie (fuera del dropzone) */
-  .up-tip{display:flex;align-items:flex-start;gap:8px;font-size:11.8px;color:var(--text-gray);margin:10px 2px 0;line-height:1.4;}
-  .up-tip svg{width:14px;height:14px;color:var(--info-blue);flex-shrink:0;margin-top:1px;}
   /* Botón "Subir" habilitado: conserva la clase base para no deformarse en mobile */
   .btn-primary-disabled.ready{background:var(--winland-orange);color:#fff;cursor:pointer;transition:.3s;}
   .btn-primary-disabled.ready:hover{filter:brightness(1.1);opacity:.8;}
@@ -518,21 +632,42 @@
   .upload-box:hover{border-color:var(--winland-orange);background:#FFFBF8;}
   .upload-box.loaded{border-style:solid;border-color:var(--success-green);background:var(--success-bg);cursor:default;}
   .upload-box.loaded > svg{color:var(--success-green);}
-  .upload-box .file-name{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--success-green);margin-top:5px;}
+  .upload-box .file-name{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--success-green);margin-top:5px;}
   .upload-box .file-name svg{width:12px;height:12px;}
   .modal-actions .btn-white{flex:1;}
   /* Destello de atención en advertencias y rechazos */
   @keyframes pulseRed{0%{box-shadow:0 0 0 0 rgba(197,48,31,.5);}70%{box-shadow:0 0 0 10px rgba(197,48,31,0);}100%{box-shadow:0 0 0 0 rgba(197,48,31,0);}}
-  @keyframes pulseWarn{0%{box-shadow:0 0 0 0 rgba(232,91,17,.5);}70%{box-shadow:0 0 0 10px rgba(232,91,17,0);}100%{box-shadow:0 0 0 0 rgba(232,91,17,0);}}
   .doc-ic.st-rejected{animation:pulseRed 1.6s ease-out infinite;}
   .status-banner.error .ic{animation:pulseRed 1.6s ease-out infinite;}
-  .status-banner.warn .ic{animation:pulseWarn 1.6s ease-out infinite;}
+  /* Éxito: la palomita entra con pop, dibuja su trazo y emite una onda */
+  @keyframes popIn{0%{transform:scale(.35);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+  @keyframes ringSuccess{0%{box-shadow:0 0 0 0 rgba(46,125,50,.4)}100%{box-shadow:0 0 0 16px rgba(46,125,50,0)}}
+  @keyframes drawStroke{to{stroke-dashoffset:0}}
+  .pop-check{animation:popIn .45s var(--ease) both, ringSuccess .8s .4s ease-out both;}
+  .pop-check svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:drawStroke .35s .32s ease-out forwards;}
+  /* Banner de identidad validada: pulso verde suave (homólogo al rojo/naranja de alerta) */
+  @keyframes pulseSuccess{0%{box-shadow:0 0 0 0 rgba(46,125,50,.35)}70%{box-shadow:0 0 0 10px rgba(46,125,50,0)}100%{box-shadow:0 0 0 0 rgba(46,125,50,0)}}
+  .status-banner.success .ic{animation:pulseSuccess 2.4s ease-out infinite;}
   /* Pasos del tracker como botones cuando tienen acción */
   .step.clickable{cursor:pointer;transition:transform .12s var(--ease), box-shadow .15s var(--ease);}
   .step.clickable:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(20,20,22,.08);}
   /* Fila de documento rechazado: toda la card invita al clic */
-  .doc-row.row-alert{cursor:pointer;animation:none;}
-  .doc-row.row-alert:hover{border-color:var(--error-red);}
+  /* Filas accionables: al pasar el cursor, el contorno se "pinta" en el color de acción
+     (naranja para pendientes, rojo para rechazadas). Fallback sin @property: borde coloreado simple. */
+  @property --sweep{syntax:'<angle>';initial-value:0deg;inherits:false;}
+  .doc-row.row-action,.doc-row.row-alert{cursor:pointer;position:relative;animation:none;transition:transform .15s var(--ease);}
+  .doc-row.row-action{--paint:var(--winland-orange);}
+  .doc-row.row-alert{--paint:var(--error-red);}
+  .doc-row.row-action:hover,.doc-row.row-alert:hover{border-color:var(--paint);transform:translateY(-1px);}
+  .doc-row.row-action::after,.doc-row.row-alert::after{
+    content:'';position:absolute;inset:-1px;border-radius:var(--radius-sm);padding:1.5px;
+    background:conic-gradient(from 0deg, var(--paint) var(--sweep), transparent var(--sweep));
+    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    opacity:0;pointer-events:none;
+  }
+  .doc-row.row-action:hover::after,.doc-row.row-alert:hover::after{opacity:1;animation:paintBorder .45s var(--ease) forwards;}
+  @keyframes paintBorder{from{--sweep:0deg}to{--sweep:360deg}}
 
   /* FAQ hint footer */
   .faq-hint{
@@ -554,12 +689,12 @@
     .w-burger{margin-right:12px;}
     .w-logo img{width:88px;}
     .w-nav{display:none;}
-    .w-deposit{min-width:0;height:36px;padding:6px 10px;font-size:12.5px;}
-    .w-balance{min-width:0;height:36px;padding:6px 8px;font-size:12.5px;}
+    .w-deposit{min-width:0;height:36px;padding:6px 10px;font-size:13px;}
+    .w-balance{min-width:0;height:36px;padding:6px 8px;font-size:13px;}
     .w-circle{width:36px;height:36px;}
     .w-body{padding:0;}
     .w-card{border-radius:0;box-shadow:none;}
-    .w-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .w-tabs{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
     .w-tabs::-webkit-scrollbar{display:none;}
     .w-tab{font-size:13px;padding:12px 14px;white-space:nowrap;flex-shrink:0;}
     .w-subtabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 8px;}
@@ -570,12 +705,16 @@
     .vh-title{font-size:18px;}
     .tracker{flex-direction:column;gap:6px;margin-bottom:18px;}
     .step{padding:9px 12px;gap:9px;border-radius:9px;}
-    .step .num{width:22px;height:22px;font-size:10.5px;}
+    .step .num{width:22px;height:22px;font-size:11px;}
     .step .num svg{width:11px;height:11px;}
-    .step .meta .t{font-size:11.5px;}
+    .step .meta .t{font-size:12px;}
     .step .meta .s{display:none;}
-    .step.current .meta .s{display:block;font-size:10px;}
+    .step.current .meta .s,.step.alert .meta .s{display:block;font-size:11px;}
     .truora-card p{white-space:normal;}
+    /* Chip "Recomendado" como listón colgado del borde superior: no consume una línea */
+    .truora-head{flex-wrap:nowrap;margin-bottom:14px;}
+    .truora-card .badge{position:absolute;top:0;right:16px;border-radius:0 0 8px 8px;padding:4px 10px 5px 9px;font-size:11px;}
+    .truora-card .badge svg{width:10px;height:10px;}
     .btn-white{width:100%;}
     .doc-grid{grid-template-columns:1fr;}
     .email-box{flex-direction:column;align-items:stretch;gap:12px;}
@@ -594,7 +733,10 @@
     .faq-cat{white-space:nowrap;flex-shrink:0;}
     .faq-a{padding-right:24px;}
     /* Acciones de modal apiladas: primario arriba, ancho completo */
-    .modal-actions{flex-direction:column-reverse;gap:9px;}
+    .modal-actions{
+      flex-direction:column-reverse;gap:9px;
+      bottom:0;margin:16px -18px 0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));
+    }
     .modal-actions .btn-outline,.modal-actions .btn-primary-disabled{width:100%;flex:none;padding-top:12px;padding-bottom:12px;}
     /* Mobile producción: sin hamburguesa (pasa al bottom-nav), sin menú superior */
     .w-burger{display:none;}
@@ -613,10 +755,44 @@
     /* Modales cortos (confirmación, selector de canal): centrados con margen */
     .modal-overlay{padding:16px;align-items:center;}
     .modal{max-width:100%;width:100%;max-height:90%;border-radius:14px;}
-    .modal .close{top:16px;right:16px;}
+    .modal h3{margin-top:28px;}
     /* Modales de carga de documentos (largos): full-screen tipo hoja, como producción */
-    .modal-overlay:has(.doc-modal){padding:0;align-items:stretch;}
-    .doc-modal{max-width:100%;width:100%;height:100%;max-height:100%;border-radius:0;padding:20px 18px 32px;}
+    .modal-overlay:has(.doc-modal),.modal-overlay:has(.truora-wide),.modal-overlay:has(.modal-center){padding:0;align-items:stretch;}
+    .doc-modal,.modal.truora-wide,.modal.modal-center{max-width:100%;width:100%;height:100%;max-height:100%;border-radius:0;padding:20px 18px 32px;}
+    /* ── Layout tipo app: contenido arriba, acciones ancladas abajo ── */
+    .modal.truora-wide{display:flex;flex-direction:column;}
+    .truora-wide .t-step{flex:1;display:flex;flex-direction:column;min-height:0;}
+    .truora-wide .t-step.hide{display:none;}
+    .truora-wide .t-step > .btn-white{margin-top:auto;}
+    /* Consentimiento: el checkbox baja junto al CTA (a la mano del pulgar) */
+    .truora-wide [data-step="1"] .consent-check{margin-top:auto;margin-bottom:14px;}
+    .truora-wide [data-step="1"] .consent-check + .btn-white{margin-top:0;}
+    /* Canales: el bloque de teléfono + "Enviar enlace" baja a la misma posición que el CTA */
+    .truora-wide #tPhoneBox{margin-top:auto;}
+    /* Footnotes alineados a la izquierda, como app */
+    .truora-wide .modal-footnote{text-align:left;}
+    /* Éxito biométrico: full-screen homologado, contenido centrado, ✕ arriba */
+    .modal.modal-center{display:flex;flex-direction:column;justify-content:center;padding:24px 22px;}
+    .modal-center .close{position:absolute;top:14px;right:14px;margin:0;}
+    .modal-center h3{margin-top:0;}
+
+    /* ── Header glass homologado en mobile: barra 62px + gap 20px = 82px ── */
+    .modal.doc-modal,.modal.truora-wide{padding:82px 0 0;}
+    .doc-modal .m-guia,.truora-wide .t-step{padding:0 18px 32px;}
+    .doc-modal .m-main{padding:0 18px 0;}
+    .doc-modal .close::before,.truora-wide .close::before{top:-16px;right:-18px;height:62px;}
+    .modal.doc-modal .close,.modal.truora-wide .close{top:16px;right:18px;}
+    .t-back{top:19px;left:18px;}
+
+    /* ── Footer liquid glass: acciones fijas abajo con blur, como app ── */
+    .modal-actions{
+      background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+      border-top:1px solid rgba(0,0,0,.06);
+    }
+    /* Homologación: en banco/domicilio (contenido corto) las acciones también anclan abajo */
+    .doc-modal{display:flex;flex-direction:column;}
+    .doc-modal .m-main:not(.hide),.doc-modal .m-guia:not(.hide){flex:1;display:flex;flex-direction:column;min-height:0;}
+    .doc-modal .m-main .modal-actions{margin-top:auto;}
   }
 
   /* Navegador de estados flotante (demo, no entregable) */
@@ -626,7 +802,7 @@
     font-size:20px;line-height:1;cursor:pointer;font-family:inherit;}
   #stateNav button:hover:not(:disabled){background:rgba(255,255,255,.15);}
   #stateNav button:disabled{opacity:.3;cursor:default;}
-  #stateNav .sn-label{color:#c7ccd2;font-size:11.5px;font-weight:700;min-width:44px;text-align:center;font-family:'Inter',sans-serif;}
+  #stateNav .sn-label{color:#c7ccd2;font-size:12px;font-weight:700;min-width:44px;text-align:center;font-family:'Inter',sans-serif;}
   @media (max-width:768px){ #stateNav{bottom:82px;} }
 </style>
 </head>
@@ -826,8 +1002,7 @@ function mkRow(type,title,status,sub,opts={}){
   const scMap={verified:'s-verified',pending:'s-pending',progress:'s-progress',rejected:'s-rejected',blocked:'s-blocked'};
   const noChev = status==='verified' || status==='blocked' || opts.chev===false;
   const chev = noChev ? '' : `<div class="chev">${I.chevronRight}</div>`;
-  const help = '';
-  return `<div class="doc-row ${status==='blocked'?'disabled':''}"><div class="doc-ic st-${status}">${docIcon(type,status)}</div><div class="doc-meta"><div class="t">${title}</div><div class="s ${scMap[status]}">${sub}</div>${help}</div>${chev}</div>`;
+  return `<div class="doc-row ${status==='blocked'?'disabled':''}"><div class="doc-ic st-${status}">${docIcon(type,status)}</div><div class="doc-meta"><div class="t">${title}</div><div class="s ${scMap[status]}">${sub}</div></div>${chev}</div>`;
 }
 
 /* Guía visual del modal: imagen inline en desktop, tarjeta que abre visor en mobile */
@@ -935,7 +1110,7 @@ const altAccordion = (open, identityState, emailRestricted=false) => `
   </div>
 `;
 
-function docGrid(identityState, docsState='pending', showHelp=false){
+function docGrid(identityState, docsState='pending'){
   const idDoneLabel = idMethod==='manual' ? 'Validado manualmente' : 'Validado por Truora';
   const idMap={
     pending: ['pending','0 de 3 documentos subidos'],
@@ -951,10 +1126,10 @@ function docGrid(identityState, docsState='pending', showHelp=false){
   const dSub = done?'Validado':'Pendiente de subir';
   /* Cuenta bancaria y domicilio permanecen bloqueados hasta validar la identidad (por Truora o manual) */
   const bankRow = idDone
-    ? mkRow('bank','Cuenta bancaria',dSt,dSub,{help:showHelp&&!done})
+    ? mkRow('bank','Cuenta bancaria',dSt,dSub)
     : mkRow('bank','Cuenta bancaria','blocked','Disponible después de validar tu identidad');
   const homeRow = idDone
-    ? mkRow('home','Domicilio',dSt,dSub,{help:showHelp&&!done})
+    ? mkRow('home','Domicilio',dSt,dSub)
     : mkRow('home','Domicilio','blocked','Disponible después de validar tu identidad');
   return `
   <div class="doc-grid">
@@ -990,7 +1165,7 @@ inicial: () => `
   ${faqHint}
 
   <div class="modal-overlay">
-    <div class="modal">
+    <div class="modal truora-wide">
       <div class="close">${I.x}</div>
 
       <!-- Paso 1 · Consentimiento (equivalente al "Autorizo datos biométricos" de Truora) -->
@@ -1036,8 +1211,8 @@ inicial: () => `
       <!-- Paso 3 · Código QR -->
       <div class="t-step hide" data-step="3">
         <div class="t-back" onclick="truoraStep(2)">${I.chevronRight}Regresar</div>
-        <h3 style="text-align:center;">Escanea el código QR desde tu celular</h3>
-        <p class="lead" style="text-align:center;">Válido por <b id="qrTimer">05:00</b> min</p>
+        <h3 class="qr-title">Escanea el código QR desde tu celular</h3>
+        <p class="lead qr-lead">Válido por <b id="qrTimer">05:00</b> min</p>
         <div class="qr-box" id="qrBox"></div>
         <div class="modal-footnote">Al escanearlo, el proceso continúa en tu celular y esta pantalla se actualizará sola.<br><a class="faq-link" onclick="render('confirmando')">Simular escaneo (demo)</a></div>
       </div>
@@ -1080,11 +1255,11 @@ confirmando: () => `
   ${faqHint}
 
   <div class="modal-overlay">
-    <div class="modal" style="text-align:center;">
+    <div class="modal modal-center" style="text-align:center;">
       <div class="close">${I.x}</div>
-      <div style="width:54px;height:54px;border-radius:50%;background:var(--success-bg);color:var(--success-green);display:flex;align-items:center;justify-content:center;margin:4px auto 16px;">${I.check}</div>
+      <div class="pop-check" style="width:54px;height:54px;border-radius:50%;background:var(--success-bg);color:var(--success-green);display:flex;align-items:center;justify-content:center;margin:4px auto 16px;">${I.check}</div>
       <h3 style="padding-right:0;">¡Validación biométrica exitosa!</h3>
-      <p class="lead">Tu identidad ha sido confirmada. Para completar el nivel de verificación de tu cuenta, por favor adjunta los dos últimos documentos requeridos: comprobante de domicilio y estado de cuenta bancario.</p>
+      <p class="lead">Tu identidad quedó confirmada. Solo falta subir tu comprobante de domicilio y tu estado de cuenta bancario.</p>
       <button class="btn-white" style="width:100%;" onclick="idMethod='truora';render('validada')">Adjuntar documentos</button>
     </div>
   </div>
@@ -1117,7 +1292,7 @@ validada: () => `
 
 rechazado: () => `
   ${headerHTML('Hay un documento que requiere acción','Uno de tus documentos no pudo validarse. Corrígelo para continuar con tu verificación.')}
-  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'current',s:'Requiere acción'},{cls:'current',s:'En revisión'})}
+  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'current',s:'En revisión'},{cls:'alert',s:'Requiere acción'})}
   <div class="status-banner error">
     <div class="ic">${I.alertTriangle}</div>
     <div><div class="t">Comprobante de domicilio rechazado</div><div class="s">El documento estaba ilegible. Sube nuevamente un comprobante claro, no mayor a 3 meses.</div>
@@ -1355,6 +1530,12 @@ function render(stateKey){
   document.getElementById('content').innerHTML = states[stateKey]();
   document.getElementById('faqTab').classList.toggle('active', stateKey==='faq');
   document.getElementById('miCuentaTab').classList.toggle('active', stateKey!=='faq');
+  /* En mobile los tabs hacen scroll horizontal: centrar el tab activo al navegar.
+     Diferido tras el render y con asignación directa (el scroll "smooth" programático
+     se cancela o no corre en algunos WebViews). */
+  const activeTab=document.querySelector('.w-tabs .w-tab.active');
+  if(activeTab){ const tc=activeTab.parentElement;
+    setTimeout(()=>{ tc.scrollLeft = activeTab.offsetLeft-(tc.clientWidth-activeTab.offsetWidth)/2; },80); }
   document.getElementById('subtabsRow').style.display = stateKey==='faq' ? 'none' : 'flex';
   document.querySelectorAll('#subtabsRow .sub').forEach(s=>{
     s.classList.toggle('active', s.dataset.sub==='verificacion');
@@ -1400,15 +1581,17 @@ function wireDemo(state){
     const t=r.textContent;
     const rejected=/Rechazado/i.test(t);
     if(rejected) r.classList.add('row-alert');
-    if(/Identidad/i.test(t) && !/correo/i.test(t) && !/Validado/i.test(t)) go(r,'modal-identidad');
-    else if(/bancaria/i.test(t) && (/Pendiente/i.test(t)||rejected)) go(r,'modal-bancaria');
-    else if(/Domicilio/i.test(t) && (/Pendiente/i.test(t)||rejected)) go(r,'modal-domicilio');
+    let dest=null;
+    if(/Identidad/i.test(t) && !/correo/i.test(t) && !/Validado/i.test(t)) dest='modal-identidad';
+    else if(/bancaria/i.test(t) && (/Pendiente/i.test(t)||rejected)) dest='modal-bancaria';
+    else if(/Domicilio/i.test(t) && (/Pendiente/i.test(t)||rejected)) dest='modal-domicilio';
+    if(dest){ if(!rejected) r.classList.add('row-action'); go(r,dest); }
   });
 
   /* Pasos del tracker como accesos directos cuando tienen acción pendiente */
   c.querySelectorAll('.step').forEach(st=>{
     const t=st.textContent;
-    const accionable=/Pendiente|pendiente|Requiere acción/.test(t) && !/Disponible después/i.test(t);
+    const accionable=/Pendiente|pendiente|Requiere acción|Reiniciar/.test(t) && !/Disponible después/i.test(t);
     if(!accionable) return;
     st.classList.add('clickable');
     if(/Identidad/.test(t)) go(st,'truora-modal');

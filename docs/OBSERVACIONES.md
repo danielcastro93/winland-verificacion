@@ -1,5 +1,5 @@
 # Observaciones para el cliente — Módulo de Verificación Winland
-*(Para incluir como sección final de la presentación. Última actualización: 16-jul-2026)*
+*(Para incluir como sección final de la presentación. Última actualización: 17-jul-2026)*
 
 ## 1. Errores de contenido en las infografías (requieren corrección de Marketing)
 
@@ -51,3 +51,15 @@
 - Tile de identidad sin sincronizar en tiempo real → confusión y cargas duplicadas.
 - Verificación manual con la misma jerarquía visual que Truora → 6 documentos subidos en el peor caso.
 - Muros de texto en modales que los usuarios no leen → rechazos evitables.
+
+## 7. Lógica del flujo: bloqueo secuencial y vías de identidad (decisión de diseño)
+Cómo se comporta la propuesta, para que el equipo tenga la regla de negocio explícita:
+
+- **La identidad es el ancla del proceso.** Cuenta bancaria y domicilio se validan *contra* la identidad confirmada (el nombre del titular debe coincidir). Por eso ambos pasos permanecen **bloqueados** —con candado y la leyenda "Disponible después de validar tu identidad"— hasta que el Paso 1 quede validado. Se desbloquean automáticamente al validarse la identidad.
+  - *Por qué se bloquea y no es mala UX:* evita validar documentos en el vacío, evita trabajo tirado si la identidad se rechaza, y deja un solo "siguiente paso" claro (menor carga cognitiva y menor abandono).
+- **Dos vías para validar identidad, ambas respetan el bloqueo:**
+  - **Truora (biométrica):** síncrona (~5 min). La pantalla de resultado dice "Identidad validada con Truora".
+  - **Manual (carga de INE + selfie):** por el acordeón de alternativas. La pantalla de resultado dice "Identidad validada manualmente". El prototipo adapta banner, tracker, fila de identidad y los fondos de los modales según la vía usada.
+- **Recomendación UX para la vía manual (a validar con el equipo):** la revisión manual **no es instantánea** (la revisa una persona). Para no obligar al usuario a adivinar cuándo volver, agregar un **aviso por correo cuando la identidad manual quede aprobada**, invitándolo a regresar a subir cuenta bancaria y domicilio. En el prototipo la vía manual se muestra resuelta al momento solo para poder demostrar el flujo completo.
+  - *Alternativa fase 2:* permitir subir los 3 documentos en una sola sesión sin importar el orden y aplicar el bloqueo solo al **resultado** (activar retiros), validando en backend en el orden que corresponda. Reduce sesiones múltiples a costa de más lógica de backend.
+- **Cierre de modales:** cerrar un modal de documentos (identidad/banco/domicilio) regresa a la pantalla previa; **solo** cerrar el modal biométrico de Truora lleva a "Verificación interrumpida", porque ahí sí se abandonó un proceso en curso.
