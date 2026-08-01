@@ -6,11 +6,11 @@
   QUÉ ES ESTE ARCHIVO
   Prototipo funcional y spec de implementación del rediseño del panel
   Mi cuenta → Verificación. Un solo archivo HTML autocontenible con los
-  13 estados del flujo, navegables e interactivos.
+  15 estados del flujo, navegables e interactivos.
 
   CÓMO NAVEGARLO
   · Los botones ‹ › (abajo-derecha) o las flechas ←/→ del teclado recorren
-    los 13 estados en orden de presentación.
+    los 15 estados en orden de presentación.
   · Toda la UI del módulo es funcional al clic: CTA de Truora, canales,
     modales de carga, acordeones, FAQ, etc.
 
@@ -76,8 +76,20 @@
                                           manual de identidad deshabilitada;
                                           correo solo domicilio + edo. cuenta
 
+  NIVELES DE VERIFICACIÓN (regla de negocio, jul-2026)
+  · El flujo tiene TRES niveles, no dos:
+      Sin verificar                        → no puede retirar
+      Pre-verificada (identidad+domicilio) → retira EN SALAS FÍSICAS
+      Verificada (+ cuenta bancaria)       → retira por DEPÓSITO DIRECTO (SPEI)
+  · Por eso el orden de pasos es: 1 Identidad · 2 Domicilio · 3 Cuenta bancaria.
+    El paso 3 NO bloquea el retiro: es una mejora del método de cobro. En la UI se
+    comunica con el estilo `.step.invite` (punteado) y la `.upgrade-card`, nunca
+    con candado de error.
+  · API: el backend debe exponer el nivel alcanzado (none | pre-verified | verified)
+    para decidir qué estado renderizar y qué métodos de cobro ofrecer.
+
   LÓGICA DE MÉTODO DE IDENTIDAD Y BLOQUEO SECUENCIAL
-  · La identidad es el ancla del KYC: cuenta bancaria y domicilio se validan
+  · La identidad es el ancla del KYC: domicilio y cuenta bancaria se validan
     CONTRA la identidad confirmada (el nombre del titular debe coincidir).
     Por eso ambos permanecen BLOQUEADOS hasta que el Paso 1 quede validado,
     sin importar la vía. En el código lo controla `docGrid()`: si la
@@ -116,6 +128,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Mapa de salas: Leaflet + tiles de OpenStreetMap/CARTO. Open source, sin API key
+     ni cuota (Google Maps exige key y cobra por carga). Calímaco puede conservarlo. -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   /* Fuente real de producción (Denim INK VF — misma que winland.com.mx) */
   @font-face{
@@ -241,6 +257,10 @@
   .step.done{border-color:var(--success-green);background:var(--success-bg);}
   .step.done .num{background:var(--success-green);border-color:var(--success-green);color:#fff;}
   .step.current{border-color:var(--winland-orange);background:var(--orange-tint);}
+  /* Paso opcional (mejora, no requisito): borde punteado, no compite con el paso actual */
+  .step.invite{border-color:var(--winland-orange);border-style:dashed;background:var(--surface);}
+  .step.invite .num{background:var(--orange-tint);border-color:var(--winland-orange);color:var(--winland-orange);}
+  .step.invite .meta .s{color:var(--winland-orange);}
   .step.alert{border-color:var(--error-red);background:var(--error-bg);}
   .step.alert .num{background:var(--error-red);border-color:var(--error-red);color:#fff;}
   .step.alert .meta .s{color:var(--error-red);}
@@ -305,6 +325,13 @@
     border:1px solid var(--line-soft);transition:background .15s var(--ease);
   }
   .alt-toggle:hover{background:#EEF1F2;}
+  /* Módulo aún no habilitado por Back Office: se puede abrir para entender qué es,
+     pero su acción está deshabilitada */
+  .alta-toggle{margin-top:12px;}
+  .alta-toggle span{display:flex;align-items:center;gap:8px;}
+  .alta-toggle.is-locked{color:var(--text-faint);}
+  .alta-toggle.is-locked svg:not(.chev-down){width:15px;height:15px;flex-shrink:0;}
+  .email-box button[disabled]{opacity:.5;cursor:not-allowed;pointer-events:none;}
   .alt-toggle svg.chev-down{width:16px;height:16px;color:var(--text-faint);flex-shrink:0;transition:transform .2s var(--ease);}
   .alt-toggle.open svg.chev-down{transform:rotate(180deg);}
   .alt-panel{
@@ -337,6 +364,118 @@
   .doc-row.disabled{opacity:.7;background:var(--page-bg);border-style:dashed;}
   .chev{color:var(--mid-gray);width:16px;height:16px;flex-shrink:0;}
 
+  /* ── Salas físicas (página pública, fuera del módulo privado) ── */
+  /* ── Sección pública de casinos ── */
+  .salas-app{position:relative;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-card);background:#12151A;}
+  #mapaSalas{height:430px;width:100%;background:#12151A;}
+  .salas-app .leaflet-control-attribution{font-size:9px;background:rgba(18,21,26,.8);color:#8A9099;}
+  .salas-app .leaflet-control-attribution a{color:#A6ACB3;}
+  .salas-app .leaflet-bar a{background:#1C2027;color:#fff;border-color:#2A2F37;}
+  .salas-app .leaflet-bar a:hover{background:#262B33;}
+  .mapa-reset{
+    position:absolute;top:14px;right:14px;z-index:500;background:rgba(28,32,39,.92);
+    backdrop-filter:blur(8px);border:1px solid #343A44;border-radius:20px;padding:9px 16px;
+    font-size:12px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;transition:.15s var(--ease);
+  }
+  .mapa-reset:hover{border-color:var(--winland-orange);color:var(--winland-orange);}
+
+  /* Pin: punto luminoso de la marca */
+  .pin-sala{
+    position:relative;width:15px;height:15px;border-radius:50%;background:var(--winland-orange);
+    border:2px solid #fff;box-shadow:0 0 12px rgba(232,91,16,.9);
+    transition:transform .25s var(--ease), box-shadow .25s var(--ease);
+    animation:pinEntrada .5s var(--ease) both;
+  }
+  /* Onda tipo radar: mantiene el mapa vivo sin ser ruidosa (desfasada por pin) */
+  .pin-sala::after{
+    content:'';position:absolute;inset:-2px;border-radius:50%;
+    border:2px solid var(--winland-orange);animation:pinRadar 2.8s ease-out infinite;
+    animation-delay:inherit;
+  }
+  .pin-sala.fortune::after{border-color:#fff;}
+  .pin-sala.activo::after{animation:none;}
+  @keyframes pinRadar{0%{transform:scale(1);opacity:.75}70%{transform:scale(3);opacity:0}100%{opacity:0}}
+  @keyframes pinEntrada{0%{transform:scale(0) translateY(-14px);opacity:0}60%{transform:scale(1.25) translateY(0)}100%{transform:scale(1);opacity:1}}
+  /* Resalte al pasar el cursor por su tarjeta */
+  .pin-sala.senalado{transform:scale(1.5);box-shadow:0 0 0 6px rgba(232,91,16,.22),0 0 16px rgba(232,91,16,1);}
+  .pin-sala.fortune.senalado{box-shadow:0 0 0 6px rgba(255,255,255,.2),0 0 16px rgba(255,255,255,.9);}
+  .pin-sala.fortune{background:#F5F5F5;box-shadow:0 0 12px rgba(255,255,255,.75);border-color:#12151A;}
+  .leaflet-marker-icon:hover .pin-sala{transform:scale(1.45);}
+  .pin-sala.activo{transform:scale(1.6);box-shadow:0 0 0 8px rgba(232,91,16,.25),0 0 18px rgba(232,91,16,1);}
+  .pin-sala.fortune.activo{box-shadow:0 0 0 8px rgba(255,255,255,.22),0 0 18px rgba(255,255,255,.9);}
+
+  /* Ficha del pin */
+  .salas-app .leaflet-popup-content-wrapper{background:#fff;border-radius:12px;box-shadow:0 18px 40px rgba(0,0,0,.45);padding:0;overflow:hidden;}
+  .salas-app .leaflet-popup-content{margin:0;width:auto !important;min-width:215px;}
+  .salas-app .leaflet-popup-tip{background:#fff;}
+  .salas-app .leaflet-popup-close-button{color:var(--text-faint);padding:8px 8px 0 0;}
+  .pop-sala{padding:13px 16px 14px;font-family:'winland',sans-serif;}
+  .pop-sala .pm{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--winland-orange);}
+  .pop-sala .pm.fortune{color:var(--ink);}
+  .pop-sala .pc{font-size:17px;font-weight:700;color:var(--ink);margin:2px 0 6px;letter-spacing:-.01em;}
+  .pop-sala .pd{font-size:12.5px;color:var(--text-gray);line-height:1.5;margin-bottom:11px;}
+  .pop-sala .pb{
+    display:inline-flex;align-items:center;gap:6px;background:var(--winland-orange);color:#fff;
+    border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;text-decoration:none;
+  }
+  .pop-sala .pb:hover{background:var(--orange-dark);}
+  .pop-sala .pb svg{width:13px;height:13px;}
+
+  /* Tarjetas con fotografía: la imagen hace el trabajo, el texto solo lo necesario */
+  .sala-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px;}
+  .sala-card{
+    background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--radius);
+    overflow:hidden;cursor:pointer;transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .2s var(--ease);
+  }
+  .sala-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(20,20,22,.13);border-color:var(--line);}
+  .sala-card.activa{border-color:var(--winland-orange);box-shadow:0 0 0 3px var(--orange-tint);}
+  .sala-card.senalada{border-color:var(--winland-orange);transform:translateY(-3px);box-shadow:0 12px 28px rgba(20,20,22,.13);}
+  .sala-foto{position:relative;aspect-ratio:16/10;overflow:hidden;background:var(--page-bg);}
+  .sala-foto img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease);}
+  .sala-card:hover .sala-foto img{transform:scale(1.07);}
+  .sala-foto::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent 55%);}
+  .sala-marca{
+    position:absolute;top:11px;left:11px;z-index:2;font-size:10px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;background:var(--winland-orange);color:#fff;border-radius:5px;padding:4px 9px;
+  }
+  .sala-card.es-fortune .sala-marca{background:#fff;color:var(--ink);}
+  .sala-foto .ciudad{
+    position:absolute;left:14px;bottom:11px;z-index:2;color:#fff;font-size:20px;font-weight:700;
+    letter-spacing:-.015em;text-shadow:0 2px 10px rgba(0,0,0,.5);
+  }
+  .sala-body{padding:14px 16px 16px;}
+  .sala-body .edo{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px;}
+  .sala-body .dir{font-size:13px;color:var(--text-gray);line-height:1.5;}
+  .sala-body .ir{
+    display:inline-flex;align-items:center;gap:5px;margin-top:11px;
+    font-size:13px;font-weight:600;color:var(--winland-orange);text-decoration:none;
+  }
+  .sala-body .ir:hover{text-decoration:underline;}
+  .sala-body .ir svg{width:13px;height:13px;}
+
+  /* Nota de cobro: útil, pero secundaria a la sección */
+  .salas-cobro{
+    margin-top:26px;background:var(--page-bg);border-radius:var(--radius);padding:18px 20px;
+    display:flex;gap:12px;align-items:flex-start;
+  }
+  .salas-cobro svg{width:17px;height:17px;color:var(--winland-orange);flex-shrink:0;margin-top:2px;}
+  .salas-cobro .t{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .salas-cobro .s{font-size:13px;color:var(--text-gray);line-height:1.6;}
+
+  @media (max-width:900px){ .sala-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:768px){
+    .sala-grid{grid-template-columns:1fr;gap:14px;}
+    #mapaSalas{height:330px;}
+    .salas-cobro{flex-direction:column;gap:8px;}
+  }
+
+  /* Tarjeta de mejora: convierte el paso 3 en beneficio ("olvídate de las filas") */
+  .upgrade-card{
+    display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:20px;
+    background:var(--orange-tint);border:1px solid var(--winland-orange);border-radius:var(--radius);padding:18px 20px;
+  }
+  .upgrade-card .t{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .upgrade-card .s{font-size:13px;color:var(--text-gray);line-height:1.5;}
   .email-box{
     margin-top:8px;background:var(--surface);border-radius:var(--radius-sm);padding:18px 20px;
     display:flex;justify-content:space-between;align-items:center;gap:16px;border:1px solid var(--line-soft);
@@ -709,7 +848,7 @@
     .step .num svg{width:11px;height:11px;}
     .step .meta .t{font-size:12px;}
     .step .meta .s{display:none;}
-    .step.current .meta .s,.step.alert .meta .s{display:block;font-size:11px;}
+    .step.current .meta .s,.step.alert .meta .s,.step.invite .meta .s{display:block;font-size:11px;}
     .truora-card p{white-space:normal;}
     /* Chip "Recomendado" como listón colgado del borde superior: no consume una línea */
     .truora-head{flex-wrap:nowrap;margin-bottom:14px;}
@@ -717,7 +856,14 @@
     .truora-card .badge svg{width:10px;height:10px;}
     .btn-white{width:100%;}
     .doc-grid{grid-template-columns:1fr;}
-    .email-box{flex-direction:column;align-items:stretch;gap:12px;}
+    /* Tarjeta de mejora: convierte el paso 3 en beneficio ("olvídate de las filas") */
+  .upgrade-card{
+    display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:20px;
+    background:var(--orange-tint);border:1px solid var(--winland-orange);border-radius:var(--radius);padding:18px 20px;
+  }
+  .upgrade-card .t{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .upgrade-card .s{font-size:13px;color:var(--text-gray);line-height:1.5;}
+  .email-box{flex-direction:column;align-items:stretch;gap:12px;}
     .email-box .btn-outline{width:100%;}
     .modal{padding:20px;}
     .wf-grid{grid-template-columns:1fr;}
@@ -748,6 +894,8 @@
     .w-deposit img{width:18px;height:18px;}
     .w-balance{padding:0 8px;}
     /* Texto de dudas/preguntas alineado a la izquierda en mobile */
+    .upgrade-card{flex-direction:column;align-items:flex-start;gap:14px;}
+    .upgrade-card button{width:100%;}
     .faq-hint{justify-content:flex-start;text-align:left;}
     /* Bottom-nav SIEMPRE fijo abajo */
     .w-bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;}
@@ -874,6 +1022,7 @@
           <div class="wf-grid">
             <div class="wf-col">
               <div class="wf-title">¿Necesitas ayuda?</div>
+              <span class="wf-link" onclick="render('salas')">Nuestras salas</span>
               <span class="wf-link">Chat de soporte</span>
               <span class="wf-mail">clientes@winland.com.mx</span>
               <span class="wf-link">Reglas</span>
@@ -937,6 +1086,7 @@ const I = {
   star:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8-5.1-4.7 6.9-.8L12 2z"/></svg>`,
   check:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12.5l5 5L19 7"/></svg>`,
   mail:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>`,
+  pin:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
   clock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>`,
   alertTriangle:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><rect x="11" y="6.5" width="2" height="7.5" rx="1" fill="#fff"/><circle cx="12" cy="17" r="1.35" fill="#fff"/></svg>`,
   lock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/></svg>`,
@@ -1049,6 +1199,75 @@ function faqInfo(img, titulo){
   ov.addEventListener('click', e=>{ if(e.target===ov||e.target.closest('.fv-close')) ov.remove(); });
   document.body.appendChild(ov);
 }
+/* Catálogo de salas. API: alimentar desde el catálogo de sucursales.
+   Coordenadas aproximadas a nivel calle — confirmar con operación. */
+const SALAS = [
+  {m:'Winland', c:'Monterrey',  e:'Nuevo León',          f:'monterrey.jpg',  d:'Av. Eugenio Garza Sada 3640, Col. 42, 64770 Monterrey, N.L.',      lat:25.6510, lng:-100.2890},
+  {m:'Winland', c:'Cuernavaca', e:'Morelos',             f:'cuernavaca.jpg', d:'Lomas de la Selva, 62270 Cuernavaca, Morelos',                     lat:18.9300, lng:-99.2280},
+  {m:'Winland', c:'Chihuahua',  e:'Chihuahua',           f:'chihuahua.jpg',  d:'Perif. de la Juventud 6300, Saucito, 31165 Chihuahua, Chih.',      lat:28.6640, lng:-106.1300},
+  {m:'Fortune', c:'La Paz',     e:'Baja California Sur', f:'lapaz.jpg',      d:'Blvd. Forjadores 303, Bellavista, 23050 La Paz, B.C.S.',           lat:24.1050, lng:-110.3120},
+  {m:'Fortune', c:'Hermosillo', e:'Sonora',              f:'hermosillo.jpg', d:'Av. Luis Donaldo Colosio 357, Santa Fe, 83249 Hermosillo, Sonora', lat:29.0950, lng:-110.9700},
+];
+const mapsUrl = s => `https://www.google.com/maps/search/${encodeURIComponent(s.m+' '+s.c+' '+s.d)}`;
+
+/* ── Mapa de salas (Leaflet). Se reinicializa en cada render del estado 'salas'. ── */
+let mapaSalas=null, marcadoresSalas=[], salaActiva=null;
+function initMapaSalas(){
+  const cont=document.getElementById('mapaSalas');
+  if(!cont || typeof L==='undefined') return;   /* sin conexión: la página sigue usable */
+  mapaSalas = L.map(cont,{scrollWheelZoom:false, zoomControl:true});
+  /* Tiles oscuros: el naranja de marca resalta mucho más y el bloque hace juego
+     con el footer negro del sitio. Cambiar a 'voyager' para la versión clara. */
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:19
+  }).addTo(mapaSalas);
+  marcadoresSalas = SALAS.map((x,i)=>{
+    const icono = L.divIcon({
+      className:'', iconSize:[15,15], iconAnchor:[7,7], popupAnchor:[0,-12],
+      html:`<div class="pin-sala ${x.m==='Fortune'?'fortune':''}" style="animation-delay:${i*.09}s"></div>`
+    });
+    return L.marker([x.lat,x.lng],{icon:icono, riseOnHover:true})
+      .addTo(mapaSalas)
+      .bindPopup(`<div class="pop-sala">
+          <div class="pm ${x.m==='Fortune'?'fortune':''}">${x.m}</div>
+          <div class="pc">${x.c}</div>
+          <div class="pd">${x.d}</div>
+          <a class="pb" href="${mapsUrl(x)}" target="_blank" rel="noopener">${I.pin}Cómo llegar</a>
+        </div>`,{closeButton:true, offset:[0,-2]})
+      .on('click',()=>seleccionarSala(i,true))
+      .on('mouseover',()=>document.querySelector(`.sala-card[data-sala="${i}"]`)?.classList.add('senalada'))
+      .on('mouseout', ()=>document.querySelector(`.sala-card[data-sala="${i}"]`)?.classList.remove('senalada'));
+  });
+  verTodasLasSalas(false);   /* primer encuadre sin animación: el mapa aún no tiene centro */
+}
+/* Acerca el mapa a la sala y sincroniza el resaltado con su tarjeta */
+function seleccionarSala(i, desdeMapa){
+  salaActiva=i;
+  marcadoresSalas.forEach((m,j)=>m.getElement()?.querySelector('.pin-sala')?.classList.toggle('activo', j===i));
+  document.querySelectorAll('.sala-item').forEach(c=>c.classList.toggle('activa', c.dataset.sala==String(i)));
+  mapaSalas?.flyTo([SALAS[i].lat,SALAS[i].lng], 14, {duration:1.1});
+  setTimeout(()=>marcadoresSalas[i]?.openPopup(), desdeMapa?0:600);
+  if(desdeMapa){
+    const it=document.querySelector(`.sala-item[data-sala="${i}"]`), panel=document.querySelector('.salas-lista');
+    if(it&&panel) panel.scrollTo({top:it.offsetTop-panel.offsetTop-70, behavior:'smooth'});
+  }
+}
+function irASala(i){ seleccionarSala(i,false); }
+/* Espejo entre lista y mapa: al pasar el cursor por una tarjeta, su pin se ilumina */
+function senalarPin(i, on){
+  marcadoresSalas[i]?.getElement()?.querySelector('.pin-sala')?.classList.toggle('senalado', on);
+}
+function verTodasLasSalas(animar=true){
+  if(!mapaSalas) return;
+  salaActiva=null;
+  mapaSalas.closePopup();
+  const bounds=SALAS.map(x=>[x.lat,x.lng]), opts={padding:[50,50]};
+  if(animar) mapaSalas.flyToBounds(bounds,{...opts, duration:.9});
+  else       mapaSalas.fitBounds(bounds,opts);
+  document.querySelectorAll('.sala-item').forEach(c=>c.classList.remove('activa'));
+  marcadoresSalas.forEach(m=>m.getElement()?.querySelector('.pin-sala')?.classList.remove('activo'));
+}
+
 function faqCat(el){
   document.querySelectorAll('#faqCats .faq-cat').forEach(c=>c.classList.toggle('active', c===el));
   document.querySelectorAll('.faq-group').forEach(g=>g.classList.toggle('hide', g.dataset.cat!==el.dataset.cat));
@@ -1062,8 +1281,8 @@ const headerHTML = (title, sub) => `
 const tracker = (a,b,c) => `
   <div class="tracker">
     <div class="step ${a.cls}"><div class="num">${a.cls==='done'?I.check:'1'}</div><div class="meta"><div class="t">Paso 1 — Identidad</div><div class="s">${a.s}</div></div></div>
-    <div class="step ${b.cls}"><div class="num">${b.cls==='done'?I.check:'2'}</div><div class="meta"><div class="t">Paso 2 — Cuenta bancaria</div><div class="s">${b.s}</div></div></div>
-    <div class="step ${c.cls}"><div class="num">${c.cls==='done'?I.check:'3'}</div><div class="meta"><div class="t">Paso 3 — Domicilio</div><div class="s">${c.s}</div></div></div>
+    <div class="step ${b.cls}"><div class="num">${b.cls==='done'?I.check:'2'}</div><div class="meta"><div class="t">Paso 2 — Domicilio</div><div class="s">${b.s}</div></div></div>
+    <div class="step ${c.cls}"><div class="num">${c.cls==='done'?I.check:'3'}</div><div class="meta"><div class="t">Paso 3 — Cuenta bancaria</div><div class="s">${c.s}</div></div></div>
   </div>
 `;
 
@@ -1110,7 +1329,30 @@ const altAccordion = (open, identityState, emailRestricted=false) => `
   </div>
 `;
 
-function docGrid(identityState, docsState='pending'){
+/* bankState permite estados distintos por documento (cuenta pre-verificada:
+   domicilio validado y cuenta bancaria todavía pendiente). Por omisión, ambos siguen docsState. */
+/* Formato de alta de cliente: módulo PARALELO al KYC (no es un cuarto paso del tracker).
+   Nace bloqueado y Back Office lo habilita por usuario; al activarse abre la firma digital.
+   API: bandera de activación desde BO + estado de firma (pendiente | firmado). */
+const altaAccordion = (active=false, open=false) => `
+  <div class="alt-toggle alta-toggle ${active?'':'is-locked'} ${open?'open':''}" onclick="this.classList.toggle('open');document.getElementById('altaPanel').classList.toggle('hide')">
+    <span>${active?'':I.lock}Formato de alta de cliente${active?'':' · próximamente'}</span>${I.chevronDown}
+  </div>
+  <div class="alt-panel ${open?'':'hide'}" id="altaPanel">
+    <div class="alt-note">Documento de alta que se firma de forma digital, sin imprimir ni escanear nada. Toma un par de minutos y queda guardado en tu cuenta.</div>
+    ${active ? `
+    <div class="email-box">
+      <div><div class="t">Firma tu formato de alta de cliente</div><div class="s">Ya puedes completarlo. Al firmarlo queda registrado automáticamente en tu expediente.</div></div>
+      <button class="btn-outline">Firmar formato</button>
+    </div>` : `
+    <div class="email-box restricted">
+      <div><div class="t">${I.lock}Disponible próximamente</div><div class="s">Estamos habilitando la firma digital de este formato. <b>Te avisaremos en cuanto puedas firmarlo</b>; no necesitas hacer nada por ahora.</div></div>
+      <button class="btn-outline" disabled>Firmar formato</button>
+    </div>`}
+  </div>
+`;
+
+function docGrid(identityState, docsState='pending', bankState){
   const idDoneLabel = idMethod==='manual' ? 'Validado manualmente' : 'Validado por Truora';
   const idMap={
     pending: ['pending','0 de 3 documentos subidos'],
@@ -1121,22 +1363,26 @@ function docGrid(identityState, docsState='pending'){
   };
   const [idStatus,idSub]=idMap[identityState];
   const idDone = identityState==='done';
-  const done = docsState==='done';
-  const dSt = done?'verified':'pending';
-  const dSub = done?'Validado':'Pendiente de subir';
-  /* Cuenta bancaria y domicilio permanecen bloqueados hasta validar la identidad (por Truora o manual) */
-  const bankRow = idDone
-    ? mkRow('bank','Cuenta bancaria',dSt,dSub)
-    : mkRow('bank','Cuenta bancaria','blocked','Disponible después de validar tu identidad');
+  const homeDone = docsState==='done';
+  const bnkDone  = (bankState||docsState)==='done';
+  /* Con el domicilio ya validado, la cuenta bancaria se comunica por su beneficio (cobrar sin ir
+     a sala), NO como "opcional": etiquetarla así invita a saltarla y es el paso que más conviene. */
+  const bankSub = bnkDone ? 'Validado'
+                : homeDone ? 'Recibe tus retiros directo en tu banco'
+                : 'Pendiente de subir';
+  /* Domicilio y cuenta bancaria permanecen bloqueados hasta validar la identidad (por Truora o manual) */
   const homeRow = idDone
-    ? mkRow('home','Domicilio',dSt,dSub)
+    ? mkRow('home','Domicilio',homeDone?'verified':'pending',homeDone?'Validado':'Pendiente de subir')
     : mkRow('home','Domicilio','blocked','Disponible después de validar tu identidad');
+  const bankRow = idDone
+    ? mkRow('bank','Cuenta bancaria',bnkDone?'verified':'pending',bankSub)
+    : mkRow('bank','Cuenta bancaria','blocked','Disponible después de validar tu identidad');
   return `
   <div class="doc-grid">
     ${mkRow('email','Email','verified','Verificado')}
     ${mkRow('identity','Identidad',idStatus,idSub)}
-    ${bankRow}
     ${homeRow}
+    ${bankRow}
   </div>`;
 }
 
@@ -1149,19 +1395,21 @@ const faqHint = `
 const states = {
 
 inicial: () => `
-  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad, cuenta bancaria y domicilio para activar tus retiros de forma segura.')}
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
   ${tracker({cls:'current',s:'Pendiente'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
   ${truoraHero()}
   ${altAccordion(false,'pending')}
+  ${altaAccordion()}
 
     ${faqHint}
   `,
 
 'truora-modal': () => `
-  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad, cuenta bancaria y domicilio para activar tus retiros de forma segura.')}
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
   ${tracker({cls:'current',s:'Iniciando verificación...'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
   ${truoraHero()}
   ${altAccordion(false,'blocked')}
+  ${altaAccordion()}
   ${faqHint}
 
   <div class="modal-overlay">
@@ -1236,7 +1484,7 @@ inicial: () => `
 `,
 
 confirmando: () => `
-  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad, cuenta bancaria y domicilio para activar tus retiros de forma segura.')}
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
   <div class="status-banner info">
     <div class="ic">${I.clock}</div>
     <div><div class="t">Estamos confirmando tu identidad</div><div class="s">Tu proceso con Truora finalizó y estamos actualizando tu estado. Esto puede tardar unos minutos.</div>
@@ -1244,13 +1492,14 @@ confirmando: () => `
   </div>
   ${tracker({cls:'current',s:'Verificación en proceso'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
   ${altAccordion(false,'progress',true)}
+  ${altaAccordion()}
 
     ${faqHint}
   `,
 
 'exito-biometria': () => `
-  ${headerHTML('Identidad validada correctamente','Ahora sube tu cuenta bancaria y comprobante de domicilio para finalizar tu verificación.')}
-  ${tracker({cls:'done',s:'Validada con Truora'},{cls:'current',s:'Pendiente'},{cls:'',s:'Pendiente'})}
+  ${headerHTML('Identidad validada correctamente','Ahora sube tu comprobante de domicilio para activar tus retiros.')}
+  ${tracker({cls:'done',s:'Validada con Truora'},{cls:'current',s:'Pendiente de subir'},{cls:'invite',s:'Cobra sin ir a sala'})}
   ${docGrid('done')}
   ${faqHint}
 
@@ -1266,33 +1515,64 @@ confirmando: () => `
 `,
 
 validada: () => `
-  ${headerHTML('Identidad validada correctamente','Ya completaste la validación de identidad. Ahora sube tu cuenta bancaria y comprobante de domicilio para finalizar tu verificación.')}
+  ${headerHTML('Identidad validada correctamente','Ya completaste la validación de identidad. Ahora sube tu comprobante de domicilio para activar tus retiros.')}
   <div class="status-banner success">
     <div class="ic">${I.check}</div>
     <div><div class="t">Identidad validada ${idMethod==='manual'?'manualmente':'con Truora'}</div><div class="s">Continúa con los documentos pendientes para activar tus retiros.</div></div>
   </div>
-  ${tracker({cls:'done',s:idMethod==='manual'?'Validada manualmente':'Validada por Truora'},{cls:'current',s:'Pendiente de subir'},{cls:'current',s:'Pendiente de subir'})}
+  ${tracker({cls:'done',s:idMethod==='manual'?'Validada manualmente':'Validada por Truora'},{cls:'current',s:'Pendiente de subir'},{cls:'invite',s:'Cobra sin ir a sala'})}
   ${docGrid('done','pending')}
+  ${altaAccordion()}
 
     ${faqHint}
   `,
 
 'docs-validacion': () => `
-  ${headerHTML('Estamos revisando tus documentos','Tu cuenta bancaria y comprobante de domicilio están en revisión. Te avisaremos cuando estén listos.')}
-  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'current',s:'En revisión'},{cls:'current',s:'En revisión'})}
+  ${headerHTML('Estamos revisando tus documentos','Tu comprobante de domicilio está en revisión. Te avisaremos en cuanto quede validado.')}
+  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'current',s:'En revisión'},{cls:'invite',s:'Cobra sin ir a sala'})}
+  <div class="status-banner info">
+    <div class="ic">${I.clock}</div>
+    <div><div class="t">Documento en revisión</div><div class="s">Normalmente toma menos de 24 horas. Te avisaremos por correo en cuanto tengamos el resultado.</div>
+    <!-- API: re-consultar el estado de la revisión documental -->
+    <div class="cta"><a>Actualizar estado</a></div></div>
+  </div>
   <div class="doc-grid">
     ${mkRow('email','Email','verified','Verificado')}
     ${mkRow('identity','Identidad','verified','Validado por Truora')}
-    ${mkRow('bank','Cuenta bancaria','progress','En revisión',{chev:false})}
     ${mkRow('home','Domicilio','progress','En revisión',{chev:false})}
+    ${mkRow('bank','Cuenta bancaria','pending','Recibe tus retiros directo en tu banco')}
   </div>
+
+    ${faqHint}
+  `,
+
+/* pre-verificada: identidad + domicilio validados. El usuario YA PUEDE RETIRAR (en salas
+   físicas); la cuenta bancaria se ofrece como mejora del método de cobro, no como requisito. */
+'pre-verificada': () => `
+  ${headerHTML('¡Tu cuenta ya está pre-verificada!','Por ahora, tus retiros solo pueden ser cobrados en nuestras salas físicas.')}
+  <div class="status-banner success">
+    <div class="ic">${I.partyPopper}</div>
+    <div><div class="t">Identidad y domicilio validados</div><div class="s">Ya puedes cobrar tus retiros en cualquiera de nuestras salas físicas.</div>
+    <div class="cta"><a onclick="render('salas')">Ver dónde están nuestras salas</a></div></div>
+  </div>
+  ${tracker({cls:'done',s:idMethod==='manual'?'Validada manualmente':'Validada por Truora'},{cls:'done',s:'Validado'},{cls:'invite',s:'Cobra sin ir a sala'})}
+  ${docGrid('done','done','pending')}
+
+  <div class="upgrade-card">
+    <div>
+      <div class="t">¿Prefieres recibir tu dinero por depósito directo?</div>
+      <div class="s">Sube tu información bancaria y olvídate de las filas.</div>
+    </div>
+    <button class="btn-white">Subir mi cuenta bancaria</button>
+  </div>
+  ${altaAccordion()}
 
     ${faqHint}
   `,
 
 rechazado: () => `
   ${headerHTML('Hay un documento que requiere acción','Uno de tus documentos no pudo validarse. Corrígelo para continuar con tu verificación.')}
-  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'current',s:'En revisión'},{cls:'alert',s:'Requiere acción'})}
+  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'alert',s:'Requiere acción'},{cls:'invite',s:'Cobra sin ir a sala'})}
   <div class="status-banner error">
     <div class="ic">${I.alertTriangle}</div>
     <div><div class="t">Comprobante de domicilio rechazado</div><div class="s">El documento estaba ilegible. Sube nuevamente un comprobante claro, no mayor a 3 meses.</div>
@@ -1301,27 +1581,28 @@ rechazado: () => `
   <div class="doc-grid">
     ${mkRow('email','Email','verified','Verificado')}
     ${mkRow('identity','Identidad','verified','Validado por Truora')}
-    ${mkRow('bank','Cuenta bancaria','progress','En revisión',{chev:false})}
     ${mkRow('home','Domicilio','rejected','Rechazado — requiere acción')}
+    ${mkRow('bank','Cuenta bancaria','pending','Recibe tus retiros directo en tu banco')}
   </div>
 
     ${faqHint}
   `,
 
 verificada: () => `
-  ${headerHTML('Tu cuenta está verificada','Ya puedes retirar tus fondos sin restricciones.')}
+  ${headerHTML('Tu cuenta está verificada','Ya recibes tus retiros por depósito directo, sin pasar a sala.')}
   ${tracker({cls:'done',s:'Validada'},{cls:'done',s:'Validada'},{cls:'done',s:'Validada'})}
   <div class="status-banner success">
     <div class="ic">${I.partyPopper}</div>
-    <div><div class="t">Cuenta verificada</div><div class="s">Identidad, cuenta bancaria y domicilio fueron validados correctamente.</div></div>
+    <div><div class="t">Cuenta verificada</div><div class="s">Identidad, comprobante de domicilio y cuenta bancaria fueron validados correctamente.</div></div>
   </div>
   ${docGrid('done','done')}
+  ${altaAccordion()}
 
     ${faqHint}
   `,
 
 interrumpida: () => `
-  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad, cuenta bancaria y domicilio para activar tus retiros de forma segura.')}
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
   <div class="status-banner error">
     <div class="ic">${I.alertTriangle}</div>
     <div><div class="t">Verificación interrumpida</div><div class="s">Cerraste el proceso de Truora. Para continuar con tu validación de identidad, inicia nuevamente.</div></div>
@@ -1329,12 +1610,78 @@ interrumpida: () => `
   ${tracker({cls:'current',s:'Reiniciar proceso'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
   ${truoraHero('Reiniciar verificación')}
   ${altAccordion(false,'pending')}
+  ${altaAccordion()}
 
     ${faqHint}
   `,
 
+/* Página PÚBLICA de salas (fuera del módulo privado, indexable): intención
+   transaccional —cómo cobrar un premio— para no competir con el listado
+   institucional de winlandcasino.com. */
+salas: () => `
+  ${headerHTML('Nuestros casinos','Cinco casinos en México, con salas de slots, mesas de juego y apuestas deportivas. Encuentra el más cercano y consulta cómo llegar.')}
+
+  <div class="salas-app">
+    <div id="mapaSalas"></div>
+    <button class="mapa-reset" onclick="verTodasLasSalas()">Ver todo México</button>
+  </div>
+
+  <div class="sala-grid">
+    ${SALAS.map((x,i)=>`
+    <div class="sala-card ${x.m==='Fortune'?'es-fortune':''}" data-sala="${i}" onclick="irASala(${i})"
+         onmouseenter="senalarPin(${i},true)" onmouseleave="senalarPin(${i},false)">
+      <div class="sala-foto">
+        <img src="assets/salas/${x.f}" alt="Casino ${x.m} ${x.c}" loading="lazy">
+        <span class="sala-marca">${x.m}</span>
+        <span class="ciudad">${x.c}</span>
+      </div>
+      <div class="sala-body">
+        <div class="edo">${x.e}</div>
+        <div class="dir">${x.d}</div>
+        <a class="ir" href="${mapsUrl(x)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${I.pin}Cómo llegar</a>
+      </div>
+    </div>`).join('')}
+  </div>
+
+  <div class="salas-cobro">
+    ${I.check}
+    <div>
+      <div class="t">¿Vas a cobrar un premio?</div>
+      <div class="s">Con tu cuenta pre-verificada puedes cobrar tus retiros en efectivo en cualquiera de nuestras salas. Lleva tu identificación oficial vigente y el folio de tu retiro; el pago se entrega únicamente al titular de la cuenta.</div>
+    </div>
+  </div>
+`,
+
+/* Firma digital del formato de alta de cliente, con el módulo ya habilitado desde BO */
+'modal-firma': () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
+  ${tracker({cls:'current',s:'Pendiente'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
+  ${truoraHero()}
+  ${altAccordion(false,'pending')}
+  ${altaAccordion(true,true)}
+  ${faqHint}
+
+  <div class="modal-overlay">
+    <div class="modal truora-wide">
+      <div class="close">${I.x}</div>
+      <div class="t-step">
+        <h3>Firma tu formato de alta de cliente</h3>
+        <p class="lead">Vas a firmar digitalmente tu documento de alta. No necesitas imprimir ni escanear nada: se firma desde aquí y queda guardado en tu expediente.</p>
+        <div class="t-checklist">
+          <span>${I.check}Revisa que tus datos personales sean correctos</span>
+          <span>${I.check}Firma con tu dedo o mouse, o con tu firma electrónica</span>
+          <span>${I.check}Recibirás una copia del documento firmado por correo</span>
+        </div>
+        <!-- API: abrir la sesión del proveedor de firma digital y devolver el acuse al expediente -->
+        <button class="btn-white" style="width:100%;">Continuar a la firma</button>
+        <div class="modal-footnote">Si cierras esta ventana puedes retomar la firma más tarde desde esta misma sección.</div>
+      </div>
+    </div>
+  </div>
+`,
+
 'modal-identidad': () => `
-  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad, cuenta bancaria y domicilio para activar tus retiros de forma segura.')}
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
   ${tracker({cls:'current',s:'Pendiente'},{cls:'',s:''},{cls:'',s:''})}
   ${truoraHero()}
   ${faqHint}
@@ -1382,8 +1729,8 @@ interrumpida: () => `
 `,
 
 'modal-bancaria': () => `
-  ${headerHTML('Identidad validada correctamente','Sube tu cuenta bancaria y comprobante de domicilio para finalizar tu verificación.')}
-  ${tracker({cls:'done',s:'Validada'},{cls:'current',s:'pendiente'},{cls:'current',s:'pendiente'})}
+  ${headerHTML('Identidad validada correctamente','Sube tu comprobante de domicilio y tu cuenta bancaria para completar tu verificación.')}
+  ${tracker({cls:'done',s:'Validada'},{cls:'current',s:'Pendiente de subir'},{cls:'invite',s:'Cobra sin ir a sala'})}
   ${docGrid('done')}
   ${faqHint}
 
@@ -1419,8 +1766,8 @@ interrumpida: () => `
 `,
 
 'modal-domicilio': () => `
-  ${headerHTML('Identidad validada correctamente','Sube tu cuenta bancaria y comprobante de domicilio para finalizar tu verificación.')}
-  ${tracker({cls:'done',s:'Validada'},{cls:'current',s:'pendiente'},{cls:'current',s:'pendiente'})}
+  ${headerHTML('Identidad validada correctamente','Sube tu comprobante de domicilio y tu cuenta bancaria para completar tu verificación.')}
+  ${tracker({cls:'done',s:'Validada'},{cls:'current',s:'Pendiente de subir'},{cls:'invite',s:'Cobra sin ir a sala'})}
   ${docGrid('done')}
   ${faqHint}
 
@@ -1465,9 +1812,9 @@ faq: () => `
   </div>
 
   <div class="faq-group" data-cat="verificacion">
-    ${faqItem('¿Cómo verifico mi cuenta en Winland?','La forma más rápida es <a class="faq-link" onclick="event.stopPropagation();render(&quot;inicial&quot;)">verificarte con Truora</a>: validas tu identidad desde tu celular en unos 2 minutos y después solo adjuntas tu comprobante de domicilio y estado de cuenta bancario.')}
+    ${faqItem('¿Cómo verifico mi cuenta en Winland?','La forma más rápida es <a class="faq-link" onclick="event.stopPropagation();render(&quot;inicial&quot;)">verificarte con Truora</a>: validas tu identidad desde tu celular en unos 2 minutos y después adjuntas tu comprobante de domicilio (con eso ya puedes cobrar en sala) y, si quieres depósito directo, tu estado de cuenta bancario.')}
     ${faqItem('¿Cuánto tarda la verificación de mi cuenta?','La validación de identidad con Truora toma solo unos minutos. La revisión del comprobante de domicilio y el estado de cuenta puede tardar hasta 24–48 horas.')}
-    ${faqItem('¿Qué documentos necesito para verificarme?','Necesitas una <a class="faq-link" onclick="event.stopPropagation();faqInfo(&quot;guia-identidad-tipos.jpg&quot;,&quot;Identificaciones aceptadas&quot;)">identificación oficial vigente</a> (INE/IFE, pasaporte o forma migratoria), un comprobante de domicilio no mayor a 3 meses y un estado de cuenta bancario a tu nombre.')}
+    ${faqItem('¿Qué documentos necesito para verificarme?','Necesitas una <a class="faq-link" onclick="event.stopPropagation();faqInfo(&quot;guia-identidad-tipos.jpg&quot;,&quot;Identificaciones aceptadas&quot;)">identificación oficial vigente</a> (INE/IFE, pasaporte o forma migratoria), un comprobante de domicilio no mayor a 3 meses y, para recibir tus retiros por depósito directo, un estado de cuenta bancario a tu nombre.')}
     ${faqItem('¿Por qué fue rechazado mi documento?','Las causas más comunes son documento vencido, foto borrosa o con reflejos, datos cubiertos o recortados, comprobantes con más de 3 meses o estados de cuenta de apps fintech. Puedes corregirlo y volver a subirlo desde la sección de Verificación; ahí verás el motivo exacto del rechazo.')}
     ${faqItem('¿Qué comprobantes de domicilio aceptan?','Recibos de luz (CFE), gas natural o teléfono/internet (Telmex, Izzi, Totalplay, Megacable) con antigüedad máxima de 3 meses. Antes de subir el tuyo, revisa los <a class="faq-link" onclick="event.stopPropagation();faqInfo(&quot;guia-domicilio-tipos.jpg&quot;,&quot;Comprobantes de domicilio aceptados&quot;)">ejemplos de comprobantes válidos</a>. No se aceptan predial, contratos de arrendamiento ni escrituras.')}
     ${faqItem('¿Por qué no puedo subir mis documentos manualmente?','Si iniciaste tu validación biométrica con Truora, la carga manual de identidad se bloquea temporalmente (~5 minutos) para evitar documentos duplicados. Se libera automáticamente al terminar el proceso.')}
@@ -1475,8 +1822,9 @@ faq: () => `
   </div>
 
   <div class="faq-group hide" data-cat="retiros">
-    ${faqItem('¿Por qué no puedo retirar mi dinero?','La causa más común es que tu cuenta aún no está verificada por completo. Para activar los retiros necesitas <a class="faq-link" onclick="event.stopPropagation();render(&quot;inicial&quot;)">completar tu verificación</a>: identidad, comprobante de domicilio y cuenta bancaria.')}
-    ${faqItem('¿Cómo hago un retiro?','Con tu cuenta verificada, entra a tu saldo y elige Retirar. El pago se envía por SPEI a la cuenta bancaria que registraste a tu nombre.')}
+    ${faqItem('¿Por qué no puedo retirar mi dinero?','Para activar tus retiros necesitas al menos tu identidad y tu comprobante de domicilio validados: con eso tu cuenta queda <b>pre-verificada</b> y puedes cobrar en nuestras salas físicas. Si además registras tu cuenta bancaria, recibes el dinero por depósito directo. <a class="faq-link" onclick="event.stopPropagation();render(&quot;inicial&quot;)">Completa tu verificación aquí</a>.')}
+    ${faqItem('¿Qué es una cuenta pre-verificada?','Es la cuenta que ya tiene validada la identidad y el comprobante de domicilio. Con ese nivel <b>ya puedes cobrar tus retiros en nuestras salas físicas</b>. Para recibirlos por depósito directo en tu banco —y evitarte las filas— solo falta que subas tu estado de cuenta bancario.')}
+    ${faqItem('¿Cómo hago un retiro?','Entra a tu saldo y elige Retirar. Si tu cuenta está pre-verificada, cobras el dinero en una de nuestras <a class="faq-link" onclick="event.stopPropagation();render(&quot;salas&quot;)">salas físicas</a>. Si ya registraste tu cuenta bancaria, el pago se envía por SPEI a esa cuenta, siempre a tu nombre.')}
     ${faqItem('¿Cuánto tarda en llegar mi retiro?','Los retiros vía SPEI suelen procesarse el mismo día hábil una vez aprobados.')}
     ${faqItem('¿Puedo retirar a una cuenta que no está a mi nombre?','No. Por seguridad y normativa, los retiros solo se procesan a cuentas bancarias a nombre del titular registrado en Winland.')}
     ${faqItem('Gané un premio, ¿necesito hacer algo más?','Para premios relevantes puede requerirse la firma de un formulario antes de procesar el pago. Te avisaremos en tu cuenta cuando aplique.')}
@@ -1504,18 +1852,21 @@ const TOUR = [
   {s:'truora-modal',   t:'Toca "Iniciar verificación"',              n:'Elige por dónde continuar: WhatsApp, SMS, QR o este dispositivo. Sale al flujo seguro de Truora.'},
   {s:'confirmando',    t:'Regresa de la biometría',                  n:'Mientras Truora confirma, el panel muestra estado "en proceso" y bloquea la carga manual para no duplicar datos.'},
   {s:'exito-biometria',t:'Pop-up: ¡biometría exitosa!',              n:'Fase 2 del documento: el sistema celebra el éxito y pide los 2 documentos restantes.'},
-  {s:'validada',       t:'Se revelan los documentos pendientes',     n:'Solo hasta ahora aparecen domicilio y estado de cuenta, justo debajo. Carga cognitiva mínima.'},
-  {s:'docs-validacion',t:'Documentos enviados: en revisión',         n:'Feedback claro de qué está en revisión y tiempos estimados.'},
-  {s:'rechazado',      t:'Un documento fue rechazado',               n:'Se le dice exactamente cuál, por qué y cómo volver a subirlo.'},
-  {s:'verificada',     t:'Cuenta 100% verificada',                   n:'Cierre del flujo: retiros activos.'},
+  {s:'validada',       t:'Se revelan los documentos pendientes',     n:'Solo hasta ahora aparecen domicilio (paso 2) y estado de cuenta (paso 3), justo debajo. Carga cognitiva mínima.'},
+  {s:'docs-validacion',t:'Documento enviado: en revisión',           n:'Feedback claro de qué está en revisión y tiempos estimados.'},
+  {s:'pre-verificada', t:'Cuenta pre-verificada',                    n:'Con identidad y domicilio validados el usuario YA puede cobrar en salas físicas. La cuenta bancaria se ofrece como mejora (depósito directo), no como requisito: recompensa a mitad del camino en vez de un candado.'},
+  {s:'verificada',     t:'Cuenta 100% verificada',                   n:'Cierre del flujo: retiros por depósito directo, sin pasar a sala.'},
   {g:'Caminos alternos (si algo sale mal)'},
+  {s:'rechazado',      t:'Un documento fue rechazado',               n:'Se le dice exactamente cuál, por qué y cómo volver a subirlo. Ocurre tras la revisión del domicilio: es la rama que no lleva a cuenta pre-verificada.'},
   {s:'interrumpida',   t:'Cerró Truora a medias',                    n:'Puede retomar donde se quedó, sin regaños.'},
   {g:'Detalle de cada documento (modales)'},
   {s:'modal-identidad',t:'Modal: identidad + prueba de vida',        n:'Infografía Do’s & Don’ts, incluye selfie con documento (sección 5 del documento, copys sujetos a Legal).'},
   {s:'modal-bancaria', t:'Modal: estado de cuenta bancario',         n:'Sin capturas de neobancos, titular igual al de la cuenta, máx. 3 meses.'},
   {s:'modal-domicilio',t:'Modal: comprobante de domicilio',          n:'Vigencia máx. 3 meses, legible y completo.'},
   {g:'Nuevas secciones'},
+  {s:'modal-firma',    t:'Formato de alta de cliente (firma digital)',n:'Módulo paralelo al KYC, no un cuarto paso. Nace bloqueado ("próximamente") y Back Office lo habilita; al activarse abre este modal y el CTA entrega el control al proveedor de firma digital.'},
   {s:'faq',            t:'Pestaña: Preguntas frecuentes',            n:'FAQ dentro del perfil para no sacar al usuario del embudo.'},
+  {s:'salas',          t:'Página pública: nuestras salas',           n:'Cierra el hueco del nuevo flujo (le decimos "cobra en sala" sin decirle dónde). Va FUERA del área privada para que sea indexable: SEO local sobre las 5 sucursales. Enfoque transaccional (cómo cobrar un premio), distinto al listado institucional de winlandcasino.com para no canibalizarlo.'},
 ];
 const TOUR_STEPS = TOUR.filter(x=>x.s);
 
@@ -1528,15 +1879,18 @@ function render(stateKey){
   currentState=stateKey;
   const idx = TOUR_STEPS.findIndex(x=>x.s===stateKey);
   document.getElementById('content').innerHTML = states[stateKey]();
+  /* 'salas' es una página PÚBLICA: se muestra sin las pestañas del área privada */
+  const esPublica = stateKey==='salas';
+  document.querySelector('.w-tabs').style.display = esPublica ? 'none' : 'flex';
   document.getElementById('faqTab').classList.toggle('active', stateKey==='faq');
-  document.getElementById('miCuentaTab').classList.toggle('active', stateKey!=='faq');
+  document.getElementById('miCuentaTab').classList.toggle('active', stateKey!=='faq' && !esPublica);
   /* En mobile los tabs hacen scroll horizontal: centrar el tab activo al navegar.
      Diferido tras el render y con asignación directa (el scroll "smooth" programático
      se cancela o no corre en algunos WebViews). */
   const activeTab=document.querySelector('.w-tabs .w-tab.active');
   if(activeTab){ const tc=activeTab.parentElement;
     setTimeout(()=>{ tc.scrollLeft = activeTab.offsetLeft-(tc.clientWidth-activeTab.offsetWidth)/2; },80); }
-  document.getElementById('subtabsRow').style.display = stateKey==='faq' ? 'none' : 'flex';
+  document.getElementById('subtabsRow').style.display = (stateKey==='faq'||esPublica) ? 'none' : 'flex';
   document.querySelectorAll('#subtabsRow .sub').forEach(s=>{
     s.classList.toggle('active', s.dataset.sub==='verificacion');
   });
@@ -1574,6 +1928,9 @@ function wireDemo(state){
     c.querySelectorAll('.modal .close').forEach(x=>go(x,'interrumpida'));
   }
   if(state==='confirmando') byText('Actualizar estado','a').forEach(a=>go(a,'exito-biometria'));
+  if(state==='docs-validacion') byText('Actualizar estado','a').forEach(a=>go(a,'pre-verificada'));
+  if(state==='pre-verificada') byText('Subir mi cuenta bancaria','button').forEach(b=>go(b,'modal-bancaria'));
+  if(state==='salas') initMapaSalas();
   if(state==='exito-biometria') c.querySelectorAll('.modal .close').forEach(x=>go(x,'validada'));
 
   /* Filas de documentos → su modal (pendientes y rechazadas) */
@@ -1591,7 +1948,7 @@ function wireDemo(state){
   /* Pasos del tracker como accesos directos cuando tienen acción pendiente */
   c.querySelectorAll('.step').forEach(st=>{
     const t=st.textContent;
-    const accionable=/Pendiente|pendiente|Requiere acción|Reiniciar/.test(t) && !/Disponible después/i.test(t);
+    const accionable=/Pendiente|pendiente|Requiere acción|Reiniciar|Cobra sin ir/.test(t) && !/Disponible después/i.test(t);
     if(!accionable) return;
     st.classList.add('clickable');
     if(/Identidad/.test(t)) go(st,'truora-modal');
@@ -1612,9 +1969,12 @@ function wireDemo(state){
     function habilitar(){
       if(!boxes.every(b=>b.classList.contains('loaded'))) return;
       subir.classList.add('ready');
+      /* Domicilio (paso 2) → revisión · Cuenta bancaria (paso 3) → cuenta completa */
       const submitTarget = state==='modal-identidad'
         ? ()=>{ idMethod='manual'; render('validada'); }
-        : ()=>render('docs-validacion');
+        : state==='modal-bancaria'
+          ? ()=>render('verificada')
+          : ()=>render('docs-validacion');
       subir.addEventListener('click', submitTarget, {once:true});
     }
     boxes.forEach(b=>{
@@ -1632,6 +1992,13 @@ function wireDemo(state){
     });
   }
   byText('Probar Truora','a').forEach(a=>go(a,'truora-modal'));
+
+  /* Cerrar al tocar el fondo oscuro: dispara el mismo destino que la ✕ para que ambos
+     caminos nunca se desincronicen (documentos → pantalla previa, biometría de
+     Truora → "verificación interrumpida"). */
+  c.querySelectorAll('.modal-overlay').forEach(ov=>{
+    ov.addEventListener('click', e=>{ if(e.target===ov) ov.querySelector('.close')?.click(); });
+  });
 }
 
 /* Control flotante para recorrer los estados (solo demo) */
