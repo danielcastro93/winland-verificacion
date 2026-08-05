@@ -1,0 +1,68 @@
+/* ─────────────────────────────────────────────────────────────
+   Pegamento mínimo para el header y el footer reales de Winland.
+   Va DESPUÉS de emotion.css y winland-prod.css.
+   ───────────────────────────────────────────────────────────── */
+
+/* La tipografía real del sitio, servida en local */
+@font-face {
+  font-family: winland;
+  /* Es el MISMO archivo que traía el paquete (assets/fonts/DenimINK.ttf):
+     mismo hash que el que ya vivía en el proyecto, así que no se duplica. */
+  src: url("assets/produccion/winland-font.ttf") format("truetype");
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: var(--clmc-font, winland), system-ui, sans-serif;
+}
+
+/* El header real va fijo arriba, así que el contenido necesita dejarle
+   su altura libre. Envuelve tu contenido en <main class="wl-contenido">. */
+.wl-contenido { padding-top: 60px; }
+
+/* ── Bloque de sesión iniciada dentro del header real ──
+   Depositar · saldo · perfil · boleto. Son los cuatro elementos que ya
+   tenías y que sí aparecen así en producción. */
+.wl-sesion { gap: 8px; }
+
+.wl-deposit,
+.wl-balance {
+  background: #fff; color: #000;
+  border: 1px solid var(--clmc-color-primary, #e85b11);
+  border-radius: 8px; height: 40px; min-width: 100px;
+  padding: 6px 12px; font-size: 14px; font-weight: 400;
+  font-family: var(--clmc-font, winland), sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; white-space: nowrap; box-sizing: border-box;
+}
+.wl-deposit img { width: 20px; height: 20px; display: block; }
+.wl-balance svg { width: 14px; height: 14px; stroke: #000; }
+
+.wl-circle {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,.16);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex: none;
+}
+.wl-circle img { display: block; }
+
+@media (max-width: 768px) {
+  .wl-sesion { gap: 6px; }
+  .wl-deposit { min-width: 0; height: 36px; padding: 0 10px; font-size: 13px; gap: 5px; }
+  .wl-deposit img { width: 18px; height: 18px; }
+  .wl-balance { min-width: 0; height: 36px; padding: 0 8px; font-size: 13px; }
+  .wl-circle { width: 36px; height: 36px; }
+  /* en pantallas chicas producción esconde el boleto */
+  .wl-sesion .wl-circle:last-child { display: none; }
+}
+
+/* ── El menú inferior solo existe en móvil ── */
+.wl-solo-movil { display: none; }
+@media (max-width: 768px) {
+  .wl-solo-movil { display: block; }
+  .clmc-mobile-navigation { z-index: 1100; }
+  body { padding-bottom: 70px; }
+}

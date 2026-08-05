@@ -54,8 +54,17 @@
       botón primario    ≡ .clmc-btn-primary (hover: brightness(1.1)+opacity .8;
                           disabled: #d1d1d1 / #adadad)
       botón outline     ≡ .clmc-btn-primary-white
-  · HEADER y FOOTER incluidos aquí son RÉPLICA VISUAL para presentar en
-    contexto — NO se implementan: usar los componentes reales del sitio.
+  · HEADER, FOOTER y MENÚ INFERIOR son el HTML REAL del sitio (clmc / MUI),
+    servidos con sus propias hojas: assets/emotion.css + assets/winland-prod.css
+    + chrome.css, enlazadas ANTES del <style> de este archivo. NO se implementan:
+    el equipo usa los componentes que ya existen en producción; aquí solo
+    enmarcan el módulo para presentarlo en su contexto real.
+      · El contenido va dentro de <main class="wl-contenido">, que reserva los
+        60px del header fijo.
+      · Único añadido al header real: el bloque de sesión iniciada (.wl-sesion:
+        Depositar · saldo · perfil · boleto), con saldo genérico de $100.00 MXN.
+      · El header de producción usa z-index 1100; por eso los modales de este
+        prototipo van en 1200 y el navegador de estados en 1300.
   · Lo que SÍ se implementa es el bloque marcado como "MÓDULO ENTREGABLE"
     (contenedor .w-body/.w-card, equivalente a .privateLayout /
     .privateLayout-content: fondo #fff, padding 40px, radius 16px, sombra).
@@ -125,9 +134,13 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Winland — Centro de verificación (Propuesta UX/UI)</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- ═══ CHROME REAL DE PRODUCCIÓN ═══
+     Hojas reales del sitio (header, footer y menú inferior). El ORDEN importa:
+     estas tres van primero y la hoja del módulo (<style> de abajo) al final,
+     para que el prototipo pueda ajustar sobre ellas y no al revés. -->
+<link rel="stylesheet" href="assets/emotion.css">
+<link rel="stylesheet" href="assets/winland-prod.css">
+<link rel="stylesheet" href="chrome.css">
 <!-- Mapa de salas: Leaflet + tiles de OpenStreetMap/CARTO. Open source, sin API key
      ni cuota (Google Maps exige key y cobra por carga). Calímaco puede conservarlo. -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -169,52 +182,14 @@
   *{margin:0;padding:0;box-sizing:border-box;}
   html{-webkit-font-smoothing:antialiased;}
   body{
-    font-family:'winland','Inter',-apple-system,sans-serif;
+    font-family:'winland',-apple-system,sans-serif;
     background:#dde1e4;
     color:var(--ink);
     font-size:14px;
   }
-  h1,h2,h3{font-family:'winland','Manrope',sans-serif;letter-spacing:-0.01em;}
+  h1,h2,h3{font-family:'winland',sans-serif;letter-spacing:-0.01em;}
   svg{display:block;}
   .icon{width:1em;height:1em;flex-shrink:0;}
-
-  /* ===== Header — réplica 1:1 producción (MuiAppBar 60px #e85b10) ===== */
-  .w-header{
-    background:var(--winland-orange);color:#fff;display:flex;align-items:center;
-    justify-content:space-between;height:60px;padding:0 32px;
-    box-shadow:rgba(0,0,0,.2) 0 2px 4px -1px, rgba(0,0,0,.14) 0 4px 5px 0, rgba(0,0,0,.12) 0 1px 10px 0;
-    position:relative;z-index:5;
-  }
-  .w-balance{white-space:nowrap;}
-  .w-header .left{display:flex;align-items:center;gap:0;}
-  .w-burger{margin-right:41px;cursor:pointer;display:flex;align-items:center;}
-  .w-burger img{width:24px;height:24px;display:block;}
-  .w-logo{display:flex;align-items:center;}
-  .w-logo img{width:100px;display:block;}
-  .w-nav{display:flex;align-items:center;font-size:16px;font-weight:400;font-family:'winland',sans-serif;}
-  .w-nav span{padding:0 12px;margin:0 8px;opacity:.8;cursor:pointer;white-space:nowrap;position:relative;}
-  .w-nav span:hover{opacity:1;}
-  .w-header .right{display:flex;align-items:center;gap:8px;}
-  /* Botones réplica 1:1 producción: pill blanco, borde naranja, texto negro */
-  .w-deposit{
-    background:#fff;color:#000;border:1px solid var(--winland-orange);border-radius:8px;
-    height:40px;min-width:100px;padding:6px 12px;font-weight:400;font-size:14px;font-family:'winland',sans-serif;
-    display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;
-  }
-  .w-deposit img{width:20px;height:20px;display:block;}
-  .w-balance{
-    background:#fff;color:#000;border:1px solid var(--winland-orange);border-radius:8px;
-    height:40px;min-width:100px;padding:6px 10px;font-size:14px;font-weight:400;font-family:'winland',sans-serif;
-    display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;
-  }
-  .w-balance svg{width:14px;height:14px;stroke:#000;}
-  .w-circle{
-    width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.3);
-    display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
-    transition:background .15s var(--ease);
-  }
-  .w-circle:hover{background:rgba(255,255,255,.45);}
-  .w-circle img{display:block;}
 
   /* ===== Contenedor del módulo — medidas EXACTAS de producción (.privateLayout) ===== */
   .w-body{background:#fff;padding:40px;}
@@ -252,7 +227,7 @@
   }
   .step .num{
     width:28px;height:28px;border-radius:50%;background:#fff;color:var(--mid-gray);border:1.5px solid var(--mid-gray);
-    font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Manrope',sans-serif;
+    font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'winland',sans-serif;
   }
   .step.done{border-color:var(--success-green);background:var(--success-bg);}
   .step.done .num{background:var(--success-green);border-color:var(--success-green);color:#fff;}
@@ -506,6 +481,9 @@
   .status-banner.info{background:var(--info-bg);} .status-banner.info .ic{background:#CFE0F4;color:var(--info-blue);}
   .status-banner .cta{margin-top:10px;}
   .status-banner .cta a{color:var(--winland-orange);font-weight:600;font-size:13px;cursor:pointer;}
+  /* Enlace embebido en la frase del banner: evita una línea extra de CTA */
+  .status-banner .s a{color:var(--winland-orange);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+  .status-banner .s a:hover{color:var(--orange-dark);}
 
   /* FAQ */
   .faq-cats{display:flex;gap:9px;margin-bottom:34px;flex-wrap:wrap;}
@@ -522,7 +500,8 @@
   .modal-overlay{
     position:fixed;inset:0;background:rgba(12,12,14,.6);
     display:flex;align-items:center;justify-content:center;padding:24px;
-    backdrop-filter:blur(2px);z-index:200;
+    /* Por encima del header real de producción (MuiAppBar, z-index 1100) */
+    backdrop-filter:blur(2px);z-index:1200;
   }
   .modal{
     background:#fff;border-radius:12px;max-width:480px;width:100%;padding:28px;position:relative;
@@ -620,59 +599,6 @@
     flex:1;background:#d1d1d1;color:#adadad;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:default;font-family:inherit;
   }
 
-  /* ===== Footer — réplica 1:1 producción (.clmc-footer-dark) ===== */
-  .w-footer{background:#000;color:#fff;font-family:'winland',sans-serif;}
-  .wf-inner{max-width:1180px;margin:0 auto;padding:32px 24px;}
-  .wf-divider{height:1px;background:#242424;width:100%;}
-  /* Cinta de logos de métodos de pago (marquee) */
-  .wf-logos{overflow:hidden;padding:28px 0;}
-  .wf-logos-track{display:flex;gap:56px;align-items:center;width:max-content;animation:wfMarquee 70s linear infinite;}
-  .wf-logos-track img{height:32px;width:auto;filter:grayscale(100%) brightness(1.4);opacity:.85;}
-  @keyframes wfMarquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
-  /* Grid de 3 columnas */
-  .wf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;}
-  .wf-col{display:flex;flex-direction:column;gap:10px;}
-  .wf-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;}
-  .wf-link{color:#adadad;text-decoration:none;font-weight:600;font-size:14px;cursor:pointer;}
-  .wf-link:hover{color:var(--winland-orange);}
-  .wf-mail{color:var(--winland-orange);font-size:14px;text-decoration:underline;cursor:pointer;}
-  .wf-select{
-    background:#3a3a3a;color:#aeaeae;border:none;border-radius:10px;padding:10px 40px 10px 12px;
-    font-size:14px;font-weight:600;font-family:inherit;appearance:none;cursor:pointer;width:100%;max-width:220px;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23aeaeae' stroke-width='2' fill='none'/></svg>");
-    background-repeat:no-repeat;background-position:right 12px center;
-  }
-  /* Más información (details) */
-  .wf-details{border:none;}
-  .wf-summary{list-style:none;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:16px;cursor:pointer;color:#fff;}
-  .wf-summary::-webkit-details-marker{display:none;}
-  .wf-caret{font-size:18px;color:#b8b8b8;transform:translateY(-2px);transition:transform .2s;}
-  .wf-details:not([open]) .wf-caret{transform:rotate(180deg);}
-  .wf-info{margin-top:16px;display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.6;color:#cfcfcf;}
-  /* Bottom: social + badges */
-  .wf-bottom{margin-top:28px;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;}
-  .wf-social{display:flex;gap:12px;align-items:center;}
-  .wf-social a{
-    width:36px;height:36px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
-    transition:background .2s;
-  }
-  .wf-social a svg{width:20px;height:20px;fill:#adadad;}
-  .wf-social a:hover{background:var(--winland-orange);}
-  .wf-social a:hover svg{fill:#fff;}
-  .wf-badges{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
-  .wf-badges img{max-height:52px;display:block;}
-  .wf-legal{margin-top:18px;font-size:11px;line-height:1.6;color:#9f9f9f;}
-  .wf-legal a{color:#9f9f9f;text-decoration:underline;}
-
-  /* Bottom nav mobile — réplica 1:1 producción */
-  .w-bottomnav{display:none;}
-  .w-bottomnav .bn-item{display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex:1;}
-  .w-bottomnav .bn-item img{width:24px;height:24px;display:block;}
-  .w-bottomnav .bn-item span{
-    font-size:9px;font-weight:700;color:#7f7f7f;text-transform:uppercase;margin-top:8px;
-    text-align:center;letter-spacing:.02em;font-family:'winland',sans-serif;
-  }
-
   /* FAQ funcional: acordeón, categorías clickeables, interlinks */
   .faq-cat{cursor:pointer;transition:background .15s var(--ease);}
   .faq-cat:not(.active):hover{background:#e8ebed;}
@@ -688,7 +614,7 @@
   
 
   /* Visor de infografías en FAQ (overlay ligero, no saca al usuario) */
-  .faq-visor-overlay{position:fixed;inset:0;background:rgba(12,12,14,.65);z-index:210;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);}
+  .faq-visor-overlay{position:fixed;inset:0;background:rgba(12,12,14,.65);z-index:1210;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);}
   .faq-visor{background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90%;overflow-y:auto;padding:18px;}
   .fv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:14px;}
   .fv-close{width:30px;height:30px;border-radius:50%;background:var(--page-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;}
@@ -824,13 +750,6 @@
 
   /* ═══════════ RESPONSIVE REAL (media queries) ═══════════ */
   @media (max-width:768px){
-    .w-header{padding:0 12px;}
-    .w-burger{margin-right:12px;}
-    .w-logo img{width:88px;}
-    .w-nav{display:none;}
-    .w-deposit{min-width:0;height:36px;padding:6px 10px;font-size:13px;}
-    .w-balance{min-width:0;height:36px;padding:6px 8px;font-size:13px;}
-    .w-circle{width:36px;height:36px;}
     .w-body{padding:0;}
     .w-card{border-radius:0;box-shadow:none;}
     .w-tabs{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
@@ -866,13 +785,6 @@
   .email-box{flex-direction:column;align-items:stretch;gap:12px;}
     .email-box .btn-outline{width:100%;}
     .modal{padding:20px;}
-    .wf-grid{grid-template-columns:1fr;}
-    .wf-inner{padding:24px 16px;}
-    .w-footer{padding-bottom:70px;}
-    .w-bottomnav{
-    display:flex;background:#000;justify-content:space-around;align-items:center;
-    height:70px;position:sticky;bottom:0;box-shadow:0 -4px 10px rgba(0,0,0,.2);z-index:20;
-  }
     /* Categorías de FAQ: scroll horizontal, una sola línea */
     .faq-cats{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:26px;padding-bottom:0;}
     .faq-cats::-webkit-scrollbar{display:none;}
@@ -884,21 +796,10 @@
       bottom:0;margin:16px -18px 0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));
     }
     .modal-actions .btn-outline,.modal-actions .btn-primary-disabled{width:100%;flex:none;padding-top:12px;padding-bottom:12px;}
-    /* Mobile producción: sin hamburguesa (pasa al bottom-nav), sin menú superior */
-    .w-burger{display:none;}
-    .w-nav{display:none;}
-    /* Header mobile idéntico a producción: logo + Depositar + saldo + UN avatar (MyBets se oculta) */
-    .w-header .right{gap:6px;}
-    .w-header .right .w-circle:last-child{display:none;}
-    .w-deposit{padding:0 10px;gap:5px;}
-    .w-deposit img{width:18px;height:18px;}
-    .w-balance{padding:0 8px;}
     /* Texto de dudas/preguntas alineado a la izquierda en mobile */
     .upgrade-card{flex-direction:column;align-items:flex-start;gap:14px;}
     .upgrade-card button{width:100%;}
     .faq-hint{justify-content:flex-start;text-align:left;}
-    /* Bottom-nav SIEMPRE fijo abajo */
-    .w-bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;}
     body{padding-bottom:70px;}
     /* Modales cortos (confirmación, selector de canal): centrados con margen */
     .modal-overlay{padding:16px;align-items:center;}
@@ -944,42 +845,34 @@
   }
 
   /* Navegador de estados flotante (demo, no entregable) */
-  #stateNav{position:fixed;right:16px;bottom:16px;z-index:400;display:flex;align-items:center;gap:4px;
+  #stateNav{position:fixed;right:16px;bottom:16px;z-index:1300;display:flex;align-items:center;gap:4px;
     background:rgba(16,18,22,.92);border-radius:999px;padding:5px 6px;box-shadow:0 8px 24px rgba(0,0,0,.3);}
   #stateNav button{width:34px;height:34px;border:none;border-radius:50%;background:transparent;color:#fff;
     font-size:20px;line-height:1;cursor:pointer;font-family:inherit;}
   #stateNav button:hover:not(:disabled){background:rgba(255,255,255,.15);}
   #stateNav button:disabled{opacity:.3;cursor:default;}
-  #stateNav .sn-label{color:#c7ccd2;font-size:12px;font-weight:700;min-width:44px;text-align:center;font-family:'Inter',sans-serif;}
+  #stateNav .sn-label{color:#c7ccd2;font-size:12px;font-weight:700;min-width:44px;text-align:center;font-family:'winland',sans-serif;}
   @media (max-width:768px){ #stateNav{bottom:82px;} }
 </style>
 </head>
 <body>
 <div id="device">
 
-      <!-- Header recreado del screenshot -->
       <!-- ═══════════════════════════════════════════════════════════════
-           HEADER DE PRODUCCIÓN — NO IMPLEMENTAR / SOLO REFERENCIA VISUAL
-           Réplica del <header> real (clmc MuiAppBar). El equipo de dev debe
-           usar el header existente de producción tal cual; aquí solo se
-           reproduce para presentar el módulo en su contexto.
+           HEADER REAL DE PRODUCCIÓN — NO IMPLEMENTAR / SOLO CONTEXTO VISUAL
+           HTML tal cual del sitio (clmc / MuiAppBar), con sus hojas reales.
+           El equipo de dev usa el header existente; aquí solo enmarca el módulo.
+           Único añadido: el bloque de sesión iniciada (.wl-sesion).
            ═══════════════════════════════════════════════════════════════ -->
-      <div class="w-header">
-        <div class="left">
-          <div class="w-burger"><img src="assets/produccion/Menu.svg" alt=""></div>
-          <div class="w-logo"><img src="assets/produccion/logo_winland_white.png" alt="Winland"></div>
-        </div>
-        <div class="w-nav">
-          <span>Fiesta futbolera</span><span>Deportes</span><span>En vivo</span><span>Casino</span><span>Casino en vivo</span><span>Virtuales</span><span>Promociones</span>
-        </div>
-        <div class="right">
-          <div class="w-deposit"><img src="assets/produccion/header/wallet.svg" alt="">Depositar</div>
-          <div class="w-balance">$100.00 MXN <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg></div>
-          <div class="w-circle"><img src="assets/produccion/header/Profile.svg" alt="Perfil" width="24" height="24"></div>
-          <div class="w-circle"><img src="assets/produccion/header/MyBets.svg" alt="Mis apuestas" width="17" height="17"></div>
-        </div>
+<header class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation4 MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionFixed clmc-appBar clmc-flex clmc-justify-center clmc-align-center clmc-pl-large clmc-pr-large mui-fixed css-1rod9u0" style="--Paper-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2),0px 4px 5px 0px rgba(0,0,0,0.14),0px 1px 10px 0px rgba(0,0,0,0.12);"><div class="clmc-flex clmc-row clmc-justify-between clmc-align-center clmc-w100"><div class="clmc-flex clmc-row clmc-nowrap clmc-align-center clmc-justify-start"><div class="clmc-mr-medium"><img class="clmc-img-header-menu-casino clmc-mr-large clmc-cursor-pointer" alt="Menu lateral" title="Menu lateral" src="assets/produccion/Menu.svg"></div><a title="Ir al inicio de Winland" class="clmc-flex clmc-align-center clmc-justify-center" href="#"><img class="clmc-header-logo clmc-mr-large" alt="Winland" title="Winland" src="assets/produccion/logo_winland_white.png"></a></div><div class="clmc-main-menu clmc-flex clmc-row clmc-align-center clmc-justify-center"><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a Tu Liga Mexicana" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Tu Liga Mexicana</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a Deportes" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Deportes</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a En vivo" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">En vivo</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row clmc-main-menu-item-active"><a title="Ir a Casino" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Casino</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a Casino en vivo" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Casino en vivo</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a Virtuales" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Virtuales</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a Promociones" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Promociones</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div></div><div class="clmc-flex clmc-align-center clmc-justify-end"><div class="clmc-flex clmc-align-center wl-sesion">
+        <div class="wl-deposit"><img src="assets/produccion/header/wallet.svg" alt="">Depositar</div>
+        <div class="wl-balance">$100.00 MXN <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="wl-circle"><img src="assets/produccion/header/Profile.svg" alt="Perfil" width="24" height="24"></div>
+        <div class="wl-circle"><img src="assets/produccion/header/MyBets.svg" alt="Mis apuestas" width="17" height="17"></div>
       </div>
+    </div></div></header>
 
+      <main class="wl-contenido">
       <!-- ═══════════════════════════════════════════════════════════════
            ▼▼▼ MÓDULO ENTREGABLE — ESTO ES LO QUE SE IMPLEMENTA ▼▼▼
            Contenedor con medidas de producción (.privateLayout: fondo #fff,
@@ -1007,76 +900,21 @@
         </div>
       </div>
 
-      <!-- ═══════════════════════════════════════════════════════════════
-           FOOTER DE PRODUCCIÓN — NO IMPLEMENTAR / SOLO REFERENCIA VISUAL
-           Réplica del footer real (.clmc-footer). El equipo de dev debe usar
-           el footer existente de producción; aquí solo es contexto visual.
-           ═══════════════════════════════════════════════════════════════ -->
-      <!-- Footer réplica 1:1 producción -->
-      <div class="w-footer">
-        <div class="wf-logos">
-          <div class="wf-logos-track"><img src="assets/produccion/footer/metodo_de_pago17_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago18_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago19_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago2_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago1_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago3_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago4_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago5_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago6_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago7_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago8_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago9_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago10_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago11_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago12_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago13_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago14_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago15_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago16_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago17_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago18_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago19_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago2_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago1_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago3_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago4_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago5_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago6_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago7_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago8_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago9_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago10_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago11_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago12_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago13_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago14_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago15_footer.png" alt=""><img src="assets/produccion/footer/metodo_de_pago16_footer.png" alt=""></div>
-        </div>
-        <div class="wf-divider"></div>
-        <div class="wf-inner">
-          <div class="wf-grid">
-            <div class="wf-col">
-              <div class="wf-title">¿Necesitas ayuda?</div>
-              <span class="wf-link" onclick="render('salas')">Nuestras salas</span>
-              <span class="wf-link">Chat de soporte</span>
-              <span class="wf-mail">clientes@winland.com.mx</span>
-              <span class="wf-link">Reglas</span>
-            </div>
-            <div class="wf-col">
-              <div class="wf-title">Legales</div>
-              <span class="wf-link">Aviso de privacidad</span>
-              <span class="wf-link">Términos y condiciones</span>
-              <span class="wf-link">Juego responsable</span>
-              <span class="wf-link">Política de cookies</span>
-            </div>
-            <div class="wf-col">
-              <div class="wf-title">Ajustes</div>
-              <select class="wf-select"><option>Americano</option><option>Decimal</option><option>Fraccional</option></select>
-            </div>
-          </div>
-        </div>
-        <div class="wf-divider"></div>
-        <div class="wf-inner">
-          <details class="wf-details">
-            <summary class="wf-summary">Más información sobre Winland<span class="wf-caret">⌃</span></summary>
-            <div class="wf-info">
-              <p>Winland Online: La Casa de Apuestas</p>
-              <p>Deportivas y Casino en Línea más Segura de México</p>
-              <p>Experiencia y Trayectoria En Winland Casino, somos una empresa consolidada en el sector del entretenimiento en México, con una sólida trayectoria en la creación de experiencias de juego de alta calidad. Nuestra plataforma, Winland Online, representa la evolución natural de nuestro compromiso con la innovación, llevando la emoción del mundo físico a tu dispositivo móvil.</p>
-              <p>Las Mejores Apuestas Deportivas Nuestro Sportsbook está diseñado para el aficionado mexicano. Ofrecemos los momios más competitivos para tus deportes favoritos: desde la pasión de la Liga MX y el fútbol internacional (Champions League, La Liga), hasta la intensidad de la NFL, NBA, MLB y Boxeo. Disfruta de nuestra plataforma de Apuestas En Vivo con estadísticas en tiempo real para jugar minuto a minuto.</p>
-              <p>Casino en Línea y Juegos en Vivo Nuestro portafolio incluye una amplia gama de opciones de entretenimiento. Vive la adrenalina en nuestro Casino en Vivo con crupieres reales en Ruleta, Blackjack y Baccarat, o explora cientos de Slots (Tragamonedas), Jackpots y juegos virtuales con tecnología de última generación</p>
-              <p>Seguridad, Regulación y Confianza A través de Winland Online, ofrecemos un entorno digital seguro y 100% regulado por la SEGOB. Nos enfocamos en brindar valor y confianza, facilitando depósitos rápidos y seguros vía SPEI, tarjetas bancarias y efectivo en tiendas de conveniencia (como 7-Eleven y Walmart), garantizando el pago de tus premios. Nuestra misión es consolidar a Winland como el referente del entretenimiento responsable, transparente y orientado al cliente en México.</p>
-            </div>
-          </details>
-          <div class="wf-divider" style="margin-top:24px;"></div>
-          <div class="wf-bottom">
-            <div class="wf-social">
-              <a aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.25-1.5 1.55-1.5h1.65V3.6c-.3-.04-1.3-.13-2.45-.13-2.4 0-4.05 1.47-4.05 4.17v2.33H7.5V13h2.7v8h3.3z"/></svg></a>
-              <a aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 4.3c2.5 0 2.8 0 3.8.06 1 .04 1.5.2 1.85.34.47.18.8.4 1.15.75s.57.68.75 1.15c.13.35.3.86.34 1.85.05 1 .06 1.3.06 3.8s0 2.8-.06 3.8c-.04 1-.2 1.5-.34 1.85-.18.47-.4.8-.75 1.15s-.68.57-1.15.75c-.35.13-.86.3-1.85.34-1 .05-1.3.06-3.8.06s-2.8 0-3.8-.06c-1-.04-1.5-.2-1.85-.34a3.1 3.1 0 0 1-1.15-.75 3.1 3.1 0 0 1-.75-1.15c-.13-.35-.3-.86-.34-1.85-.05-1-.06-1.3-.06-3.8s0-2.8.06-3.8c.04-1 .2-1.5.34-1.85.18-.47.4-.8.75-1.15s.68-.57 1.15-.75c.35-.13.86-.3 1.85-.34 1-.05 1.3-.06 3.8-.06M12 2.6c-2.55 0-2.87 0-3.87.06-1 .05-1.68.2-2.28.44-.62.24-1.14.56-1.66 1.08S3.35 5.23 3.1 5.85c-.23.6-.39 1.28-.44 2.28C2.6 9.13 2.6 9.45 2.6 12s0 2.87.06 3.87c.05 1 .2 1.68.44 2.28.24.62.56 1.14 1.08 1.66s1.04.84 1.66 1.08c.6.23 1.28.39 2.28.44 1 .05 1.32.06 3.87.06s2.87 0 3.87-.06c1-.05 1.68-.2 2.28-.44a4.6 4.6 0 0 0 1.66-1.08 4.6 4.6 0 0 0 1.08-1.66c.23-.6.39-1.28.44-2.28.05-1 .06-1.32.06-3.87s0-2.87-.06-3.87c-.05-1-.2-1.68-.44-2.28a4.6 4.6 0 0 0-1.08-1.66 4.6 4.6 0 0 0-1.66-1.08c-.6-.23-1.28-.39-2.28-.44-1-.05-1.32-.06-3.87-.06zm0 4.57a4.83 4.83 0 1 0 0 9.66 4.83 4.83 0 0 0 0-9.66zm0 7.96a3.13 3.13 0 1 1 0-6.26 3.13 3.13 0 0 1 0 6.26zm6.15-8.15a1.13 1.13 0 1 1-2.26 0 1.13 1.13 0 0 1 2.26 0z"/></svg></a>
-            </div>
-            <div class="wf-badges">
-              <img src="assets/produccion/footer/juego-responsable.png" alt="18+ Juego responsable">
-              <img src="assets/produccion/footer/ssl_certified.webp" alt="SSL certificado">
-            </div>
-          </div>
-          <div class="wf-legal">
-            <a>www.winland.com.mx</a> es operado en México por Operadora de Salas Fortune de México, S.A. de C.V., operador autorizado conforme al oficio No. DGJS/682/2018, bajo el Permiso Federal No.DGJS/DGAAD/DCRCA/P-01/2017 otorgado a Operadora de Coincidencias Numéricas, S.A. de C.V., y cuenta con la autorización específica del sitio mediante el oficio No.DGJS/DCRCA/0149/2023 de fecha 9 de febrero de 2023. Juega responsablemente. El juego con apuesta está prohibido para menores de 18 años. Su finalidad es el entretenimiento; juega con moderación y dentro de tus límites.
-          </div>
-        </div>
-      </div>
+      </main><!-- /wl-contenido -->
 
-      <!-- Bottom nav mobile réplica 1:1 producción -->
-      <div class="w-bottomnav">
-        <div class="bn-item"><img src="assets/produccion/mobilenav/menu.svg" alt=""><span>Menú</span></div>
-        <div class="bn-item"><img src="assets/produccion/mobilenav/deportes.svg" alt=""><span>Deportes</span></div>
-        <div class="bn-item"><img src="assets/produccion/mobilenav/envivo.svg" alt=""><span>En vivo</span></div>
-        <div class="bn-item"><img src="assets/produccion/mobilenav/misApuestas.svg" alt=""><span>Mis apuestas</span></div>
-        <div class="bn-item"><img src="assets/produccion/mobilenav/casino.svg" alt=""><span>Casino</span></div>
+      <!-- ═══════════════════════════════════════════════════════════════
+           FOOTER REAL DE PRODUCCIÓN — NO IMPLEMENTAR / SOLO CONTEXTO VISUAL
+           ═══════════════════════════════════════════════════════════════ -->
+<footer class="clmc-footer clmc-footer-dark"><div class="clmc-footer-inner clmc-pt-large clmc-pb-large"><div class="clmc-footer-logos"><div class="MuiBox-root css-h1rw7n"><div class="MuiBox-root css-137ehfp"><img width="110" class="clmc-footer-logos" height="50" alt="SPEI" title="SPEI" src="assets/produccion/footer/metodo_de_pago17_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Mastercard" title="Mastercard" src="assets/produccion/footer/metodo_de_pago18_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Visa" title="Visa" src="assets/produccion/footer/metodo_de_pago19_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="7 Eleven" title="7 Eleven" src="assets/produccion/footer/metodo_de_pago2_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Bodega Aurrera" title="Bodega Aurrera" src="assets/produccion/footer/metodo_de_pago1_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Soriana" title="Soriana" src="assets/produccion/footer/metodo_de_pago3_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Kiosko" title="Kiosko" src="assets/produccion/footer/metodo_de_pago4_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Circle K" title="Circle K" src="assets/produccion/footer/metodo_de_pago5_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Sams Club" title="Sams Club" src="assets/produccion/footer/metodo_de_pago6_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Walmart" title="Walmart" src="assets/produccion/footer/metodo_de_pago7_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Afirme" title="Afirme" src="assets/produccion/footer/metodo_de_pago8_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="BBVA" title="BBVA" src="assets/produccion/footer/metodo_de_pago9_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Telecomm" title="Telecomm" src="assets/produccion/footer/metodo_de_pago10_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Santander" title="Santander" src="assets/produccion/footer/metodo_de_pago11_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Banorte" title="Banorte" src="assets/produccion/footer/metodo_de_pago12_footer.png"><img width="70" class="clmc-footer-logos" height="50" alt="CFE" title="CFE" src="assets/produccion/footer/metodo_de_pago13_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Caja Popular" title="Caja Popular" src="assets/produccion/footer/metodo_de_pago14_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Alianza" title="Alianza" src="assets/produccion/footer/metodo_de_pago15_footer.png"><img width="90" class="clmc-footer-logos" height="50" alt="Otros" title="Otros" src="assets/produccion/footer/metodo_de_pago16_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="SPEI" title="SPEI" src="assets/produccion/footer/metodo_de_pago17_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Mastercard" title="Mastercard" src="assets/produccion/footer/metodo_de_pago18_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Visa" title="Visa" src="assets/produccion/footer/metodo_de_pago19_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="7 Eleven" title="7 Eleven" src="assets/produccion/footer/metodo_de_pago2_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Bodega Aurrera" title="Bodega Aurrera" src="assets/produccion/footer/metodo_de_pago1_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Soriana" title="Soriana" src="assets/produccion/footer/metodo_de_pago3_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Kiosko" title="Kiosko" src="assets/produccion/footer/metodo_de_pago4_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Circle K" title="Circle K" src="assets/produccion/footer/metodo_de_pago5_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Sams Club" title="Sams Club" src="assets/produccion/footer/metodo_de_pago6_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Walmart" title="Walmart" src="assets/produccion/footer/metodo_de_pago7_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Afirme" title="Afirme" src="assets/produccion/footer/metodo_de_pago8_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="BBVA" title="BBVA" src="assets/produccion/footer/metodo_de_pago9_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Telecomm" title="Telecomm" src="assets/produccion/footer/metodo_de_pago10_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Santander" title="Santander" src="assets/produccion/footer/metodo_de_pago11_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Banorte" title="Banorte" src="assets/produccion/footer/metodo_de_pago12_footer.png"><img width="70" class="clmc-footer-logos" height="50" alt="CFE" title="CFE" src="assets/produccion/footer/metodo_de_pago13_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Caja Popular" title="Caja Popular" src="assets/produccion/footer/metodo_de_pago14_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Alianza" title="Alianza" src="assets/produccion/footer/metodo_de_pago15_footer.png"><img width="90" class="clmc-footer-logos" height="50" alt="Otros" title="Otros" src="assets/produccion/footer/metodo_de_pago16_footer.png"></div></div><style>
+						@keyframes clmc-marquee {
+							0% { transform: translateX(0); }
+							100% { transform: translateX(-50%); }
+						}
+					</style></div></div><div class="clmc-footer-divider"></div><div class="clmc-footer-inner clmc-pt-large clmc-pb-large"><div class="clmc-footer-grid"><div class="clmc-footer-column"><h3 class="clmc-footer-title">¿Necesitas ayuda?</h3><section><ul class="clmc-flex clmc-gap-small clmc-column" style="list-style: none; padding: 0px; margin: 0px;"><li><p class="clmc-link clmc-cursor-pointer clmc-text-small clmc-color-quinary" onclick="render('salas')">Nuestras salas</p></li><li><p class="clmc-link clmc-cursor-pointer clmc-text-small clmc-color-quinary">Chat de soporte</p></li><li><a class="clmc-color-primary clmc-text-small clmc-text-decoration-underline" href="mailto:clientes@winland.com.mx" title="Enviar correo a clientes@winland.com.mx">clientes@winland.com.mx</a></li><li><a title="Reglas" class="clmc-link clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Reglas</a></li></ul></section></div><div class="clmc-footer-column"><h3 class="clmc-footer-title">Legales</h3><section><ul class="clmc-flex clmc-gap-small clmc-column" style="list-style: none; padding: 0px; margin: 0px;"><li><a title="Aviso de privacidad" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Aviso de privacidad</a></li><li><a title="Términos y condiciones" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Términos y condiciones</a></li><li><a title="Juego responsable" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Juego responsable</a></li><li><a title="Política de cookies" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Política de cookies</a></li></ul></section></div><div class="clmc-footer-column"><h4 class="clmc-footer-title">Ajustes</h4><div class="MuiFormControl-root clmc-select-label clmc-w100 clmc-footer-odds-control css-1qk38wv"><div class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-formControl MuiInputBase-sizeSmall clmc-footer-odds-select MuiSelect-root css-98ra8i"><div tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-labelledby="currency-select-label" class="MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input css-uxvpzc">Americano</div><input aria-invalid="false" aria-hidden="true" tabindex="-1" class="MuiSelect-nativeInput css-147e5lo" id="_r_6_" value="2"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium MuiSelect-icon css-1l3b12y" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"></path></svg><fieldset aria-hidden="true" class="MuiOutlinedInput-notchedOutline css-5v2ak0"><legend class="css-w4cd9x"><span class="notranslate" aria-hidden="true">​</span></legend></fieldset></div></div></div></div></div><div class="clmc-footer-divider"></div><div class="clmc-footer-inner clmc-pt-large clmc-pb-large"><details class="clmc-footer-details" open=""><summary class="clmc-footer-summary"><h3 class="clmc-mb-medium">Más información sobre Winland</h3><span class="clmc-footer-caret" aria-hidden="true">⌃</span></summary><div class="clmc-footer-info"><p class="clmc-color-quinary">Winland Online: La Casa de Apuestas</p><p class="clmc-color-quinary">Deportivas y Casino en Línea más Segura de México</p><p class="clmc-color-quinary">Experiencia y Trayectoria En Winland Casino, somos una empresa consolidada en el sector del entretenimiento en México, con una sólida trayectoria en la creación de experiencias de juego de alta calidad. Nuestra plataforma, Winland Online, representa la evolución natural de nuestro compromiso con la innovación, llevando la emoción del mundo físico a tu dispositivo móvil.</p><p class="clmc-color-quinary">Las Mejores Apuestas Deportivas Nuestro Sportsbook está diseñado para el aficionado mexicano. Ofrecemos los momios más competitivos para tus deportes favoritos: desde la pasión de la Liga MX y el fútbol internacional (Champions League, La Liga), hasta la intensidad de la NFL, NBA, MLB y Boxeo. Disfruta de nuestra plataforma de Apuestas En Vivo con estadísticas en tiempo real para jugar minuto a minuto.</p><p class="clmc-color-quinary">Casino en Línea y Juegos en Vivo Nuestro portafolio incluye una amplia gama de opciones de entretenimiento. Vive la adrenalina en nuestro Casino en Vivo con crupieres reales en Ruleta, Blackjack y Baccarat, o explora cientos de Slots (Tragamonedas), Jackpots y juegos virtuales con tecnología de última generación</p><p class="clmc-color-quinary">Seguridad, Regulación y Confianza A través de Winland Online, ofrecemos un entorno digital seguro y 100% regulado por la SEGOB. Nos enfocamos en brindar valor y confianza, facilitando depósitos rápidos y seguros vía SPEI, tarjetas bancarias y efectivo en tiendas de conveniencia (como 7-Eleven y Walmart), garantizando el pago de tus premios. Nuestra misión es consolidar a Winland como el referente del entretenimiento responsable, transparente y orientado al cliente en México.</p></div></details><div class="clmc-footer-divider"></div><div class="clmc-footer-bottom "><div class="clmc-footer-social"><a href="https://www.facebook.com/profile.php?id=61578614082947&amp;mibextid=wwXIfr&amp;rdid=0KIFuWybq5ttbVTk&amp;share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F17pzR3BBaz%2F%3Fmibextid%3DwwXIfr#" aria-label="Facebook" title="Visitar Facebook de Winland" target="_blank" class="clmc-footer-social-link"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-q7mezt" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"></path></svg></a><a href="https://www.instagram.com/winland.com.mx/" aria-label="Instagram" title="Visitar Instagram de Winland" target="_blank" class="clmc-footer-social-link"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-q7mezt" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"></path></svg></a></div><div class="clmc-footer-badges"><img height="120" alt="+18 Responsable" title="+18 Responsable" src="assets/produccion/footer/juego-responsable.png"><img height="64" alt="ssl_certified" title="ssl_certified" src="assets/produccion/footer/ssl_certified.webp"></div></div><div class="clmc-footer-legal"><p class="clmc-color-quinary clmc-w100"><a href="#" title="Ir al inicio de Winland" class="clmc-text-decoration-underline clmc-color-secondary clmc-footer-legal-link">www.winland.com.mx</a>  es operado en México por Operadora de Salas Fortune de México, S.A. de C.V., operador autorizado conforme al oficio No. DGJS/682/2018, bajo el Permiso Federal No.DGJS/DGAAD/DCRCA/P-01/2017 otorgado a Operadora de Coincidencias Numéricas, S.A. de C.V., y cuenta con la autorización específica del sitio mediante el oficio No.DGJS/DCRCA/0149/2023 de fecha 9 de febrero de 2023. Juega responsablemente. El juego con apuesta está prohibido para menores de 18 años. Su finalidad es el entretenimiento; juega con moderación y dentro de tus límites.</p></div></div></footer>
+
+      <!-- Menú inferior real (solo móvil, como en producción) -->
+      <div class="wl-solo-movil">
+<div class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation3 clmc-mobile-navigation css-1hv9hlh" style="--Paper-shadow: 0px 3px 3px -2px rgba(0,0,0,0.2),0px 3px 4px 0px rgba(0,0,0,0.14),0px 1px 8px 0px rgba(0,0,0,0.12);"><div class="MuiBottomNavigation-root clmc-mobile-navigation-content clmc-flex clmc-align-center clmc-justify-around clmc-text-nowrap css-r8tunr"><a href="#" title="Ir a Menú" class="clmc-mobile-menu-option clmc-text-decoration-none"><div class="clmc-mobile-navigation-element clmc-flex clmc-column clmc-align-center clmc-justify-center clmc-cursor-pointer"><img class="clmc-cursor-pointer" alt="Menú" title="Menú" src="assets/produccion/mobilenav/menu.svg"><p class="clmc-mt-small clmc-text-uppercase">Menú</p></div></a><a href="#" title="Ir a Deportes" class="clmc-mobile-menu-option clmc-text-decoration-none"><div class="clmc-mobile-navigation-element clmc-flex clmc-column clmc-align-center clmc-justify-center clmc-cursor-pointer"><img class="clmc-cursor-pointer" alt="Deportes" title="Deportes" src="assets/produccion/mobilenav/deportes.svg"><p class="clmc-mt-small clmc-text-uppercase">Deportes</p></div></a><a href="#" title="Ir a En vivo" class="clmc-mobile-menu-option clmc-text-decoration-none"><div class="clmc-mobile-navigation-element clmc-flex clmc-column clmc-align-center clmc-justify-center clmc-cursor-pointer"><img class="clmc-cursor-pointer" alt="En vivo" title="En vivo" src="assets/produccion/mobilenav/envivo.svg"><p class="clmc-mt-small clmc-text-uppercase">En vivo</p></div></a><a href="#" title="Ir a Mis apuestas" class="clmc-mobile-menu-option clmc-text-decoration-none"><div class="clmc-mobile-navigation-element clmc-flex clmc-column clmc-align-center clmc-justify-center clmc-cursor-pointer"><img class="clmc-cursor-pointer" alt="Mis apuestas" title="Mis apuestas" src="assets/produccion/mobilenav/misApuestas.svg"><p class="clmc-mt-small clmc-text-uppercase">Mis apuestas</p></div></a><a href="#" title="Ir a Casino" class="clmc-mobile-menu-option clmc-text-decoration-none"><div class="clmc-mobile-navigation-element clmc-flex clmc-column clmc-align-center clmc-justify-center clmc-cursor-pointer"><img class="clmc-cursor-pointer" alt="Casino" title="Casino" src="assets/produccion/mobilenav/casino.svg"><p class="clmc-mt-small clmc-text-uppercase">Casino</p></div></a></div></div>
       </div>
 </div>
 
@@ -1552,8 +1390,7 @@ validada: () => `
   ${headerHTML('¡Tu cuenta ya está pre-verificada!','Por ahora, tus retiros solo pueden ser cobrados en nuestras salas físicas.')}
   <div class="status-banner success">
     <div class="ic">${I.partyPopper}</div>
-    <div><div class="t">Identidad y domicilio validados</div><div class="s">Ya puedes cobrar tus retiros en cualquiera de nuestras salas físicas.</div>
-    <div class="cta"><a onclick="render('salas')">Ver dónde están nuestras salas</a></div></div>
+    <div><div class="t">Identidad y domicilio validados</div><div class="s">Ya puedes cobrar tus retiros en cualquiera de <a onclick="render('salas')">nuestras salas físicas</a>.</div></div>
   </div>
   ${tracker({cls:'done',s:idMethod==='manual'?'Validada manualmente':'Validada por Truora'},{cls:'done',s:'Validado'},{cls:'invite',s:'Cobra sin ir a sala'})}
   ${docGrid('done','done','pending')}
