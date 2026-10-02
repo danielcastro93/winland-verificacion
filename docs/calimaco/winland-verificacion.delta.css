@@ -1100,8 +1100,27 @@ de este archivo. NO se implementan:
     .wl-doc-modal .clmc-upload-documents-actions{justify-content:flex-end;}
     .wl-doc-modal .clmc-upload-documents-actions > button{flex:0 0 auto;min-width:168px;}
   }
+  /* Escritorio amplio: modal de 1040px y panel de ayuda fijo de 456px. El ancho
+     sale de medir el título más largo de las guías ("Cómo tomar tu selfie con la
+     identificación", 259px a 14px): miniatura 60 + márgenes y flecha suman 390px
+     de tarjeta, y así título y descripción caben cada uno en una sola línea. La
+     fuente es la web font del sitio, así que la medida es la misma en cualquier
+     equipo. Debajo de 960px se conserva el reparto proporcional. */
+  @media (min-width:960px){
+    .clmc-dialog.wl-doc-modal{max-width:1040px;}
+    .wl-mm{grid-template-columns:minmax(0,1fr) 456px;gap:32px;}
+  }
   @media (max-width:768px){
+    /* Los modales que en teléfono van a pantalla completa no llevan esquinas ni
+       sombra: el radio de 20px de la capa v2 aplica solo a los que flotan. */
+    .clmc-dialog.wl-doc-modal,.clmc-dialog.wl-truora-wide,.clmc-dialog.wl-modal-center{border-radius:0;box-shadow:none;}
     .wl-mm-help{margin-top:28px;}
+    /* Requisitos a dos columnas: son frases cortas y en una sola columna dejaban
+       media pantalla vacía. Si alguna no cabe, parte en dos líneas dentro de su celda. */
+    .wl-mm-help .wl-req-line ul{grid-template-columns:1fr 1fr;gap:10px 14px;}
+    /* Respiro antes de la barra del botón. Con contenido largo, el margin-top:auto
+       de la barra vale cero y el último texto quedaba pegado a ella. */
+    .wl-doc-modal .wl-mm{margin-bottom:32px;}
     /* Una sola acción: la X ya cierra, "Cancelar" sobraba */
     .wl-doc-modal .clmc-upload-documents-actions .clmc-btn-primary-white{display:none;}
   }
