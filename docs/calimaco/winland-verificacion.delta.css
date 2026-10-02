@@ -808,3 +808,89 @@ de este archivo. NO se implementan:
   #stateNav button:disabled{opacity:.3;cursor:default;}
   #stateNav .wl-sn-label{color:#c7ccd2;font-size:var(--clmc-text-xsmall, 12px);font-weight:700;min-width:44px;text-align:center;font-family:'winland',sans-serif;}
   @media (max-width:768px){ #stateNav{bottom:82px;} }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     V2 MÓVIL · Menos cajas, más aire, una sola familia de íconos.
+     Solo CSS: el markup y las clases de Calímaco no cambian.
+     ═══════════════════════════════════════════════════════════════════════ */
+  .wl-row-ok{display:none;}
+  @media (max-width:768px){
+    /* Escala de espacio: 8 dentro de un grupo · 16 entre relacionados · 28 entre secciones */
+    .wl-w-content{padding:22px 18px 30px;}
+    .wl-vh-title{font-size:21px;line-height:1.25;margin-bottom:8px;}
+    .wl-vh-sub{font-size:15px;line-height:1.5;margin-bottom:26px;}
+
+    /* ── Tracker: barra de progreso de tres segmentos + etiqueta del paso activo ── */
+    .wl-tracker{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+      position:relative;margin:0 0 28px;padding-bottom:28px;
+    }
+    .wl-step{
+      display:block;height:6px;padding:0;border:0;border-radius:3px;
+      background:var(--line);position:static;box-shadow:none;transform:none;
+    }
+    .wl-step.done{background:var(--success-green);}
+    .wl-step.current{background:var(--winland-orange);}
+    .wl-step.alert{background:var(--error-red);}
+    /* Paso invitación: punteado naranja, promete sin exigir */
+    .wl-step.invite{background:repeating-linear-gradient(90deg,var(--winland-orange) 0 7px,transparent 7px 11px);}
+    .wl-step .num{display:none;}
+    .wl-step .meta{display:none;position:absolute;left:0;right:0;top:16px;}
+    .wl-step.current .meta,.wl-step.alert .meta,.wl-step.invite .meta{
+      display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+    }
+    /* Solo una etiqueta a la vez: la del primer paso que requiere atención */
+    .wl-step.current ~ .wl-step .meta,.wl-step.alert ~ .wl-step .meta{display:none;}
+    .wl-step .meta .t{font-size:14px;font-weight:600;color:var(--ink);}
+    .wl-step .meta .s{display:block;font-size:14px;margin:0;color:var(--text-gray);}
+    .wl-step .meta .s::before{content:'· ';color:var(--mid-gray);}
+    .wl-step.current .meta .s{color:var(--text-gray);}
+    .wl-step.invite .meta .s{color:var(--winland-orange);}
+    .wl-step.alert .meta .s{color:var(--error-red);}
+
+    /* ── Banner de estado: acento lateral en vez de fondo pastel, ícono sin círculo ── */
+    .wl-status-banner{
+      background:transparent;border-radius:0;padding:2px 0 2px 14px;margin-bottom:28px;
+      border-left:3px solid var(--line);gap:12px;align-items:flex-start;
+    }
+    .wl-status-banner.success{background:transparent;border-left-color:var(--success-green);}
+    .wl-status-banner.error{background:transparent;border-left-color:var(--error-red);}
+    .wl-status-banner.info{background:transparent;border-left-color:var(--info-blue);}
+    .wl-status-banner .ic{width:auto;height:auto;background:transparent !important;animation:none;margin-top:1px;}
+    .wl-status-banner .ic svg{width:20px;height:20px;}
+    .wl-status-banner .t{font-size:15px;margin-bottom:3px;}
+    .wl-status-banner .s{font-size:14px;line-height:1.55;}
+
+    /* ── Documentos: lista con divisores, ícono sin cuadrito, palomita al final ── */
+    .clmc-user-documents-grid{display:block;gap:0;margin-bottom:24px;border-top:1px solid var(--line-soft);}
+    .clmc-user-document-item{
+      display:flex;align-items:center;gap:14px;padding:15px 0;
+      border:0;border-bottom:1px solid var(--line-soft);border-radius:0;background:transparent;
+      box-shadow:none;transform:none;animation:none;
+    }
+    .clmc-user-document-item.disabled{background:transparent;border-style:solid;opacity:1;}
+    .clmc-user-document-item.disabled .wl-doc-meta .t{color:var(--text-faint);}
+    .clmc-user-document-icon{width:24px;height:24px;border-radius:0;background:transparent !important;animation:none;}
+    .clmc-user-document-icon img,.clmc-user-document-icon svg{width:22px !important;height:22px !important;}
+    .wl-doc-meta .t{font-size:15px;}
+    .wl-doc-meta .s{font-size:13px;margin-top:3px;}
+    .wl-chev{width:18px;height:18px;color:var(--mid-gray);}
+    .wl-row-ok{display:flex;width:18px;height:18px;color:var(--success-green);flex-shrink:0;}
+    .wl-row-ok svg{width:18px;height:18px;}
+    /* Sin caja no hay contorno que "pintar": se apaga el efecto de hover */
+    .clmc-user-document-item.wl-row-action::after,.clmc-user-document-item.wl-row-alert::after{display:none;}
+
+    /* ── Acordeones: fila con divisor, sin fondo ── */
+    .wl-alt-toggle{
+      background:transparent;border:0;border-bottom:1px solid var(--line-soft);border-radius:0;
+      padding:16px 0;color:var(--ink);font-size:15px;
+    }
+    .wl-alt-toggle:hover{background:transparent;}
+    .wl-alta-toggle{margin-top:0;}
+    .wl-alt-toggle.is-locked{color:var(--text-gray);}
+    .wl-alt-toggle svg:not(.wl-chev-down){width:16px;height:16px;}
+
+    /* ── Nota de ayuda: texto suelto, sin línea superior ── */
+    .wl-faq-hint{margin-top:30px;padding-top:0;border-top:0;}
+    .wl-faq-hint span{font-size:14px;}
+  }
