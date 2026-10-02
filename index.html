@@ -1151,6 +1151,20 @@
     /* Una sola acción: la X ya cierra, "Cancelar" sobraba */
     .wl-doc-modal .clmc-upload-documents-actions .clmc-btn-primary-white{display:none;}
   }
+
+  /* ═══ Vista de infografía dentro del modal ═══
+     Escritorio: imagen algo más contenida y con aire arriba y abajo; botón a su
+     ancho natural, centrado bajo la imagen. Móvil: título arriba, la imagen
+     centrada en el espacio disponible y el botón anclado abajo a lo ancho. */
+  .wl-m-guia .g-title{margin:0 0 24px;}
+  .wl-m-guia .wl-g-img{max-height:min(50vh, 460px);border-radius:14px;}
+  .wl-m-guia .wl-g-cta{display:flex;width:auto;min-width:280px;margin:28px auto 0;}
+  @media (max-width:768px){
+    .wl-doc-modal .wl-m-guia:not(.hide){padding-bottom:calc(20px + env(safe-area-inset-bottom));}
+    .wl-m-guia .g-title{margin-bottom:24px;}  /* igual al margen del botón: centrado exacto */
+    .wl-m-guia .wl-g-img{max-height:none;width:100%;margin:auto 0;}
+    .wl-m-guia .wl-g-cta{width:100%;min-width:0;margin:24px 0 0;flex-shrink:0;}
+  }
 </style>
 </head>
 <body>
@@ -1846,9 +1860,9 @@ interrumpida: () => `
 
       <div class="wl-m-guia hide">
         <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
-        <h3 class="g-title" style="margin-bottom:14px;"></h3>
+        <h3 class="g-title"></h3>
         <img src="" alt="" class="wl-g-img">
-        <button class="clmc-btn-primary" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+        <button class="clmc-btn-primary wl-g-cta" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
       </div>
     </div>
   </div>
@@ -1886,9 +1900,9 @@ interrumpida: () => `
 
       <div class="wl-m-guia hide">
         <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
-        <h3 class="g-title" style="margin-bottom:14px;"></h3>
+        <h3 class="g-title"></h3>
         <img src="" alt="" class="wl-g-img">
-        <button class="clmc-btn-primary" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+        <button class="clmc-btn-primary wl-g-cta" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
       </div>
     </div>
   </div>
@@ -1926,9 +1940,9 @@ interrumpida: () => `
 
       <div class="wl-m-guia hide">
         <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
-        <h3 class="g-title" style="margin-bottom:14px;"></h3>
+        <h3 class="g-title"></h3>
         <img src="" alt="" class="wl-g-img">
-        <button class="clmc-btn-primary" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+        <button class="clmc-btn-primary wl-g-cta" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
       </div>
     </div>
   </div>
