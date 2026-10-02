@@ -561,29 +561,7 @@
 
   
 
-  /* Visor de infografías en FAQ (overlay ligero, no saca al usuario) */
-  .wl-faq-visor-overlay{position:fixed;inset:0;overscroll-behavior:contain;background:rgba(12,12,14,.65);z-index:1210;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);}
-  .wl-faq-visor{overscroll-behavior:contain;background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90%;overflow-y:auto;padding:18px;}
-  .wl-fv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:var(--clmc-text-small, 14px);}
-  .wl-fv-close{width:30px;height:30px;border-radius:50%;background:var(--page-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;}
-  .wl-fv-close svg{width:13px;height:13px;}
-  .wl-faq-visor img{width:100%;display:block;border-radius:8px;}
   @media (max-width:768px){
-    /* En teléfono el visor ocupa toda la pantalla, igual que los modales de
-       documento: la infografía se ve más grande y el patrón es el mismo. */
-    .wl-faq-visor-overlay{padding:0;align-items:stretch;}
-    .wl-faq-visor{
-      max-width:100%;width:100%;max-height:100%;height:100%;
-      border-radius:0;padding:0 18px 24px;
-    }
-    .wl-fv-head{
-      position:sticky;top:0;z-index:2;margin:0 -18px 16px;padding:18px;
-      background:rgba(255,255,255,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-      border-bottom:1px solid var(--line-soft);font-size:var(--clmc-text-medium, 16px);font-weight:600;
-    }
-    .wl-fv-head b{padding-right:12px;line-height:1.35;}
-    .wl-fv-close{width:40px;height:40px;flex-shrink:0;}
-    .wl-fv-close svg{width:16px;height:16px;}
     .wl-faq-item{padding:22px 2px;}
     .wl-faq-q{gap:14px;line-height:1.45;}
     .wl-faq-a-tx{padding-top:12px;padding-right:14px;}
@@ -1172,18 +1150,41 @@
      Antes el círculo iba en el contenedor y, en los modales con barra
      translúcida, la barra quedaba encima y lo tapaba: por eso unos modales lo
      mostraban y otros no. Ahora el contenedor es transparente (solo área de
-     toque) y el círculo vive en el ícono, por encima de la barra. */
+     toque) y el círculo vive en el ícono, por encima de la barra. Aplica
+     también al visor de infografías, que reutiliza el mismo modal. */
   .clmc-dialog .clmc-closeIcon-popup,
-  .clmc-dialog .clmc-closeIcon-popup:hover,
-  .wl-fv-close{background:transparent;box-shadow:none;}
-  .clmc-dialog .clmc-closeIcon-popup > svg,
-  .wl-fv-close > svg{
+  .clmc-dialog .clmc-closeIcon-popup:hover{background:transparent;box-shadow:none;}
+  .clmc-dialog .clmc-closeIcon-popup > svg{
     width:24px !important;height:24px !important;box-sizing:content-box;padding:5px;
     background:#f5f7f7;border-radius:100%;color:#000;cursor:pointer;transition:all 250ms ease-in-out;
   }
-  .clmc-dialog .clmc-closeIcon-popup > svg:hover,
-  .wl-fv-close > svg:hover{color:var(--clmc-color-primary);}
-  .wl-fv-close{display:flex;align-items:center;justify-content:center;}
+  .clmc-dialog .clmc-closeIcon-popup > svg:hover{color:var(--clmc-color-primary);}
+
+  /* ═══ Móvil: hojas de pantalla completa que nunca dejan hueco ═══
+     El alto sigue a la pantalla visible (100dvh) aunque el navegador esconda o
+     muestre su barra. Y el fondo del overlay es blanco: si en algún navegador
+     quedara una franja durante la transición, se ve blanca, nunca la página. */
+  @media (max-width:768px){
+    .wl-modal-overlay:has(.wl-doc-modal),.wl-modal-overlay:has(.wl-truora-wide),.wl-modal-overlay:has(.wl-modal-center){
+      top:0;left:0;right:0;bottom:auto;height:100vh;height:100dvh;background:#fff;
+      backdrop-filter:none;-webkit-backdrop-filter:none;
+    }
+    /* Regresar: solo el chevron, del mismo tamaño y a la misma altura que el
+       tache de cerrar (área de 40px, glifo de 24), sin círculo ni texto. El
+       texto se conserva para lectores de pantalla con font-size:0. */
+    .wl-t-back{
+      top:16px;left:12px;width:40px;height:40px;justify-content:center;gap:0;
+      font-size:0;color:#000;
+    }
+    .wl-t-back svg{width:24px;height:24px;stroke-width:2;}
+    .wl-t-back:hover{color:var(--clmc-color-primary);}
+  }
+
+  /* "Ver guía visual" en preguntas frecuentes: en móvil es un botón y va a lo
+     ancho, como el resto de las acciones en teléfono. */
+  @media (max-width:768px){
+    .wl-faq-guia{display:flex;width:100%;justify-content:center;padding:12px 14px;}
+  }
 </style>
 </head>
 <body>
@@ -1401,23 +1402,33 @@ function faqOpen(item){
    contenido no dé un brinco lateral al bloquear. */
 let capasAbiertas = 0;
 let capaDeEstado = false;   /* si la pantalla actual dibuja una capa encima */
+/* Bloqueo del fondo mientras hay una capa encima. overflow:hidden en <html> no
+   basta en iOS: Safari y Chrome siguen desplazando el fondo y, al hacerlo,
+   esconden o muestran su barra inferior, lo que deja el modal más corto que la
+   pantalla. Fijar el <body> en su posición (position:fixed con top negativo)
+   es la técnica que iOS respeta; al soltarlo se devuelve el scroll exacto. */
 function bloquearFondo(activar){
-  const h = document.documentElement;
+  const h = document.documentElement, b = document.body;
   if(activar){
     if(capasAbiertas++) return;
+    const y = window.scrollY;
+    b.dataset.bloqueoY = y;
     const barra = window.innerWidth - h.clientWidth;
-    if(barra > 0) document.body.style.paddingRight = barra + 'px';
+    if(barra > 0) b.style.paddingRight = barra + 'px';
     h.style.overflow = 'hidden';
+    Object.assign(b.style, {position:'fixed', top:(-y)+'px', left:'0', right:'0', width:'100%'});
   } else {
     if(capasAbiertas === 0) return;
     if(--capasAbiertas) return;
+    const y = parseInt(b.dataset.bloqueoY || '0', 10);
     h.style.overflow = '';
-    document.body.style.paddingRight = '';
+    Object.assign(b.style, {position:'', top:'', left:'', right:'', width:'', paddingRight:''});
+    window.scrollTo(0, y);
   }
 }
 function cerrarVisor(){
-  const habia = document.querySelectorAll('.wl-faq-visor-overlay').length;
-  document.querySelectorAll('.wl-faq-visor-overlay').forEach(o=>o.remove());
+  const habia = document.querySelectorAll('.wl-visor').length;
+  document.querySelectorAll('.wl-visor').forEach(o=>o.remove());
   document.removeEventListener('keydown', visorEscape);
   if(habia) bloquearFondo(false);
 }
@@ -1432,22 +1443,44 @@ function subirAlInicio(instantaneo){
   const token = ++tokenSubida;
   const animar = !instantaneo && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(!animar){ window.scrollTo(0,0); return; }
-  try { window.scrollTo({top:0, behavior:'smooth'}); } catch(e) { window.scrollTo(0,0); return; }
+  /* Un cuadro después: si la pantalla nueva es más corta, el navegador recorta
+     el scroll al acomodarla y ese recorte cancela una animación ya iniciada. */
+  requestAnimationFrame(() => {
+    if(token !== tokenSubida) return;
+    try { window.scrollTo({top:0, behavior:'smooth'}); } catch(e) { window.scrollTo(0,0); }
+  });
+  /* Respaldo: solo se fuerza el salto si el scroll se quedó quieto entre dos
+     revisiones. Si la animación va en camino, se le deja terminar; y hay un
+     tope de 2 s por si algo la detiene a medio camino. */
+  let previo = window.scrollY;
   const verificar = (intento) => setTimeout(() => {
     if(token !== tokenSubida) return;      /* hubo otra navegación: ya no aplica */
-    if(window.scrollY <= 1) return;        /* la animación llegó */
-    if(intento < 3) return verificar(intento+1);
-    window.scrollTo(0,0);                  /* no se movió: salto directo */
-  }, 200);
+    const y = window.scrollY;
+    if(y <= 1) return;                     /* la animación llegó */
+    const quieto = Math.abs(y - previo) < 1;
+    previo = y;
+    if(!quieto && intento < 8) return verificar(intento+1);
+    window.scrollTo(0,0);                  /* no avanza: salto directo */
+  }, 250);
   verificar(0);
 }
 function faqInfo(img, titulo){
   cerrarVisor();   /* nunca apilar: si ya hay uno abierto, se reemplaza */
   bloquearFondo(true);
   const ov=document.createElement('div');
-  ov.className='wl-faq-visor-overlay';
-  ov.innerHTML=`<div class="wl-faq-visor"><div class="wl-fv-head"><b>${titulo}</b><div class="wl-fv-close">${I.x}</div></div><img src="assets/infografias/${img}" alt="${titulo}"></div>`;
-  ov.addEventListener('click', e=>{ if(e.target===ov||e.target.closest('.wl-fv-close')) cerrarVisor(); });
+  /* Reutiliza el mismo componente que la guía visual del modal de documentos
+     (.wl-doc-modal > .wl-m-guia): misma barra superior, mismo tache, mismo
+     acomodo en escritorio y móvil. Sin "Regresar" ni botón, porque aquí no
+     hay formulario al que volver. */
+  ov.className='wl-modal-overlay wl-visor';
+  ov.innerHTML=`<div class="clmc-dialog wl-doc-modal">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-m-guia">
+        <h3 class="g-title">${titulo}</h3>
+        <img src="assets/infografias/${img}" alt="${titulo}" class="wl-g-img">
+      </div>
+    </div>`;
+  ov.addEventListener('click', e=>{ if(e.target===ov||e.target.closest('.clmc-closeIcon-popup')) cerrarVisor(); });
   document.addEventListener('keydown', visorEscape);
   document.body.appendChild(ov);
 }
@@ -2104,6 +2137,9 @@ function render(stateKey){
      el prefijo 'modal-'. De esta misma señal dependen el bloqueo del fondo y
      el salto al inicio, para que no se puedan contradecir. */
   const conCapa = !!document.querySelector('#content .wl-modal-overlay');
+  /* Al abrir una capa, primero se sube el fondo (salto directo, no se ve) y
+     después se bloquea: así el bloqueo guarda la posición 0 y no la anterior. */
+  if(conCapa && !capaDeEstado && window.scrollY > 0) window.scrollTo(0,0);
   if(conCapa !== capaDeEstado){ capaDeEstado = conCapa; bloquearFondo(conCapa); }
   /* Cada cambio de pantalla empieza arriba. Si el usuario venía leyendo abajo y
      aterriza a media página, parece que no pasó nada. Aplica también al abrir y
