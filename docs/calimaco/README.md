@@ -143,6 +143,24 @@ Otra regla ya implementada en el prototipo: mientras la biometría de Truora est
 proceso, **la carga manual de identidad queda deshabilitada** unos minutos, para que
 no entren documentos duplicados. El domicilio y el estado de cuenta siguen abiertos.
 
+## Capa visual v2
+
+Al final del delta hay un bloque marcado `V2 · MODERNIZACIÓN VISUAL`. Reestiliza
+sin tocar contenido, con un criterio único: la caja se reserva para lo que es una
+unidad accionable y lo demás se resuelve con listas y divisores.
+
+Lo que conviene saber al integrar:
+
+- **Filas de documento.** Dejan de ser tarjetas y pasan a lista con divisores. Las
+  validadas llevan una palomita al final (`.wl-row-ok`), con el mismo path de
+  Material que ya usa la fila real de producción.
+- **Tracker.** En móvil es una barra de tres segmentos con la etiqueta del paso que
+  pide atención; en escritorio, la misma barra con las tres etiquetas debajo. Es el
+  mismo markup en ambos casos.
+- **Requisitos de cada documento.** Antes eran una línea separada por puntos; ahora
+  son una lista (`.wl-req-line ul > li`). Mismo texto.
+- **Zona de carga.** Borde sólido de 1px en lugar del punteado.
+
 ## Puntos abiertos
 
 1. **RFC.** El diálogo de identidad en producción lo lista como tercer bloque de

@@ -810,22 +810,203 @@ de este archivo. NO se implementan:
   @media (max-width:768px){ #stateNav{bottom:82px;} }
 
   /* ═══════════════════════════════════════════════════════════════════════
-     V2 MÓVIL · Menos cajas, más aire, una sola familia de íconos.
-     Solo CSS: el markup y las clases de Calímaco no cambian.
+     V2 · MODERNIZACIÓN VISUAL
+     Menos cajas, más aire, color solo donde importa. La caja se reserva para
+     lo que es una unidad accionable (Truora, la mejora a depósito directo, el
+     envío por correo); todo lo demás se resuelve con listas y divisores.
+     Solo estilo: el contenido y las clases de Calímaco no cambian.
+     Escala de espacio: 8 dentro de un grupo · 16 entre relacionados ·
+     28–32 entre secciones.
      ═══════════════════════════════════════════════════════════════════════ */
-  .wl-row-ok{display:none;}
-  @media (max-width:768px){
-    /* Escala de espacio: 8 dentro de un grupo · 16 entre relacionados · 28 entre secciones */
-    .wl-w-content{padding:22px 18px 30px;}
-    .wl-vh-title{font-size:21px;line-height:1.25;margin-bottom:8px;}
-    .wl-vh-sub{font-size:15px;line-height:1.5;margin-bottom:26px;}
 
-    /* ── Tracker: barra de progreso de tres segmentos + etiqueta del paso activo ── */
+  /* ── Encabezado de pantalla ── */
+  .wl-vh-title{font-size:var(--clmc-text-large, 24px);line-height:1.2;letter-spacing:-0.02em;margin-bottom:8px;}
+  .wl-vh-sub{font-size:15px;line-height:1.55;margin-bottom:32px;white-space:normal;}
+
+  /* ── Banner de estado: acento lateral en vez de fondo pastel; ícono sin círculo ── */
+  .wl-status-banner{
+    background:transparent;border-radius:0;padding:2px 0 2px 16px;margin-bottom:32px;
+    border-left:3px solid var(--line);gap:12px;align-items:flex-start;
+  }
+  .wl-status-banner.success,.wl-status-banner.error,.wl-status-banner.info{background:transparent;}
+  .wl-status-banner.success{border-left-color:var(--success-green);}
+  .wl-status-banner.error{border-left-color:var(--error-red);}
+  .wl-status-banner.info{border-left-color:var(--info-blue);}
+  .wl-status-banner .ic,
+  .wl-status-banner.success .ic,.wl-status-banner.error .ic,.wl-status-banner.info .ic{
+    width:auto;height:auto;background:transparent;animation:none;margin-top:1px;
+  }
+  .wl-status-banner .ic svg{width:20px;height:20px;}
+  .wl-status-banner .t{font-size:15px;margin-bottom:3px;}
+  .wl-status-banner .s{font-size:14px;line-height:1.55;}
+
+  /* ── Documentos: lista con divisores; ícono suelto; palomita al final ── */
+  .clmc-user-documents-grid{margin-bottom:28px;}
+  .clmc-user-document-item,
+  .clmc-user-document-item.disabled{
+    gap:14px;padding:16px 0;background:transparent;opacity:1;
+    border:0;border-bottom:1px solid var(--line-soft);border-radius:0;box-shadow:none;
+  }
+  .clmc-user-document-item.disabled .wl-doc-meta .t{color:var(--text-faint);}
+  .clmc-user-document-icon,
+  .clmc-user-document-icon.email,.clmc-user-document-icon.st-verified,.clmc-user-document-icon.st-pending,
+  .clmc-user-document-icon.st-progress,.clmc-user-document-icon.st-rejected{
+    width:24px;height:24px;border-radius:0;background:transparent;animation:none;
+  }
+  .clmc-user-document-icon.st-blocked{width:24px;height:24px;background:transparent;color:var(--text-faint);}
+  .clmc-user-document-icon img,.clmc-user-document-icon svg{width:22px !important;height:22px !important;}
+  .wl-doc-meta .t{font-size:15px;}
+  .wl-doc-meta .s{font-size:13px;margin-top:3px;}
+  .wl-row-ok{display:flex;width:20px;height:20px;color:var(--success-green);flex-shrink:0;}
+  .wl-row-ok svg{width:20px;height:20px;}
+  .wl-chev{width:18px;height:18px;color:var(--mid-gray);transition:transform .15s var(--ease), color .15s var(--ease);}
+  /* Sin caja no hay contorno que pintar: el hover lo cuenta el chevron */
+  .clmc-user-document-item.wl-row-action::after,.clmc-user-document-item.wl-row-alert::after{display:none;}
+  .clmc-user-document-item.wl-row-action:hover,.clmc-user-document-item.wl-row-alert:hover{transform:none;}
+  .clmc-user-document-item[data-accionable]:hover .wl-chev{transform:translateX(3px);color:var(--winland-orange);}
+  .clmc-user-document-item[data-accionable]:hover .wl-doc-meta .t{color:var(--winland-orange);}
+
+  /* ── Acordeones: filas con divisor arriba y abajo, sin fondo ── */
+  .wl-alt-toggle{
+    background:transparent;border:0;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);
+    border-radius:0;padding:17px 0;color:var(--ink);font-size:15px;
+  }
+  .wl-alt-toggle:hover{background:transparent;color:var(--winland-orange);}
+  .wl-alt-panel + .wl-alt-toggle{border-top:0;}
+  .wl-alt-toggle.open{border-bottom-color:transparent;}
+  .wl-alta-toggle{margin-top:0;}
+  .wl-alt-toggle.is-locked{color:var(--text-gray);}
+  .wl-alt-toggle.is-locked:hover{color:var(--text-gray);}
+  .wl-alt-toggle svg:not(.wl-chev-down){width:16px;height:16px;}
+  .wl-alt-panel{
+    margin:0;padding:4px 0 22px;border:0;border-bottom:1px solid var(--line-soft);border-radius:0;
+    background:transparent;gap:16px;
+  }
+  .wl-alt-note{font-size:14px;line-height:1.6;}
+  .wl-alt-panel .clmc-user-documents-grid{margin-bottom:0;}
+
+  /* ── Tarjetas accionables: borde neutro y radio amplio ── */
+  .wl-truora-card{
+    border:1px solid var(--line);border-radius:20px;padding:24px;margin-bottom:28px;
+    box-shadow:0 1px 2px rgba(20,20,22,.04), 0 10px 28px rgba(20,20,22,.05);
+  }
+  .wl-truora-card h2{font-size:20px;letter-spacing:-0.015em;margin-bottom:8px;}
+  .wl-truora-card p{font-size:15px;}
+  .wl-truora-benefits span{font-size:15px;}
+  /* "Recomendado": pastilla tintada, sin estrella ni destello */
+  .wl-truora-card .badge{
+    background:var(--orange-tint);color:var(--orange-dark);font-weight:600;letter-spacing:0;
+    padding:5px 11px;border-radius:999px;
+  }
+  .wl-truora-card .badge::after{display:none;}
+  .wl-upgrade-card{
+    background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px 22px;margin-top:28px;
+    box-shadow:0 1px 2px rgba(20,20,22,.04), 0 10px 28px rgba(20,20,22,.05);
+  }
+  .wl-upgrade-card .t{font-size:15px;}
+  .wl-upgrade-card .s{font-size:14px;}
+  .wl-email-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:0;}
+  .wl-email-box.restricted{background:#fff;border-color:#F0D9C4;}
+  .wl-email-box .t{font-size:15px;}
+  .wl-email-box .s{font-size:14px;}
+
+  /* ── Nota de ayuda al pie ── */
+  .wl-faq-hint{margin-top:32px;padding-top:0;border-top:0;}
+
+  /* ═══ MODALES ═══ */
+  .wl-modal-overlay{background:rgba(12,12,14,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+  .clmc-dialog{border-radius:20px;box-shadow:0 24px 64px rgba(15,15,18,.28);}
+  .clmc-dialog h3{font-size:20px;letter-spacing:-0.015em;margin-bottom:10px;}
+  .clmc-dialog .lead{font-size:15px;line-height:1.6;margin-bottom:24px;}
+
+  /* Requisitos: lista con palomitas, sin franja gris */
+  .wl-req-line{
+    display:block;background:transparent;border-radius:0;padding:0;margin:0 0 24px;
+    font-size:14px;color:var(--text-gray);
+  }
+  .wl-req-line > b{display:block;font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px;}
+  .wl-req-line ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:9px 20px;}
+  .wl-req-line li{display:flex;align-items:flex-start;gap:8px;line-height:1.45;}
+  .wl-req-line li svg{width:18px;height:18px;color:var(--success-green);flex-shrink:0;}
+
+  /* Selector de tipo de documento */
+  .wl-doc-select{margin-bottom:24px;}
+  .wl-doc-select label{font-size:14px;}
+  .wl-doc-select select{border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:15px;}
+
+  /* Guía visual: miniatura protagonista, no "archivo adjunto" */
+  .wl-guia-cta{border-radius:16px;padding:10px 16px 10px 10px;gap:14px;margin-bottom:16px;}
+  .wl-guia-thumb{width:60px;height:60px;border-radius:12px;object-position:center top;}
+  .wl-guia-cta span{gap:3px;}
+  .wl-guia-cta span b{font-size:14px;}
+  .wl-guia-cta span small{font-size:13px;color:var(--text-gray);}
+
+  /* Zona de carga: sólida y clara, el ícono en color de marca */
+  .clmc-upload-documents-grid{gap:12px;}
+  .clmc-upload-document-drop-area{
+    border:1px solid var(--line);background:#FAFBFB;border-radius:16px;color:var(--ink);
+  }
+  .clmc-upload-document-drop-area svg{color:var(--winland-orange);}
+  .clmc-upload-document-drop-area:hover{border-color:var(--winland-orange);background:#FFF8F4;}
+  .clmc-upload-document-drop-area.loaded{border:1px solid var(--success-green);background:#F4FAF5;}
+  .clmc-upload-documents-format-box{font-size:13px;color:var(--text-gray);}
+
+  /* Truora: encabezado con presencia */
+  .wl-modal-truora-head{gap:16px;margin-bottom:20px;}
+  .wl-modal-truora-head .wl-truora-icon{width:48px;height:48px;border-radius:14px;}
+  .wl-modal-truora-head .wl-truora-icon img{width:24px !important;height:24px !important;}
+  .wl-modal-truora-head h3{font-size:20px;}
+
+  /* Canales de envío: ícono suelto, WhatsApp con su verde oficial */
+  .wl-channel-list .ch{padding:16px 6px;gap:16px;border-radius:12px;}
+  .wl-channel-list .ch-ic{width:26px;height:26px;background:transparent;color:var(--ink);}
+  .wl-channel-list .ch-ic svg{width:22px;height:22px;}
+  .wl-channel-list .ch[onclick*="WhatsApp"] .ch-ic{color:#25D366;}
+  .wl-channel-list .ch-meta .t{font-size:15px;}
+  .wl-channel-list .ch-meta .s{font-size:13px;}
+
+  /* Listas de comprobación dentro de modales */
+  .wl-t-checklist{gap:12px;margin:4px 0 24px;}
+  .wl-t-checklist span{font-size:15px;color:var(--ink);align-items:flex-start;line-height:1.45;}
+  .wl-t-checklist svg{width:18px;height:18px;}
+
+  /* ═══ ESCRITORIO ═══ */
+  @media (min-width:769px){
+    /* Tracker: barra de tres segmentos con su etiqueta debajo de cada uno */
+    .wl-tracker{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+    .wl-step,.wl-step.done,.wl-step.current,.wl-step.invite,.wl-step.alert{
+      display:block;position:relative;padding:18px 0 0;border:0;border-radius:0;background:transparent;box-shadow:none;
+    }
+    .wl-step::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;border-radius:3px;background:var(--line);}
+    .wl-step.done::before{background:var(--success-green);}
+    .wl-step.current::before{background:var(--winland-orange);}
+    .wl-step.alert::before{background:var(--error-red);}
+    .wl-step.invite::before{background:#F8CAB2;background:color-mix(in srgb, var(--winland-orange) 34%, #fff);}
+    .wl-step .num{display:none;}
+    .wl-step .meta .t{font-size:14px;color:var(--text-gray);}
+    .wl-step.done .meta .t,.wl-step.current .meta .t,.wl-step.alert .meta .t{color:var(--ink);}
+    .wl-step .meta .s{font-size:13px;margin-top:4px;}
+    .wl-step.done .meta .s{color:var(--success-green);}
+    .wl-step.clickable:hover{transform:none;box-shadow:none;}
+    .wl-step.clickable:hover .meta .t{color:var(--winland-orange);}
+
+    /* Documentos a dos columnas: el divisor superior va en la primera fila de cada una */
+    .clmc-user-documents-grid{column-gap:40px;row-gap:0;}
+    .clmc-user-documents-grid > .clmc-user-document-item:nth-child(-n+2){border-top:1px solid var(--line-soft);}
+  }
+
+  /* ═══ MÓVIL ═══ */
+  @media (max-width:768px){
+    .wl-w-content{padding:22px 18px 30px;}
+    .wl-vh-title{font-size:21px;line-height:1.25;}
+    .wl-vh-sub{margin-bottom:26px;}
+
+    /* Tracker: barra de progreso + etiqueta del paso que pide atención */
     .wl-tracker{
       display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
       position:relative;margin:0 0 28px;padding-bottom:28px;
     }
-    .wl-step{
+    .wl-step,.wl-step.done,.wl-step.current,.wl-step.invite,.wl-step.alert{
       display:block;height:6px;padding:0;border:0;border-radius:3px;
       background:var(--line);position:static;box-shadow:none;transform:none;
     }
@@ -846,53 +1027,32 @@ de este archivo. NO se implementan:
     .wl-step .meta .t{font-size:14px;font-weight:600;color:var(--ink);}
     .wl-step .meta .s{display:block;font-size:14px;margin:0;color:var(--text-gray);}
     .wl-step .meta .s::before{content:'· ';color:var(--mid-gray);}
-    .wl-step.current .meta .s{color:var(--text-gray);}
     .wl-step.invite .meta .s{color:var(--winland-orange);}
     .wl-step.alert .meta .s{color:var(--error-red);}
 
-    /* ── Banner de estado: acento lateral en vez de fondo pastel, ícono sin círculo ── */
-    .wl-status-banner{
-      background:transparent;border-radius:0;padding:2px 0 2px 14px;margin-bottom:28px;
-      border-left:3px solid var(--line);gap:12px;align-items:flex-start;
-    }
-    .wl-status-banner.success{background:transparent;border-left-color:var(--success-green);}
-    .wl-status-banner.error{background:transparent;border-left-color:var(--error-red);}
-    .wl-status-banner.info{background:transparent;border-left-color:var(--info-blue);}
-    .wl-status-banner .ic{width:auto;height:auto;background:transparent !important;animation:none;margin-top:1px;}
-    .wl-status-banner .ic svg{width:20px;height:20px;}
-    .wl-status-banner .t{font-size:15px;margin-bottom:3px;}
-    .wl-status-banner .s{font-size:14px;line-height:1.55;}
+    .wl-status-banner{padding-left:14px;margin-bottom:28px;}
 
-    /* ── Documentos: lista con divisores, ícono sin cuadrito, palomita al final ── */
-    .clmc-user-documents-grid{display:block;gap:0;margin-bottom:24px;border-top:1px solid var(--line-soft);}
-    .clmc-user-document-item{
-      display:flex;align-items:center;gap:14px;padding:15px 0;
-      border:0;border-bottom:1px solid var(--line-soft);border-radius:0;background:transparent;
-      box-shadow:none;transform:none;animation:none;
-    }
-    .clmc-user-document-item.disabled{background:transparent;border-style:solid;opacity:1;}
-    .clmc-user-document-item.disabled .wl-doc-meta .t{color:var(--text-faint);}
-    .clmc-user-document-icon{width:24px;height:24px;border-radius:0;background:transparent !important;animation:none;}
-    .clmc-user-document-icon img,.clmc-user-document-icon svg{width:22px !important;height:22px !important;}
-    .wl-doc-meta .t{font-size:15px;}
-    .wl-doc-meta .s{font-size:13px;margin-top:3px;}
-    .wl-chev{width:18px;height:18px;color:var(--mid-gray);}
-    .wl-row-ok{display:flex;width:18px;height:18px;color:var(--success-green);flex-shrink:0;}
-    .wl-row-ok svg{width:18px;height:18px;}
-    /* Sin caja no hay contorno que "pintar": se apaga el efecto de hover */
-    .clmc-user-document-item.wl-row-action::after,.clmc-user-document-item.wl-row-alert::after{display:none;}
+    .clmc-user-documents-grid{display:block;border-top:1px solid var(--line-soft);}
+    .clmc-user-document-item{padding:15px 0;}
 
-    /* ── Acordeones: fila con divisor, sin fondo ── */
-    .wl-alt-toggle{
-      background:transparent;border:0;border-bottom:1px solid var(--line-soft);border-radius:0;
-      padding:16px 0;color:var(--ink);font-size:15px;
+    .wl-truora-card{padding:20px;border-radius:18px;}
+    .wl-truora-card h2{font-size:19px;}
+    .wl-truora-card .badge{
+      position:absolute;top:0;right:16px;border-radius:0 0 10px 10px;padding:4px 10px 5px;font-size:11px;
     }
-    .wl-alt-toggle:hover{background:transparent;}
-    .wl-alta-toggle{margin-top:0;}
-    .wl-alt-toggle.is-locked{color:var(--text-gray);}
-    .wl-alt-toggle svg:not(.wl-chev-down){width:16px;height:16px;}
+    .wl-upgrade-card{flex-direction:column;align-items:stretch;gap:16px;padding:20px;}
+    .wl-upgrade-card .clmc-btn-primary{width:100%;}
+    .wl-email-box{flex-direction:column;align-items:stretch;gap:14px;}
 
-    /* ── Nota de ayuda: texto suelto, sin línea superior ── */
-    .wl-faq-hint{margin-top:30px;padding-top:0;border-top:0;}
-    .wl-faq-hint span{font-size:14px;}
+    /* Modales a pantalla completa: título con más presencia */
+    .clmc-dialog h3{font-size:22px;line-height:1.25;}
+    .wl-req-line ul{grid-template-columns:1fr;}
+    .wl-guia-thumb{width:56px;height:56px;}
+
+    /* Truora paso 1: ícono grande arriba, título debajo. Con el botón anclado
+       abajo, el espacio intermedio se lee como intención y no como hueco. */
+    .wl-modal-truora-head{flex-direction:column;align-items:flex-start;gap:16px;margin-bottom:16px;padding-right:0;}
+    .wl-modal-truora-head .wl-truora-icon{width:56px;height:56px;border-radius:16px;}
+    .wl-modal-truora-head .wl-truora-icon img{width:28px !important;height:28px !important;}
+    .wl-modal-truora-head h3{font-size:24px;margin-bottom:6px !important;}
   }
