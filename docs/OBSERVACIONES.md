@@ -78,22 +78,29 @@ El flujo pasa de dos niveles (verificado / no verificado) a **tres**, y el orden
 - **El paso 3 deja de ser un requisito bloqueante** y se comunica como *mejora del método de cobro*, no como candado: paso con borde punteado (`.step.invite`), fila con la leyenda "Opcional · para recibir por depósito directo" y una tarjeta de invitación con el copy del cliente ("Sube tu información bancaria y olvídate de las filas").
 - **Beneficio UX del cambio:** entrega una recompensa a mitad del recorrido (ya puedes cobrar) en lugar de exigir los tres documentos antes de cualquier retiro; y convierte el último paso en un incentivo, más fácil de vender que una obligación.
 
-### 8.1 🔴 CONTRADICCIÓN A RESOLVER ANTES DE IMPLEMENTAR
-El requerimiento recibido contiene **dos afirmaciones que se contradicen entre sí**, y de cuál sea la correcta depende **qué documento habilita el retiro en sala**:
+### 8.1 Definición del disparador de "pre-verificada" (CERRADO)
 
-| | Dice | Implicaría |
-|---|---|---|
-| **La justificación** | *"si el cliente solo cuenta con identidad verificada **y cuenta bancaria**, sus retiros únicamente se podrán realizar en salas físicas"* | Pre-verificada = identidad + **cuenta bancaria** |
-| **El mensaje propuesto** | *"¡Tu cuenta ya está pre-verificada! … ¿Prefieres depósito directo? **Sube tu información bancaria**"* | Pre-verificada = identidad + **domicilio** (el banco aún falta) |
+El requerimiento original admitía dos lecturas y no coincidían entre sí: la
+justificación hablaba de identidad **y cuenta bancaria**, mientras que el mensaje
+redactado por el propio cliente decía *"sube tu información bancaria"*, lo que
+implica que el banco todavía no está.
 
-**Lectura aplicada en el prototipo:** pre-verificada = identidad + comprobante de **domicilio**. Es la única compatible con el mensaje que ellos mismos redactaron y con el cambio de orden solicitado (domicilio a paso 2).
+**Resuelto el 1 de octubre de 2026.** Queda la lectura aplicada en el prototipo:
 
-**Riesgo si no se aclara:** implementar la regla al revés dejaría sin poder retirar a usuarios que hoy sí pueden, o al contrario. **Confirmar con el equipo antes de desarrollo.**
+> **pre-verificada = identidad aprobada + comprobante de domicilio aprobado**
 
-### 8.2 Hueco de UX: ¿a qué sala física acude el usuario?
-El nuevo estado le dice al usuario que puede cobrar en salas físicas, pero **no le dice en cuál ni dónde**. Es la fricción más visible del modelo nuevo: se le pide un traslado sin darle la información para hacerlo.
+Es la única compatible con el mensaje del cliente y con el cambio de orden que
+pidieron (domicilio a paso 2). Esta es la condición que debe programarse.
 
-**Recomendación:** agregar en la pantalla de cuenta pre-verificada un enlace a **sucursales/salas** (mapa o listado con horarios) y replicarlo en la FAQ de retiros. Si existe un localizador en el sitio, basta con enlazarlo.
+### 8.2 Hueco de UX asumido por el cliente
+
+El estado pre-verificada le dice al usuario que puede cobrar en salas físicas, pero
+no le dice en cuál ni dónde. Se propuso resolverlo con una sección de sucursales
+enlazada desde ese mensaje.
+
+**El cliente decidió descartarlo** (1 de octubre de 2026) y dejar la frase como texto
+plano, sin enlace. Queda registrado como fricción conocida del modelo, no como
+pendiente nuestro.
 
 ### 8.3 Decisión de diseño a validar
 La cuenta bancaria (paso 3) **se desbloquea al validar la identidad**, igual que el domicilio: la numeración 2/3 comunica prioridad, no un candado adicional. Bloquearla hasta tener el domicilio retrasaría justo el objetivo de negocio (que el usuario registre su banco y deje de cobrar en sala).
@@ -112,47 +119,44 @@ Se integró como **módulo paralelo al KYC**, no como un cuarto paso del tracker
 3. **Criterio de activación**: ¿se habilita para todos los usuarios o solo para los que Back Office marque?
 4. **Estado posterior a la firma**: qué se muestra cuando el formato ya está firmado (acuse descargable, sello de "firmado", etc.).
 
-## 10. Propuesta: página pública de salas (cierra el hueco del nuevo flujo + SEO local)
+## 10. Sección pública de salas (DESCARTADA)
 
-El modelo de cuenta pre-verificada le dice al usuario *"cobra en nuestras salas físicas"* **sin decirle en cuál ni dónde**. Se propone una página pública de salas, enlazada desde la pantalla de cuenta pre-verificada, desde la FAQ de retiros y desde el footer.
+Se propuso una sección pública de casinos con mapa y SEO local, para cerrar el hueco
+descrito en 8.2. **El cliente la descartó el 1 de octubre de 2026**: el alcance se
+acotó a verificación y preguntas frecuentes.
 
-### 10.1 ¿No duplica el sitio corporativo (winlandcasino.com)?
-Se diferencia por **a quién le habla**:
-- **winlandcasino.com** es el sitio del *grupo*: quiénes somos, líneas de negocio, "soluciones para casinos". Le habla al mercado, al inversionista y al socio comercial; las sucursales aparecen como prueba de presencia.
-- **winland.com.mx** le habla al *jugador*: dónde está el casino más cercano, cómo se ve, cómo llegar y qué puede resolver ahí (incluido cobrar un premio).
+El trabajo quedó archivado en `_backup/` por si se retoma. Fuera del prototipo, de la
+entrega y del repositorio.
 
-**Contenido y audiencia distintos ⇒ no compiten en buscadores, se complementan**, y pueden enlazarse entre sí.
+## 11. Preguntas frecuentes autorizadas (1 de octubre de 2026)
 
-**Además hay un argumento de conversión:** mandar a otro dominio a un usuario que está dentro de su cuenta, con un retiro pendiente, es una fuga de contexto justo en el momento de mayor intención.
+El cliente envió el listado autorizado y reemplaza por completo al que se había
+redactado en la propuesta. Se integró **tal cual**, respetando sus seis categorías y
+su orden; lo único que se agregó es el acceso a la infografía en las cinco preguntas
+donde ya existe una.
 
-### 10.1.1 Enfoque de la sección
-La sección se llama **"Nuestros casinos"**, no "cobra tus premios": la mayoría de quien llegue busca **ubicaciones**, no cobrar. El cobro de premios queda como bloque informativo al final. Deliberadamente **no** se listan amenidades por sala (qué hay en cada casino): sería contenido a inventar o a mantener, y las fotografías comunican mejor la experiencia. Si más adelante operación quiere detallarlo, cada casino puede tener su propia página (lo que además multiplica las entradas orgánicas).
+Se corrigieron acentos faltantes del original ("credito", "atencion", "deposito",
+"podras"). Es corrección mecánica, no de contenido.
 
-**Fotografías:** se usan las de las fachadas publicadas en winlandcasino.com, optimizadas para web. Confirmar con marketing que son las vigentes y que pueden usarse en winland.com.mx.
+Tres cosas quedan anotadas, sin acción de nuestra parte porque el contenido viene
+autorizado:
 
-### 10.2 Valor SEO
-- Son solo **5 ubicaciones**: un objetivo perfectamente alcanzable para dominar búsquedas locales de alta intención ("casino en Monterrey", "casino en Chihuahua", "salas de apuestas cerca de mí").
-- Con marcado `LocalBusiness` (schema.org) cada sala puede aparecer en el **paquete local de Google Maps**, que es donde se decide a dónde ir.
-- Lo que vive **detrás del login no es indexable**: por eso la página debe ser pública y el módulo de verificación solo enlazarla. (Criterio inverso al de la FAQ, que se definió privada a propósito.)
-- Recomendación adicional: una página por sucursal (`/salas/monterrey`) multiplica las entradas orgánicas.
+1. **El listado se contradice con el flujo nuevo.** En *"¿Cómo puedo retirar?"* pide
+   *"contar con su verificación completa"*, pero el estado pre-verificada existe
+   justamente para permitir el cobro sin verificación completa. Dos filas arriba,
+   *"¿Cuáles son las opciones de retiro?"* sí incluye *"directamente en punto
+   físico"*, que es lo que habilita pre-verificada.
 
-### 10.3 ⚠️ Hallazgo: dos salas no se llaman Winland
-De las 5 sucursales, **La Paz y Hermosillo operan bajo la marca Fortune**. Si el flujo dice "cobra en nuestras salas Winland", un usuario de esas ciudades puede creer que no aplica para él.
+2. **Los comprobantes de domicilio no coinciden con la infografía vigente.** El texto
+   autorizado dice *agua, luz o teléfono*; la infografía dice *luz (CFE), gas natural
+   y teléfono/internet*. El agua aparece en uno y no en el otro; el gas, al revés.
 
-**Acción:** el prototipo ya lo aclara explícitamente (badge de marca en cada sala + nota al pie). **Confirmar con marketing** si ambas marcas aceptan el cobro de retiros del casino online.
+3. **Sigue el error de la infografía de domicilio**: "Credencial del Seguro Social"
+   aparece repetida en la columna de no aceptables (ver 1.1). Las infografías
+   corregidas no llegaron con el listado.
 
-### 10.4 Implementación del mapa: por qué Leaflet y no Google Maps
-El prototipo usa **Leaflet + tiles de OpenStreetMap/CARTO**:
-- **Sin API key ni cuota.** Google Maps exige clave de facturación y cobra por carga de mapa; en una página pública con tráfico de SEO ese costo escala solo.
-- **Open source y sin dependencia de proveedor**: los tiles se pueden cambiar (claro, oscuro, satélite) sin tocar la lógica.
-- **Pines a medida** con la marca de cada sala (naranja Winland / negro Fortune), imposible de lograr igual con un iframe de Google Maps.
-- Selección **sincronizada en ambos sentidos**: al tocar un pin se resalta su tarjeta y viceversa; el botón "Ver todo México" reencuadra las 5 salas.
-- Si el usuario no tiene conexión al CDN, la página **sigue siendo usable**: el directorio con direcciones y los enlaces "Cómo llegar" no dependen del mapa.
-
-Para producción, Calímaco puede conservar Leaflet tal cual (es la opción recomendada) o migrar a Google Maps si el sitio ya tiene contrato con esa API.
-
-### 10.5 Pendientes de operación
-- **Horarios de caja** de cada sala (el prototipo los marca como "por confirmar").
-- **Requisitos exactos para cobrar**: se asumió identificación oficial + folio del retiro. Validar con operación y Legal.
-- **Montos máximos** por cobro en sala, si aplican.
-- **Coordenadas exactas** de cada sala: las del prototipo son aproximadas a nivel calle a partir de las direcciones publicadas en winlandcasino.com.
+**Administración del contenido:** el cliente pidió que las preguntas sean editables
+desde el backoffice, porque cambian con frecuencia. Lo ve directamente Andrés Arango
+con Calímaco. El componente ya está construido sin asumir cuántas preguntas hay ni
+qué tan largas son; lo que sí hay que considerar es que el campo de respuesta debe
+admitir una imagen asociada, no solo texto plano.

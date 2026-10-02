@@ -6,11 +6,11 @@
   QUÉ ES ESTE ARCHIVO
   Prototipo funcional y spec de implementación del rediseño del panel
   Mi cuenta → Verificación. Un solo archivo HTML autocontenible con los
-  16 estados del flujo, navegables e interactivos.
+  15 estados del flujo, navegables e interactivos.
 
   CÓMO NAVEGARLO
   · Los botones ‹ › (abajo-derecha) o las flechas ←/→ del teclado recorren
-    los 16 estados en orden de presentación.
+    los 15 estados en orden de presentación.
   · Toda la UI del módulo es funcional al clic: CTA de Truora, canales,
     modales de carga, acordeones, FAQ, etc.
 
@@ -53,7 +53,7 @@
     BOTONES
       botón primario    ≡ .clmc-btn-primary (hover: brightness(1.1)+opacity .8;
                           disabled: #d1d1d1 / #adadad)
-      botón outline     ≡ .clmc-btn-primary-white
+      botón outline     ≡ .clmc-btn-primary
   · HEADER, FOOTER y MENÚ INFERIOR son el HTML REAL del sitio (clmc / MUI),
     servidos con sus propias hojas: assets/emotion.css + assets/winland-prod.css
     + chrome.css, enlazadas ANTES del <style> de este archivo. NO se implementan:
@@ -66,7 +66,7 @@
       · El header de producción usa z-index 1100; por eso los modales de este
         prototipo van en 1200 y el navegador de estados en 1300.
   · Lo que SÍ se implementa es el bloque marcado como "MÓDULO ENTREGABLE"
-    (contenedor .w-body/.w-card, equivalente a .privateLayout /
+    (contenedor .wl-w-body/.clmc-card, equivalente a .privateLayout /
     .privateLayout-content: fondo #fff, padding 40px, radius 16px, sombra).
   · Cada estado del objeto `states` (JS, abajo) equivale a una vista/estado
     de React. El diccionario TOUR documenta la intención de cada uno.
@@ -92,7 +92,7 @@
       Verificada (+ cuenta bancaria)       → retira por DEPÓSITO DIRECTO (SPEI)
   · Por eso el orden de pasos es: 1 Identidad · 2 Domicilio · 3 Cuenta bancaria.
     El paso 3 NO bloquea el retiro: es una mejora del método de cobro. En la UI se
-    comunica con el estilo `.step.invite` (punteado) y la `.upgrade-card`, nunca
+    comunica con el estilo `.wl-step.invite` (punteado) y la `.wl-upgrade-card`, nunca
     con candado de error.
   · API: el backend debe exponer el nivel alcanzado (none | pre-verified | verified)
     para decidir qué estado renderizar y qué métodos de cobro ofrecer.
@@ -141,10 +141,6 @@
 <link rel="stylesheet" href="assets/emotion.css">
 <link rel="stylesheet" href="assets/winland-prod.css">
 <link rel="stylesheet" href="chrome.css">
-<!-- Mapa de salas: Leaflet + tiles de OpenStreetMap/CARTO. Open source, sin API key
-     ni cuota (Google Maps exige key y cobra por carga). Calímaco puede conservarlo. -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   /* Fuente real de producción (Denim INK VF — misma que winland.com.mx) */
   @font-face{
@@ -152,29 +148,47 @@
     src:url('assets/produccion/winland-font.ttf') format('truetype');
     font-weight:300 900; /* fuente variable: habilita Regular/Medium/SemiBold/Bold reales */
   }
+  /* ===================================================================
+     TOKENS
+
+     Dos bloques, y la diferencia importa para la integración:
+
+     A) HEREDADOS. Ya existen en client_custom.css de producción. Aquí se
+        apuntan con var(--clmc-…) y un respaldo para que el prototipo abra
+        suelto. Al montarse en el sitio heredan solos: si Calímaco cambia
+        un color de marca, esto lo sigue sin tocar una línea.
+
+     B) NUEVOS. No existen todavía. Son los que hay que dar de alta en
+        client_custom.css; vienen listos para copiar en docs/calimaco/.
+     =================================================================== */
   :root{
-    --winland-orange:#E85B10;
-    --orange-dark:#C2480C;
-    --orange-tint:#FCE9DD;
-    --ink:#1F1F1F;              /* ≡ near-black de producción (components.css) */
-    --white:#FFFFFF;
-    --page-bg:#F4F6F7;
-    --surface:#FFFFFF;
+    /* ── A) Heredados de client_custom.css ───────────────────────────── */
+    --winland-orange:var(--clmc-color-primary, #E85B10);
+    --white:          var(--clmc-bg-primary, #FFFFFF);
+    --surface:        var(--clmc-bg-primary, #FFFFFF);
+    --mid-gray:       var(--clmc-color-quinary, #ADADAD);
+    --success-green:  var(--clmc-bg-color-success, #2E7D32);
+    --error-red:      var(--clmc-bg-color-error, #D32F2F);
+    --info-blue:      var(--clmc-bg-color-info, #0288D1);
+    --radius:         var(--clmc-border-radius-large, 12px);
+    --radius-sm:      var(--clmc-border-radius-small, 8px);
+
+    /* ── B) Nuevos: dar de alta en client_custom.css ──────────────────── */
+    --orange-dark:#C2480C;      /* hover del primario */
+    --orange-tint:#FCE9DD;      /* fondo suave de la marca */
+    --ink:#1F1F1F;              /* texto principal. Deliberadamente NO es
+                                   --clmc-color-tertiary (#000): el negro puro
+                                   endurece bloques largos de texto */
+    --page-bg:#F4F6F7;          /* ≡ fondo de .clmc-profile-menu */
     --line:#E4E7EA;
     --line-soft:#ECEEF0;
-    --mid-gray:#ADADAD;         /* ≡ --clmc-color-quinary */
-    --text-gray:#5B6470;
-    --text-faint:#8A8A8A;       /* ≡ gris de apoyo de producción (profile.css) */
-    --success-green:#2E7D32;    /* ≡ --clmc-bg-color-success */
+    --text-gray:#5B6470;        /* texto secundario */
+    --text-faint:#8A8A8A;       /* texto terciario */
     --success-bg:#E7F5EA;
     --warning-bg:#FFF1E5;
-    --error-red:#D32F2F;        /* ≡ --clmc-bg-color-error */
     --error-bg:#FBEAE8;
-    --info-blue:#0288D1;        /* ≡ --clmc-bg-color-info */
     --info-bg:#E9F1FB;
-    --radius-lg:16px;           /* contenedor del módulo (privateLayout) */
-    --radius:12px;              /* ≡ --clmc-border-radius-large */
-    --radius-sm:8px;            /* ≡ --clmc-border-radius-small */
+    --radius-lg:16px;           /* ≡ borde de .privateLayout-content */
     --shadow-card:0 1px 2px rgba(20,20,22,.04), 0 8px 24px rgba(20,20,22,.05);
     --shadow-pop:0 24px 60px rgba(15,15,18,.28);
     --ease:cubic-bezier(.16,1,.3,1);
@@ -185,663 +199,589 @@
     font-family:'winland',-apple-system,sans-serif;
     background:#dde1e4;
     color:var(--ink);
-    font-size:14px;
+    font-size:var(--clmc-text-small, 14px);
   }
   h1,h2,h3{font-family:'winland',sans-serif;letter-spacing:-0.01em;}
   svg{display:block;}
   .icon{width:1em;height:1em;flex-shrink:0;}
 
   /* ===== Contenedor del módulo — medidas EXACTAS de producción (.privateLayout) ===== */
-  .w-body{background:#fff;padding:40px;}
+  .wl-w-body{background:#fff;padding:40px;}
   /* Tarjeta del módulo — .privateLayout-content de producción: radius 16, shadow sutil */
-  .w-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px 0 rgba(0,0,0,.12);}
+  .clmc-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px 0 rgba(0,0,0,.12);}
   /* Tabs (Mi cuenta / Historial / Bonos / Juego responsable) — réplica producción */
-  .w-tabs{display:flex;background:#f4f6f7;align-items:stretch;}
-  .w-tab{
-    padding:12px 20px;font-weight:600;font-size:16px;color:#000;font-family:'winland',sans-serif;
+  .wl-w-tabs{display:flex;background:#f4f6f7;align-items:stretch;}
+  .wl-w-tab{
+    padding:12px 20px;font-weight:600;font-size:var(--clmc-text-medium, 16px);color:#000;font-family:'winland',sans-serif;
     cursor:default;display:flex;align-items:center;transition:background .15s var(--ease);
   }
   #miCuentaTab,#faqTab,#verifSub{cursor:pointer;}
-  .w-tab:not(.active):hover{background:rgba(0,0,0,.06);}
-  .w-tab.active{background:#e05f22;color:#fff;}
+  .wl-w-tab:not(.active):hover{background:rgba(0,0,0,.06);}
+  .wl-w-tab.active{background:#e05f22;color:#fff;}
 
   /* Subtabs (Cuenta / Verificación / Contraseña) — réplica producción */
-  .w-subtabs{display:flex;gap:0;padding:0 12px;border-bottom:1px solid #8a8a8a;background:transparent;
-    font-size:12px;font-weight:600;color:#8a8a8a;letter-spacing:.02em;text-transform:uppercase;font-family:'winland',sans-serif;}
-  .w-subtabs .sub{padding:0 16px;min-height:48px;display:flex;align-items:center;cursor:default;position:relative;transition:background .15s var(--ease);}
-  .w-subtabs .sub:hover{background:rgba(0,0,0,.04);}
-  .w-subtabs .sub.active{color:#000;background:rgba(255,255,255,.8);}
-  .w-subtabs .sub.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--winland-orange);}
+  .wl-w-subtabs{display:flex;gap:0;padding:0 12px;border-bottom:1px solid #8a8a8a;background:transparent;
+    font-size:var(--clmc-text-xsmall, 12px);font-weight:600;color:#8a8a8a;letter-spacing:.02em;text-transform:uppercase;font-family:'winland',sans-serif;}
+  .wl-w-subtabs .sub{padding:0 16px;min-height:48px;display:flex;align-items:center;cursor:default;position:relative;transition:background .15s var(--ease);}
+  .wl-w-subtabs .sub:hover{background:rgba(0,0,0,.04);}
+  .wl-w-subtabs .sub.active{color:#000;background:rgba(255,255,255,.8);}
+  .wl-w-subtabs .sub.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--winland-orange);}
 
-  .w-content{padding:32px;}
+  .wl-w-content{padding:32px;}
 
   /* ===== Verification module ===== */
-  .vh-title{font-size:22px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:-0.015em;}
-  .vh-sub{font-size:14px;color:var(--text-gray);margin-bottom:26px;max-width:none;line-height:1.55;white-space:nowrap;}
+  .wl-vh-title{font-size:22px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:-0.015em;}
+  .wl-vh-sub{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);margin-bottom:26px;max-width:none;line-height:1.55;white-space:nowrap;}
 
   /* progress tracker */
-  .tracker{display:flex;gap:12px;margin-bottom:26px;}
-  .step{
+  .wl-tracker{display:flex;gap:12px;margin-bottom:26px;}
+  .wl-step{
     flex:1;background:var(--page-bg);border-radius:var(--radius-sm);padding:14px 15px;
     display:flex;align-items:center;gap:12px;border:1px solid var(--line-soft);
   }
-  .step .num{
+  .wl-step .num{
     width:28px;height:28px;border-radius:50%;background:#fff;color:var(--mid-gray);border:1.5px solid var(--mid-gray);
-    font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'winland',sans-serif;
+    font-size:var(--clmc-text-xsmall, 12px);font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'winland',sans-serif;
   }
-  .step.done{border-color:var(--success-green);background:var(--success-bg);}
-  .step.done .num{background:var(--success-green);border-color:var(--success-green);color:#fff;}
-  .step.current{border-color:var(--winland-orange);background:var(--orange-tint);}
+  .wl-step.done{border-color:var(--success-green);background:var(--success-bg);}
+  .wl-step.done .num{background:var(--success-green);border-color:var(--success-green);color:#fff;}
+  .wl-step.current{border-color:var(--winland-orange);background:var(--orange-tint);}
   /* Paso opcional (mejora, no requisito): borde punteado, no compite con el paso actual */
-  .step.invite{border-color:var(--winland-orange);border-style:dashed;background:var(--surface);}
-  .step.invite .num{background:var(--orange-tint);border-color:var(--winland-orange);color:var(--winland-orange);}
-  .step.invite .meta .s{color:var(--winland-orange);}
-  .step.alert{border-color:var(--error-red);background:var(--error-bg);}
-  .step.alert .num{background:var(--error-red);border-color:var(--error-red);color:#fff;}
-  .step.alert .meta .s{color:var(--error-red);}
-  .step.current .num{background:var(--winland-orange);border-color:var(--winland-orange);color:#fff;}
-  .step .meta{flex:1;min-width:0;}
-  .step .meta .t{font-size:13px;font-weight:600;color:var(--ink);}
-  .step .meta .s{font-size:12px;color:var(--text-gray);margin-top:3px;line-height:1.35;}
-  .step .num svg{width:14px;height:14px;}
+  .wl-step.invite{border-color:var(--winland-orange);border-style:dashed;background:var(--surface);}
+  .wl-step.invite .num{background:var(--orange-tint);border-color:var(--winland-orange);color:var(--winland-orange);}
+  .wl-step.invite .meta .s{color:var(--winland-orange);}
+  .wl-step.alert{border-color:var(--error-red);background:var(--error-bg);}
+  .wl-step.alert .num{background:var(--error-red);border-color:var(--error-red);color:#fff;}
+  .wl-step.alert .meta .s{color:var(--error-red);}
+  .wl-step.current .num{background:var(--winland-orange);border-color:var(--winland-orange);color:#fff;}
+  .wl-step .meta{flex:1;min-width:0;}
+  .wl-step .meta .t{font-size:13px;font-weight:600;color:var(--ink);}
+  .wl-step .meta .s{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-gray);margin-top:3px;line-height:1.35;}
+  .wl-step .num svg{width:14px;height:14px;}
 
   /* truora hero card */
-  .truora-card{
+  .wl-truora-card{
     background:#fff;
     border:1.5px solid var(--winland-orange);
     border-radius:var(--radius-lg);padding:24px;color:var(--ink);margin-bottom:24px;position:relative;
     box-shadow:0 1px 3px rgba(232,91,16,.06);
   }
-  .truora-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
-  .truora-id{display:flex;align-items:center;gap:12px;}
+  .wl-truora-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+  .wl-truora-id{display:flex;align-items:center;gap:12px;}
   /* Igual que producción: caja blanca cuadrada, icono Truora negro */
-  .truora-icon{
+  .wl-truora-icon{
     width:38px;height:38px;border-radius:8px;background:#fff;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;overflow:hidden;
     border:1px solid rgba(0,0,0,.08);
   }
-  .truora-icon svg{width:18px;height:18px;}
-  .truora-name{font-size:16px;font-weight:700;letter-spacing:-0.005em;color:var(--ink);}
-  .truora-tagline{font-size:12px;color:var(--text-faint);margin-top:3px;}
-  .truora-card .badge{
+  .wl-truora-icon svg{width:18px;height:18px;}
+  .wl-truora-name{font-size:var(--clmc-text-medium, 16px);font-weight:700;letter-spacing:-0.005em;color:var(--ink);}
+  .wl-truora-tagline{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);margin-top:3px;}
+  .wl-truora-card .badge{
     display:inline-flex;align-items:center;gap:5px;background:var(--winland-orange);color:#fff;
-    border-radius:20px;padding:5px 12px 5px 10px;font-size:12px;font-weight:700;letter-spacing:.02em;flex-shrink:0;
+    border-radius:20px;padding:5px 12px 5px 10px;font-size:var(--clmc-text-xsmall, 12px);font-weight:700;letter-spacing:.02em;flex-shrink:0;
     position:relative;overflow:hidden;
   }
-  .truora-card .badge svg{width:11px;height:11px;}
+  .wl-truora-card .badge svg{width:11px;height:11px;}
   /* Destello que recorre el chip cada ~3s + estrella que titila, para atraer la vista al canal recomendado */
-  .truora-card .badge::after{
+  .wl-truora-card .badge::after{
     content:'';position:absolute;top:0;bottom:0;left:-60%;width:45%;
     background:linear-gradient(105deg,transparent,rgba(255,255,255,.55),transparent);
     transform:skewX(-20deg);animation:badgeShine 3.2s ease-in-out infinite;
   }
   @keyframes badgeShine{0%,55%{left:-60%}80%,100%{left:130%}}
-  .truora-card .badge svg{animation:starTwinkle 3.2s ease-in-out infinite;transform-origin:center;}
+  .wl-truora-card .badge svg{animation:starTwinkle 3.2s ease-in-out infinite;transform-origin:center;}
   @keyframes starTwinkle{0%,50%,86%,100%{transform:scale(1) rotate(0deg)}64%{transform:scale(1.4) rotate(20deg)}}
-  .truora-card h2{font-size:18px;font-weight:700;margin-bottom:9px;letter-spacing:-0.01em;color:var(--ink);}
-  .truora-card p{font-size:14px;color:var(--text-gray);line-height:1.6;max-width:none;margin-bottom:16px;white-space:nowrap;}
-  .truora-benefits{display:flex;flex-direction:column;gap:10px;margin:0 0 22px;}
-  .truora-benefits span{font-size:14px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:9px;}
-  .truora-benefits svg{width:16px;height:16px;color:var(--success-green);flex-shrink:0;}
-  /* Botón primario — espec producción (.clmc-btn-primary): hover brightness+opacity, disabled #d1d1d1 */
-  .btn-white{
-    background:var(--winland-orange);color:#fff;border:none;border-radius:8px;
-    height:40px;min-width:100px;padding:0 40px;font-weight:600;font-size:14px;cursor:pointer;width:auto;
+  .wl-truora-card h2{font-size:18px;font-weight:700;margin-bottom:9px;letter-spacing:-0.01em;color:var(--ink);}
+  .wl-truora-card p{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);line-height:1.6;max-width:none;margin-bottom:16px;white-space:nowrap;}
+  .wl-truora-benefits{display:flex;flex-direction:column;gap:10px;margin:0 0 22px;}
+  .wl-truora-benefits span{font-size:var(--clmc-text-small, 14px);font-weight:500;color:var(--ink);display:flex;align-items:center;gap:9px;}
+  .wl-truora-benefits svg{width:16px;height:16px;color:var(--success-green);flex-shrink:0;}
+  /* .clmc-btn-primary — DELTA.
+     Producción ya define fondo, color, alto, min-width, radio, peso, tamaño de
+     fuente, transición, line-height y el hover (base.css 467-531). En el sitio
+     esos valores los pone MUI sobre un <Button>; aquí son <button> planos, así
+     que solo se agrega lo que MUI aportaría. Nada de esto pisa a Calímaco. */
+  .clmc-btn-primary{
+    padding:0 40px;cursor:pointer;width:auto;
     display:inline-flex;align-items:center;justify-content:center;gap:6px;
     font-family:inherit;letter-spacing:-0.005em;
-    transition:.3s;line-height:16px;
   }
-  .btn-white:hover:not(:disabled){filter:brightness(1.1);opacity:.8;}
-  .btn-white:disabled{background:#d1d1d1;color:#adadad;cursor:default;filter:none;opacity:1;}
+  .clmc-btn-primary:disabled{background:#d1d1d1 !important;color:#adadad;cursor:default;filter:none;opacity:1;}
 
-  .alt-toggle{
+  .wl-alt-toggle{
     display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:10px;
-    padding:15px 17px;background:var(--page-bg);border-radius:var(--radius-sm);font-size:14px;font-weight:600;color:var(--text-gray);
+    padding:15px 17px;background:var(--page-bg);border-radius:var(--radius-sm);font-size:var(--clmc-text-small, 14px);font-weight:600;color:var(--text-gray);
     border:1px solid var(--line-soft);transition:background .15s var(--ease);
   }
-  .alt-toggle:hover{background:#EEF1F2;}
+  .wl-alt-toggle:hover{background:#EEF1F2;}
   /* Módulo aún no habilitado por Back Office: se puede abrir para entender qué es,
      pero su acción está deshabilitada */
-  .alta-toggle{margin-top:12px;}
-  .alta-toggle span{display:flex;align-items:center;gap:8px;}
-  .alta-toggle.is-locked{color:var(--text-faint);}
-  .alta-toggle.is-locked svg:not(.chev-down){width:15px;height:15px;flex-shrink:0;}
-  .email-box button[disabled]{opacity:.5;cursor:not-allowed;pointer-events:none;}
-  .alt-toggle svg.chev-down{width:16px;height:16px;color:var(--text-faint);flex-shrink:0;transition:transform .2s var(--ease);}
-  .alt-toggle.open svg.chev-down{transform:rotate(180deg);}
-  .alt-panel{
+  .wl-alta-toggle{margin-top:12px;}
+  .wl-alta-toggle span{display:flex;align-items:center;gap:8px;}
+  .wl-alta-toggle.is-locked{color:var(--text-faint);}
+  .wl-alta-toggle.is-locked svg:not(.wl-chev-down){width:15px;height:15px;flex-shrink:0;}
+  .wl-email-box button[disabled]{opacity:.5;cursor:not-allowed;pointer-events:none;}
+  .wl-alt-toggle svg.wl-chev-down{width:16px;height:16px;color:var(--text-faint);flex-shrink:0;transition:transform .2s var(--ease);}
+  .wl-alt-toggle.open svg.wl-chev-down{transform:rotate(180deg);}
+  .wl-alt-panel{
     margin-top:10px;border:1px solid var(--line-soft);border-radius:var(--radius-sm);padding:18px;
     display:flex;flex-direction:column;gap:12px;background:#FAFBFB;
   }
-  .alt-note{font-size:12px;color:var(--text-gray);line-height:1.5;margin-bottom:4px;}
+  .wl-alt-note{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-gray);line-height:1.5;margin-bottom:4px;}
 
-  .doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .doc-row{
+  .clmc-user-documents-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .clmc-user-document-item{
     display:flex;align-items:center;gap:13px;background:var(--surface);
     border-radius:var(--radius-sm);padding:16px;border:1px solid var(--line-soft);
   }
-  .doc-row.disabled{opacity:.55;}
-  .doc-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .doc-ic svg{width:18px;height:18px;}
+  .clmc-user-document-item.disabled{opacity:.55;}
+  .clmc-user-document-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .clmc-user-document-icon svg{width:18px;height:18px;}
   /* Recuadro del ícono por estado (homologado) */
-  .doc-ic.email,.doc-ic.st-verified{background:var(--success-bg);color:var(--success-green);}
-  .doc-ic.st-pending,.doc-ic.st-progress{background:var(--orange-tint);color:var(--winland-orange);}
-  .doc-ic.st-rejected{background:var(--error-bg);color:var(--error-red);}
-  .doc-ic.st-blocked{background:var(--page-bg);color:var(--text-faint);}
-  .doc-meta{flex:1;min-width:0;}
-  .doc-meta .t{font-size:14px;font-weight:600;color:var(--ink);line-height:1.3;}
-  .doc-meta .s{font-size:12px;margin-top:4px;line-height:1.4;}
+  .clmc-user-document-icon.email,.clmc-user-document-icon.st-verified{background:var(--success-bg);color:var(--success-green);}
+  .clmc-user-document-icon.st-pending,.clmc-user-document-icon.st-progress{background:var(--orange-tint);color:var(--winland-orange);}
+  .clmc-user-document-icon.st-rejected{background:var(--error-bg);color:var(--error-red);}
+  .clmc-user-document-icon.st-blocked{background:var(--page-bg);color:var(--text-faint);}
+  .wl-doc-meta{flex:1;min-width:0;}
+  .wl-doc-meta .t{font-size:var(--clmc-text-small, 14px);font-weight:600;color:var(--ink);line-height:1.3;}
+  .wl-doc-meta .s{font-size:var(--clmc-text-xsmall, 12px);margin-top:4px;line-height:1.4;}
   .s-pending{color:var(--text-gray);}
   .s-verified{color:var(--success-green);}
   .s-progress{color:var(--winland-orange);}
   .s-rejected{color:var(--error-red);}
   .s-blocked{color:var(--text-faint);}
-  .doc-row.disabled{opacity:.7;background:var(--page-bg);border-style:dashed;}
-  .chev{color:var(--mid-gray);width:16px;height:16px;flex-shrink:0;}
-
-  /* ── Salas físicas (página pública, fuera del módulo privado) ── */
-  /* ── Sección pública de casinos ── */
-  .salas-app{position:relative;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-card);background:#12151A;}
-  #mapaSalas{height:430px;width:100%;background:#12151A;}
-  .salas-app .leaflet-control-attribution{font-size:9px;background:rgba(18,21,26,.8);color:#8A9099;}
-  .salas-app .leaflet-control-attribution a{color:#A6ACB3;}
-  .salas-app .leaflet-bar a{background:#1C2027;color:#fff;border-color:#2A2F37;}
-  .salas-app .leaflet-bar a:hover{background:#262B33;}
-  .mapa-reset{
-    position:absolute;top:14px;right:14px;z-index:500;background:rgba(28,32,39,.92);
-    backdrop-filter:blur(8px);border:1px solid #343A44;border-radius:20px;padding:9px 16px;
-    font-size:12px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;transition:.15s var(--ease);
-  }
-  .mapa-reset:hover{border-color:var(--winland-orange);color:var(--winland-orange);}
-
-  /* Pin: punto luminoso de la marca */
-  .pin-sala{
-    position:relative;width:15px;height:15px;border-radius:50%;background:var(--winland-orange);
-    border:2px solid #fff;box-shadow:0 0 12px rgba(232,91,16,.9);
-    transition:transform .25s var(--ease), box-shadow .25s var(--ease);
-    animation:pinEntrada .5s var(--ease) both;
-  }
-  /* Onda tipo radar: mantiene el mapa vivo sin ser ruidosa (desfasada por pin) */
-  .pin-sala::after{
-    content:'';position:absolute;inset:-2px;border-radius:50%;
-    border:2px solid var(--winland-orange);animation:pinRadar 2.8s ease-out infinite;
-    animation-delay:inherit;
-  }
-  .pin-sala.fortune::after{border-color:#fff;}
-  .pin-sala.activo::after{animation:none;}
-  @keyframes pinRadar{0%{transform:scale(1);opacity:.75}70%{transform:scale(3);opacity:0}100%{opacity:0}}
-  @keyframes pinEntrada{0%{transform:scale(0) translateY(-14px);opacity:0}60%{transform:scale(1.25) translateY(0)}100%{transform:scale(1);opacity:1}}
-  /* Resalte al pasar el cursor por su tarjeta */
-  .pin-sala.senalado{transform:scale(1.5);box-shadow:0 0 0 6px rgba(232,91,16,.22),0 0 16px rgba(232,91,16,1);}
-  .pin-sala.fortune.senalado{box-shadow:0 0 0 6px rgba(255,255,255,.2),0 0 16px rgba(255,255,255,.9);}
-  .pin-sala.fortune{background:#F5F5F5;box-shadow:0 0 12px rgba(255,255,255,.75);border-color:#12151A;}
-  .leaflet-marker-icon:hover .pin-sala{transform:scale(1.45);}
-  .pin-sala.activo{transform:scale(1.6);box-shadow:0 0 0 8px rgba(232,91,16,.25),0 0 18px rgba(232,91,16,1);}
-  .pin-sala.fortune.activo{box-shadow:0 0 0 8px rgba(255,255,255,.22),0 0 18px rgba(255,255,255,.9);}
-
-  /* Ficha del pin */
-  .salas-app .leaflet-popup-content-wrapper{background:#fff;border-radius:12px;box-shadow:0 18px 40px rgba(0,0,0,.45);padding:0;overflow:hidden;}
-  .salas-app .leaflet-popup-content{margin:0;width:auto !important;min-width:215px;}
-  .salas-app .leaflet-popup-tip{background:#fff;}
-  .salas-app .leaflet-popup-close-button{color:var(--text-faint);padding:8px 8px 0 0;}
-  .pop-sala{padding:13px 16px 14px;font-family:'winland',sans-serif;}
-  .pop-sala .pm{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--winland-orange);}
-  .pop-sala .pm.fortune{color:var(--ink);}
-  .pop-sala .pc{font-size:17px;font-weight:700;color:var(--ink);margin:2px 0 6px;letter-spacing:-.01em;}
-  .pop-sala .pd{font-size:12.5px;color:var(--text-gray);line-height:1.5;margin-bottom:11px;}
-  .pop-sala .pb{
-    display:inline-flex;align-items:center;gap:6px;background:var(--winland-orange);color:#fff;
-    border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;text-decoration:none;
-  }
-  .pop-sala .pb:hover{background:var(--orange-dark);}
-  .pop-sala .pb svg{width:13px;height:13px;}
-
-  /* Tarjetas con fotografía: la imagen hace el trabajo, el texto solo lo necesario */
-  .sala-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px;}
-  .sala-card{
-    background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--radius);
-    overflow:hidden;cursor:pointer;transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .2s var(--ease);
-  }
-  .sala-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(20,20,22,.13);border-color:var(--line);}
-  .sala-card.activa{border-color:var(--winland-orange);box-shadow:0 0 0 3px var(--orange-tint);}
-  .sala-card.senalada{border-color:var(--winland-orange);transform:translateY(-3px);box-shadow:0 12px 28px rgba(20,20,22,.13);}
-  .sala-foto{position:relative;aspect-ratio:16/10;overflow:hidden;background:var(--page-bg);}
-  .sala-foto img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease);}
-  .sala-card:hover .sala-foto img{transform:scale(1.07);}
-  .sala-foto::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent 55%);}
-  .sala-marca{
-    position:absolute;top:11px;left:11px;z-index:2;font-size:10px;font-weight:700;letter-spacing:.06em;
-    text-transform:uppercase;background:var(--winland-orange);color:#fff;border-radius:5px;padding:4px 9px;
-  }
-  .sala-card.es-fortune .sala-marca{background:#fff;color:var(--ink);}
-  .sala-foto .ciudad{
-    position:absolute;left:14px;bottom:11px;z-index:2;color:#fff;font-size:20px;font-weight:700;
-    letter-spacing:-.015em;text-shadow:0 2px 10px rgba(0,0,0,.5);
-  }
-  .sala-body{padding:14px 16px 16px;}
-  .sala-body .edo{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px;}
-  .sala-body .dir{font-size:13px;color:var(--text-gray);line-height:1.5;}
-  .sala-body .ir{
-    display:inline-flex;align-items:center;gap:5px;margin-top:11px;
-    font-size:13px;font-weight:600;color:var(--winland-orange);text-decoration:none;
-  }
-  .sala-body .ir:hover{text-decoration:underline;}
-  .sala-body .ir svg{width:13px;height:13px;}
-
-  /* Nota de cobro: útil, pero secundaria a la sección */
-  .salas-cobro{
-    margin-top:26px;background:var(--page-bg);border-radius:var(--radius);padding:18px 20px;
-    display:flex;gap:12px;align-items:flex-start;
-  }
-  .salas-cobro svg{width:17px;height:17px;color:var(--winland-orange);flex-shrink:0;margin-top:2px;}
-  .salas-cobro .t{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;}
-  .salas-cobro .s{font-size:13px;color:var(--text-gray);line-height:1.6;}
-
-  @media (max-width:900px){ .sala-grid{grid-template-columns:repeat(2,1fr);} }
-  @media (max-width:768px){
-    .sala-grid{grid-template-columns:1fr;gap:14px;}
-    #mapaSalas{height:330px;}
-    .salas-cobro{flex-direction:column;gap:8px;}
-  }
+  .clmc-user-document-item.disabled{opacity:.7;background:var(--page-bg);border-style:dashed;}
+  .wl-chev{color:var(--mid-gray);width:16px;height:16px;flex-shrink:0;}
 
   /* Tarjeta de mejora: convierte el paso 3 en beneficio ("olvídate de las filas") */
-  .upgrade-card{
+  .wl-upgrade-card{
     display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:20px;
     background:var(--orange-tint);border:1px solid var(--winland-orange);border-radius:var(--radius);padding:18px 20px;
   }
-  .upgrade-card .t{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;}
-  .upgrade-card .s{font-size:13px;color:var(--text-gray);line-height:1.5;}
-  .email-box{
+  .wl-upgrade-card .t{font-size:var(--clmc-text-small, 14px);font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .wl-upgrade-card .s{font-size:13px;color:var(--text-gray);line-height:1.5;}
+  .wl-email-box{
     margin-top:8px;background:var(--surface);border-radius:var(--radius-sm);padding:18px 20px;
     display:flex;justify-content:space-between;align-items:center;gap:16px;border:1px solid var(--line-soft);
   }
-  .email-box .t{font-size:14px;font-weight:600;margin-bottom:6px;display:flex;align-items:flex-start;gap:7px;line-height:1.4;}
-  .email-box .t svg{width:14px;height:14px;color:var(--text-faint);flex-shrink:0;margin-top:2px;}
-  .email-box.restricted{background:var(--warning-bg);border-color:#F0D9C4;}
-  .email-box .s{font-size:13px;color:var(--text-gray);line-height:1.6;}
-  /* Botón outline — espec producción (.clmc-btn-primary-white) */
-  .btn-outline{
-    border:1px solid var(--winland-orange);color:var(--winland-orange);background:#fff;
-    border-radius:8px;padding:10px 18px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;
+  .wl-email-box .t{font-size:var(--clmc-text-small, 14px);font-weight:600;margin-bottom:6px;display:flex;align-items:flex-start;gap:7px;line-height:1.4;}
+  .wl-email-box .t svg{width:14px;height:14px;color:var(--text-faint);flex-shrink:0;margin-top:2px;}
+  .wl-email-box.restricted{background:var(--warning-bg);border-color:#F0D9C4;}
+  .wl-email-box .s{font-size:13px;color:var(--text-gray);line-height:1.6;}
+  /* .clmc-btn-primary-white — DELTA.
+     Producción ya da el contorno naranja, el texto naranja, el fondo blanco, el
+     radio y el hover (base.css 492-531). Aquí solo el acomodo interno. */
+  .clmc-btn-primary-white{
+    padding:10px 18px;cursor:pointer;white-space:nowrap;
     font-family:inherit;display:flex;align-items:center;gap:7px;justify-content:center;
-    transition:.3s;
   }
-  .btn-outline:hover{filter:brightness(1.1);opacity:.8;}
-  .btn-outline svg{width:15px;height:15px;}
+  .clmc-btn-primary-white svg{width:15px;height:15px;}
 
-  .status-banner{
+  .wl-status-banner{
     border-radius:var(--radius-sm);padding:16px 18px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start;
   }
-  .status-banner .ic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .status-banner .ic svg{width:18px;height:18px;}
-  .status-banner .t{font-weight:600;font-size:14px;margin-bottom:5px;color:var(--ink);}
-  .status-banner .s{font-size:13px;line-height:1.6;color:var(--text-gray);}
-  .status-banner.success{background:var(--success-bg);} .status-banner.success .ic{background:#CFEAD6;color:var(--success-green);}
-  .status-banner.error{background:var(--error-bg);} .status-banner.error .ic{background:#F6D2CD;color:var(--error-red);}
-  .status-banner.info{background:var(--info-bg);} .status-banner.info .ic{background:#CFE0F4;color:var(--info-blue);}
-  .status-banner .cta{margin-top:10px;}
-  .status-banner .cta a{color:var(--winland-orange);font-weight:600;font-size:13px;cursor:pointer;}
+  .wl-status-banner .ic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .wl-status-banner .ic svg{width:18px;height:18px;}
+  .wl-status-banner .t{font-weight:600;font-size:var(--clmc-text-small, 14px);margin-bottom:5px;color:var(--ink);}
+  .wl-status-banner .s{font-size:13px;line-height:1.6;color:var(--text-gray);}
+  .wl-status-banner.success{background:var(--success-bg);} .wl-status-banner.success .ic{background:#CFEAD6;color:var(--success-green);}
+  .wl-status-banner.error{background:var(--error-bg);} .wl-status-banner.error .ic{background:#F6D2CD;color:var(--error-red);}
+  .wl-status-banner.info{background:var(--info-bg);} .wl-status-banner.info .ic{background:#CFE0F4;color:var(--info-blue);}
+  .wl-status-banner .cta{margin-top:10px;}
+  .wl-status-banner .cta a{color:var(--winland-orange);font-weight:600;font-size:13px;cursor:pointer;}
   /* Enlace embebido en la frase del banner: evita una línea extra de CTA */
-  .status-banner .s a{color:var(--winland-orange);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
-  .status-banner .s a:hover{color:var(--orange-dark);}
+  .wl-status-banner .s a{color:var(--winland-orange);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+  .wl-status-banner .s a:hover{color:var(--orange-dark);}
 
   /* FAQ */
-  .faq-cats{display:flex;gap:9px;margin-bottom:34px;flex-wrap:wrap;}
-  .faq-cat{padding:9px 16px;border-radius:20px;font-size:13px;font-weight:600;background:var(--page-bg);color:#3a4047;cursor:default;border:1px solid transparent;}
-  .faq-cat.active{background:var(--winland-orange);color:#fff;}
-  .faq-item{border-bottom:1px solid var(--line-soft);padding:19px 4px;}
-  .faq-item:first-child{padding-top:0;}
-  .faq-q{font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--ink);padding-right:8px;}
-  .faq-q svg{width:15px;height:15px;color:var(--text-faint);flex-shrink:0;}
-  .faq-a{font-size:13px;color:var(--text-gray);margin-top:9px;line-height:1.65;padding-right:48px;}
+  .wl-faq-cats{display:flex;gap:9px;margin-bottom:34px;flex-wrap:wrap;}
+  .wl-faq-cat{padding:9px 16px;border-radius:20px;font-size:13px;font-weight:600;background:var(--page-bg);color:#3a4047;cursor:default;border:1px solid transparent;}
+  .wl-faq-cat.active{background:var(--winland-orange);color:#fff;}
+  .wl-faq-item{border-bottom:1px solid var(--line-soft);padding:19px 4px;}
+  .wl-faq-item:first-child{padding-top:0;}
+  .wl-faq-q{font-size:var(--clmc-text-medium, 16px);font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--ink);padding-right:8px;line-height:1.4;}
+  .wl-faq-q svg{width:16px;height:16px;color:var(--text-faint);flex-shrink:0;}
+  .wl-faq-a-tx{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);padding-top:11px;line-height:1.7;padding-right:48px;}
 
   /* Modal */
   /* Modales a pantalla completa (sobre todo el sitio, no solo el módulo) */
-  .modal-overlay{
+  .wl-modal-overlay{
     position:fixed;inset:0;background:rgba(12,12,14,.6);
     display:flex;align-items:center;justify-content:center;padding:24px;
     /* Por encima del header real de producción (MuiAppBar, z-index 1100) */
     backdrop-filter:blur(2px);z-index:1200;
   }
-  .modal{
+  .clmc-dialog{
     background:#fff;border-radius:12px;max-width:480px;width:100%;padding:28px;position:relative;
     max-height:88%;overflow-y:auto;box-shadow:0 30px 70px rgba(0,0,0,.35);
   }
   /* Modales de documento: layout horizontal en escritorio */
-  .modal.doc-modal{max-width:820px;}
-  .doc-modal{max-height:92%;}
+  .clmc-dialog.wl-doc-modal{max-width:820px;}
+  .wl-doc-modal{max-height:92%;}
   /* Modal de Truora: ancho homologado; canales a 2 columnas en escritorio */
-  .modal.truora-wide{max-width:640px;}
+  .clmc-dialog.wl-truora-wide{max-width:640px;}
   /* ═══ HEADER GLASS HOMOLOGADO ═══
      Todos los modales con barra reservan una zona superior FIJA vía padding-top
      (barra 64px + gap 20px). El primer contenido siempre arranca en el mismo
      punto: cero márgenes por caso. Desktop: 84px · Mobile: 82px. */
-  /* El modal NO scrollea: el scroll vive en el cuerpo (.m-main/.m-guia/.t-step).
+  /* El modal NO scrollea: el scroll vive en el cuerpo (.wl-m-main/.wl-m-guia/.wl-t-step).
      Así el header (✕, Regresar, barra) es absoluto y queda fijo sin trucos. */
-  .modal.doc-modal,.modal.truora-wide{
+  .clmc-dialog.wl-doc-modal,.clmc-dialog.wl-truora-wide{
     overflow:hidden;display:flex;flex-direction:column;
     padding:84px 0 0; /* 64 barra + 20 gap; laterales los da el cuerpo */
   }
-  .doc-modal .m-main,.doc-modal .m-guia,.truora-wide .t-step{
+  .wl-doc-modal .wl-m-main,.wl-doc-modal .wl-m-guia,.wl-truora-wide .wl-t-step{
     overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;padding:0 28px 28px;
     scrollbar-width:none; /* scrollbar overlay estilo app: la clásica roba ancho y
                              provoca scroll horizontal cuando el contenido calza exacto */
   }
-  .doc-modal .m-main::-webkit-scrollbar,.doc-modal .m-guia::-webkit-scrollbar,
-  .truora-wide .t-step::-webkit-scrollbar{display:none;}
-  .doc-modal .m-main{padding-bottom:0;} /* su respiro inferior lo da la franja de acciones */
-  .doc-modal .close::before,.truora-wide .close::before{
+  .wl-doc-modal .wl-m-main::-webkit-scrollbar,.wl-doc-modal .wl-m-guia::-webkit-scrollbar,
+  .wl-truora-wide .wl-t-step::-webkit-scrollbar{display:none;}
+  .wl-doc-modal .wl-m-main{padding-bottom:0;} /* su respiro inferior lo da la franja de acciones */
+  .wl-doc-modal .clmc-closeIcon-popup::before,.wl-truora-wide .clmc-closeIcon-popup::before{
     content:'';position:absolute;top:-17px;right:-28px;width:100vw;height:64px;
     background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
     border-bottom:1px solid rgba(0,0,0,.05);z-index:-1;pointer-events:none;
   }
-  .modal.doc-modal .close,.modal.truora-wide .close{
+  .clmc-dialog.wl-doc-modal .clmc-closeIcon-popup,.clmc-dialog.wl-truora-wide .clmc-closeIcon-popup{
     position:absolute;top:17px;right:28px;margin:0;box-shadow:none;
   }
   /* El gap lo da el padding del modal: el primer contenido no aporta margen propio */
-  .doc-modal .m-main > :first-child,.doc-modal .m-guia > :first-child,
-  .truora-wide .t-step > :first-child,.t-back + *{margin-top:0 !important;}
-  .modal-truora-head h3{margin-top:0;}
+  .wl-doc-modal .wl-m-main > :first-child,.wl-doc-modal .wl-m-guia > :first-child,
+  .wl-truora-wide .wl-t-step > :first-child,.wl-t-back + *{margin-top:0 !important;}
+  .wl-modal-truora-head h3{margin-top:0;}
   @media (min-width:769px){
-    .truora-wide .channel-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .wl-truora-wide .wl-channel-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   }
   /* Línea de requisitos: discreta, escaneable, una sola línea */
-  .req-line{
+  .wl-req-line{
     display:flex;align-items:flex-start;gap:8px;background:var(--page-bg);border-radius:8px;
     padding:11px 14px;margin-bottom:14px;font-size:13px;color:var(--text-gray);line-height:1.5;
   }
-  .req-line svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;margin-top:1px;}
-  .req-line b{color:var(--ink);}
-  .modal .close{
+  .wl-req-line svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;margin-top:1px;}
+  .wl-req-line b{color:var(--ink);}
+  .clmc-dialog .clmc-closeIcon-popup{
     position:sticky;top:0;margin-left:auto;margin-bottom:-30px;width:30px;height:30px;border-radius:50%;background:var(--page-bg);
     display:flex;align-items:center;justify-content:center;color:#555;cursor:pointer;
     z-index:6;box-shadow:0 0 0 4px #fff; /* halo para leerse sobre contenido al hacer scroll */
   }
-  .modal .close svg{width:14px;height:14px;}
-  .modal h3{font-size:18px;font-weight:700;margin:22px 0 14px;padding-right:44px;color:var(--ink);letter-spacing:-0.01em;}
-  .modal .lead{font-size:14px;color:var(--text-gray);margin-bottom:20px;line-height:1.65;}
-  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-  .upload-box{
-    border:1.5px dashed var(--mid-gray);border-radius:var(--radius-sm);padding:18px 10px;text-align:center;font-size:12px;
+  .clmc-dialog .clmc-closeIcon-popup svg{width:14px;height:14px;}
+  .clmc-dialog h3{font-size:18px;font-weight:700;margin:22px 0 14px;padding-right:44px;color:var(--ink);letter-spacing:-0.01em;}
+  .clmc-dialog .lead{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);margin-bottom:20px;line-height:1.65;}
+  .clmc-upload-documents-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .clmc-upload-document-drop-area{
+    border:1.5px dashed var(--mid-gray);border-radius:var(--radius-sm);padding:18px 10px;text-align:center;font-size:var(--clmc-text-xsmall, 12px);
     color:var(--text-gray);font-weight:600;display:flex;flex-direction:column;align-items:center;gap:7px;
   }
-  .upload-box svg{width:18px;height:18px;color:var(--text-faint);}
-  .upload-box.full{grid-column:1/-1;}
+  .clmc-upload-document-drop-area svg{width:18px;height:18px;color:var(--text-faint);}
+  .clmc-upload-document-drop-area.full{grid-column:1/-1;}
   /* Modal Truora: lista de canales limpia */
-  .modal-truora-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-right:34px;}
-  .modal-truora-head .truora-icon{border:1px solid var(--line);}
-  .channel-list{border-top:1px solid var(--line-soft);}
-  .channel-list .ch{
+  .wl-modal-truora-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-right:34px;}
+  .wl-modal-truora-head .wl-truora-icon{border:1px solid var(--line);}
+  .wl-channel-list{border-top:1px solid var(--line-soft);}
+  .wl-channel-list .ch{
     display:flex;align-items:center;gap:14px;padding:15px 4px;border-bottom:1px solid var(--line-soft);
     cursor:pointer;transition:background .12s var(--ease);border-radius:6px;
   }
-  .channel-list .ch:hover{background:var(--page-bg);}
-  .channel-list .ch-ic{
+  .wl-channel-list .ch:hover{background:var(--page-bg);}
+  .wl-channel-list .ch-ic{
     width:38px;height:38px;border-radius:8px;background:var(--orange-tint);color:var(--winland-orange);
     display:flex;align-items:center;justify-content:center;flex-shrink:0;
   }
-  .channel-list .ch-ic svg{width:18px;height:18px;}
-  .channel-list .ch-meta{flex:1;min-width:0;}
-  .channel-list .ch-meta .t{font-size:14px;font-weight:600;color:var(--ink);}
-  .channel-list .ch-meta .s{font-size:12px;color:var(--text-gray);margin-top:3px;line-height:1.4;}
-  .channel-list .ch > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
-  .modal-footnote{font-size:12px;color:var(--text-faint);margin-top:16px;text-align:center;line-height:1.55;}
+  .wl-channel-list .ch-ic svg{width:18px;height:18px;}
+  .wl-channel-list .ch-meta{flex:1;min-width:0;}
+  .wl-channel-list .ch-meta .t{font-size:var(--clmc-text-small, 14px);font-weight:600;color:var(--ink);}
+  .wl-channel-list .ch-meta .s{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-gray);margin-top:3px;line-height:1.4;}
+  .wl-channel-list .ch > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
+  .clmc-upload-documents-format-box{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);margin-top:16px;text-align:center;line-height:1.55;}
 
     /* Acciones fijas al fondo: siempre a la mano aunque el contenido tenga scroll */
-  .modal-actions{
+  .clmc-upload-documents-actions{
     display:flex;gap:10px;position:sticky;bottom:0;z-index:4;
     margin:18px -28px 0;padding:14px 28px 18px;
     background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
     border-top:1px solid rgba(0,0,0,.06);
   }
-  .modal-actions .btn-outline{flex:1;}
-  .btn-primary-disabled{
-    flex:1;background:#d1d1d1;color:#adadad;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:default;font-family:inherit;
-  }
+  .clmc-upload-documents-actions .clmc-btn-primary-white{flex:1;}
+  /* .clmc-btn-disabled — DELTA. Producción ya da fondo, color y métricas. */
+  .clmc-btn-disabled{flex:1;cursor:default;font-family:inherit;}
 
   /* FAQ funcional: acordeón, categorías clickeables, interlinks */
-  .faq-cat{cursor:pointer;transition:background .15s var(--ease);}
-  .faq-cat:not(.active):hover{background:#e8ebed;}
-  .faq-q{cursor:pointer;}
-  .faq-item .faq-a{display:none;}
-  .faq-item.open .faq-a{display:block;}
-  .faq-item.open .faq-q svg{transform:rotate(45deg);}
-  .faq-q svg{transition:transform .18s var(--ease);flex-shrink:0;}
-  .faq-group.hide{display:none;}
-  .faq-link{color:var(--winland-orange);font-weight:600;cursor:pointer;}
-  .faq-link:hover{text-decoration:underline;}
+  .wl-faq-cat{cursor:pointer;transition:background .15s var(--ease);}
+  .wl-faq-cat:not(.active):hover{background:#e8ebed;}
+  .wl-faq-q{cursor:pointer;}
+  .wl-faq-item .wl-faq-a{
+    display:grid;grid-template-rows:0fr;opacity:0;
+    transition:grid-template-rows .34s var(--ease), opacity .2s var(--ease);
+  }
+  .wl-faq-item.open .wl-faq-a{grid-template-rows:1fr;opacity:1;transition-delay:0s,.06s;}
+  .wl-faq-a-in{overflow:hidden;min-height:0;}
+  .wl-faq-item.open .wl-faq-q svg{transform:rotate(45deg);}
+  .wl-faq-q svg{transition:transform .34s var(--ease);flex-shrink:0;}
+  @media (prefers-reduced-motion:reduce){
+    .wl-faq-item .wl-faq-a{transition:none;}
+    .wl-faq-q svg{transition:none;}
+  }
+  .wl-faq-group.hide{display:none;}
+  .wl-faq-link{color:var(--winland-orange);font-weight:600;cursor:pointer;}
+  .wl-faq-link:hover{text-decoration:underline;}
+  /* Subdivisión dentro de una categoría (la tabla autorizada separa Retiros y Depósito) */
+  .wl-faq-sub{
+    font-size:var(--clmc-text-xsmall, 12px);font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--text-faint);margin:6px 0 2px;padding-bottom:10px;
+  }
+  .wl-faq-item + .wl-faq-sub{margin-top:26px;}
+  /* Listas y párrafos dentro de una respuesta */
+  .wl-faq-lista{margin:8px 0 0;padding-left:18px;list-style:disc;}
+  .wl-faq-lista li{margin-bottom:5px;line-height:1.6;}
+  .wl-faq-lista li:last-child{margin-bottom:0;}
+  .wl-faq-lista b{color:var(--ink);font-weight:600;}
+  .wl-faq-a .wl-faq-p{margin-top:10px;}
+  /* Acceso a la infografía: va debajo del texto autorizado, sin alterarlo */
+  .wl-faq-guia{
+    display:inline-flex;align-items:center;gap:7px;margin-top:13px;
+    border:1px solid var(--line);border-radius:8px;padding:8px 13px;
+    font-size:13px;font-weight:600;color:var(--winland-orange);
+    cursor:pointer;transition:background .15s var(--ease),border-color .15s var(--ease);
+  }
+  .wl-faq-guia:hover{background:var(--orange-tint);border-color:var(--winland-orange);}
+  .wl-faq-guia svg{width:15px;height:15px;flex-shrink:0;}
 
   
 
   /* Visor de infografías en FAQ (overlay ligero, no saca al usuario) */
-  .faq-visor-overlay{position:fixed;inset:0;background:rgba(12,12,14,.65);z-index:1210;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);}
-  .faq-visor{background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90%;overflow-y:auto;padding:18px;}
-  .fv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:14px;}
-  .fv-close{width:30px;height:30px;border-radius:50%;background:var(--page-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;}
-  .fv-close svg{width:13px;height:13px;}
-  .faq-visor img{width:100%;display:block;border-radius:8px;}
+  .wl-faq-visor-overlay{position:fixed;inset:0;background:rgba(12,12,14,.65);z-index:1210;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);}
+  .wl-faq-visor{background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90%;overflow-y:auto;padding:18px;}
+  .wl-fv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:var(--clmc-text-small, 14px);}
+  .wl-fv-close{width:30px;height:30px;border-radius:50%;background:var(--page-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .wl-fv-close svg{width:13px;height:13px;}
+  .wl-faq-visor img{width:100%;display:block;border-radius:8px;}
   @media (max-width:768px){
-    .faq-visor-overlay{padding:12px;}
-    .faq-item{padding:22px 2px;}
-    .faq-q{gap:14px;line-height:1.45;}
-    .faq-a{margin-top:11px;padding-right:14px;}
+    .wl-faq-visor-overlay{padding:12px;}
+    .wl-faq-item{padding:22px 2px;}
+    .wl-faq-q{gap:14px;line-height:1.45;}
+    .wl-faq-a-tx{padding-top:12px;padding-right:14px;}
   }
 
   /* Flujo Truora multi-paso */
-  .t-step.hide{display:none;}
-  .t-back{
+  .wl-t-step.hide{display:none;}
+  .wl-t-back{
     position:absolute;top:20px;left:28px;z-index:7;margin:0;padding:0;
     display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--text-gray);
     cursor:pointer;width:fit-content;
   }
-  .t-back svg{width:13px;height:13px;transform:rotate(180deg);}
-  .t-back:hover{color:var(--ink);}
-  .channel-list .ch.selected{background:var(--orange-tint);border-radius:8px;}
-  .t-phone{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:16px;}
-  .t-phone.hide{display:none;}
-  .tp-label{font-size:13px;color:var(--text-gray);margin-bottom:10px;}
-  .tp-row{display:flex;align-items:center;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px;}
-  .tp-row:focus-within{border-color:var(--winland-orange);}
-  .tp-flag{padding:12px 12px;background:var(--page-bg);font-size:14px;font-weight:600;border-right:1px solid var(--line-soft);white-space:nowrap;}
-  .tp-row input{flex:1;border:none;outline:none;padding:12px 14px;font-size:14px;font-family:inherit;color:var(--ink);letter-spacing:.03em;}
-  .tp-hint{font-size:12px;color:var(--text-faint);line-height:1.45;margin-bottom:16px;}
-  .t-checklist{display:flex;flex-direction:column;gap:11px;margin:6px 0 20px;}
-  .t-checklist span{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text-gray);}
-  .t-checklist svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;}
-  .qr-title,.qr-lead{text-align:center;}
-  @media (max-width:768px){ .qr-title,.qr-lead{text-align:left;} }
-  .qr-box{width:190px;height:190px;margin:6px auto 10px;padding:12px;border:1px solid var(--line-soft);border-radius:12px;background:#fff;}
-  .qr-box svg{width:100%;height:100%;display:block;}
+  .wl-t-back svg{width:13px;height:13px;transform:rotate(180deg);}
+  .wl-t-back:hover{color:var(--ink);}
+  .wl-channel-list .ch.selected{background:var(--orange-tint);border-radius:8px;}
+  .wl-t-phone{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:16px;}
+  .wl-t-phone.hide{display:none;}
+  .wl-tp-label{font-size:13px;color:var(--text-gray);margin-bottom:10px;}
+  .wl-tp-row{display:flex;align-items:center;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px;}
+  .wl-tp-row:focus-within{border-color:var(--winland-orange);}
+  .wl-tp-flag{padding:12px 12px;background:var(--page-bg);font-size:var(--clmc-text-small, 14px);font-weight:600;border-right:1px solid var(--line-soft);white-space:nowrap;}
+  .wl-tp-row input{flex:1;border:none;outline:none;padding:12px 14px;font-size:var(--clmc-text-small, 14px);font-family:inherit;color:var(--ink);letter-spacing:.03em;}
+  .wl-tp-hint{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);line-height:1.45;margin-bottom:16px;}
+  .wl-t-checklist{display:flex;flex-direction:column;gap:11px;margin:6px 0 20px;}
+  .wl-t-checklist span{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text-gray);}
+  .wl-t-checklist svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;}
+  .wl-qr-title,.wl-qr-lead{text-align:center;}
+  @media (max-width:768px){ .wl-qr-title,.wl-qr-lead{text-align:left;} }
+  .wl-qr-box{width:190px;height:190px;margin:6px auto 10px;padding:12px;border:1px solid var(--line-soft);border-radius:12px;background:#fff;}
+  .wl-qr-box svg{width:100%;height:100%;display:block;}
 
   /* Checkbox de consentimiento (modal Truora) */
-  .consent-check{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--text-gray);line-height:1.55;margin:8px 0 20px;cursor:pointer;}
-  .consent-check input{width:17px;height:17px;margin:1px 0 0;accent-color:var(--winland-orange);flex-shrink:0;cursor:pointer;}
-  .consent-check b{color:var(--ink);}
+  .wl-consent-check{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--text-gray);line-height:1.55;margin:8px 0 20px;cursor:pointer;}
+  .wl-consent-check input{width:17px;height:17px;margin:1px 0 0;accent-color:var(--winland-orange);flex-shrink:0;cursor:pointer;}
+  .wl-consent-check b{color:var(--ink);}
 
   /* Modal de documentos v2: selector, guía visual, línea FAQ */
-  .doc-select{margin-bottom:16px;}
-  .doc-select label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px;}
-  .doc-select select{
-    width:100%;border:1.5px solid var(--line);border-radius:8px;padding:12px 14px;font-size:14px;
+  .wl-doc-select{margin-bottom:16px;}
+  .wl-doc-select label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px;}
+  .wl-doc-select select{
+    width:100%;border:1.5px solid var(--line);border-radius:8px;padding:12px 14px;font-size:var(--clmc-text-small, 14px);
     font-family:inherit;color:var(--ink);background:#fff;appearance:none;cursor:pointer;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%235B6470' stroke-width='2' fill='none'/></svg>");
     background-repeat:no-repeat;background-position:right 14px center;
   }
-  .doc-select select:focus{outline:none;border-color:var(--winland-orange);}
+  .wl-doc-select select:focus{outline:none;border-color:var(--winland-orange);}
   /* Tarjeta de guía visual: abre lightbox — misma UI en desktop y mobile */
-  .guia-cta{
+  .wl-guia-cta{
     display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:10px;
     padding:10px 14px 10px 10px;cursor:pointer;background:#fff;margin-bottom:14px;
     transition:border-color .15s var(--ease), background .15s var(--ease);
   }
-  .guia-cta:hover{border-color:var(--winland-orange);background:#FFFBF8;}
-  .guia-thumb{width:52px;height:44px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--line-soft);flex-shrink:0;}
-  .guia-cta span{flex:1;display:flex;flex-direction:column;gap:2px;line-height:1.3;}
-  .guia-cta span b{font-size:13px;color:var(--ink);}
-  .guia-cta span small{font-size:12px;color:var(--text-faint);}
-  .guia-cta > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
-  .modal-faq-line{font-size:13px;color:var(--text-gray);margin:14px 0 16px;}
+  .wl-guia-cta:hover{border-color:var(--winland-orange);background:#FFFBF8;}
+  .wl-guia-thumb{width:52px;height:44px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--line-soft);flex-shrink:0;}
+  .wl-guia-cta span{flex:1;display:flex;flex-direction:column;gap:2px;line-height:1.3;}
+  .wl-guia-cta span b{font-size:13px;color:var(--ink);}
+  .wl-guia-cta span small{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);}
+  .wl-guia-cta > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
+  .wl-modal-faq-line{font-size:13px;color:var(--text-gray);margin:14px 0 16px;}
 
   /* Vista de guía interna del modal */
-  .m-main.hide,.m-guia.hide{display:none;}
-  .m-guia .g-img{display:block;max-width:100%;max-height:60vh;width:auto;margin:0 auto;border-radius:10px;border:1px solid var(--line-soft);}
+  .wl-m-main.hide,.wl-m-guia.hide{display:none;}
+  .wl-m-guia .wl-g-img{display:block;max-width:100%;max-height:60vh;width:auto;margin:0 auto;border-radius:10px;border:1px solid var(--line-soft);}
 
   /* Línea de ayuda de selfie (fuera del dropzone) */
   /* Botón "Subir" habilitado: conserva la clase base para no deformarse en mobile */
-  .btn-primary-disabled.ready{background:var(--winland-orange);color:#fff;cursor:pointer;transition:.3s;}
-  .btn-primary-disabled.ready:hover{filter:brightness(1.1);opacity:.8;}
+  /* Formulario completo. EN REACT: cambiar className de clmc-btn-disabled a
+     clmc-btn-primary; el !important aquí solo existe porque el prototipo no
+     puede intercambiar clases desde el estado del componente. */
+  .clmc-btn-disabled.wl-ready{background:var(--winland-orange) !important;color:#fff !important;cursor:pointer;}
+  .clmc-btn-disabled.wl-ready:hover{filter:brightness(1.1);opacity:.8;}
 
   /* ── Interacciones v2 ── */
   /* Zonas de carga clickeables (simulan la selección de archivo) */
-  .upload-box{cursor:pointer;transition:border-color .15s var(--ease), background .15s var(--ease);}
-  .upload-box:hover{border-color:var(--winland-orange);background:#FFFBF8;}
-  .upload-box.loaded{border-style:solid;border-color:var(--success-green);background:var(--success-bg);cursor:default;}
-  .upload-box.loaded > svg{color:var(--success-green);}
-  .upload-box .file-name{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--success-green);margin-top:5px;}
-  .upload-box .file-name svg{width:12px;height:12px;}
-  .modal-actions .btn-white{flex:1;}
+  .clmc-upload-document-drop-area{cursor:pointer;transition:border-color .15s var(--ease), background .15s var(--ease);}
+  .clmc-upload-document-drop-area:hover{border-color:var(--winland-orange);background:#FFFBF8;}
+  .clmc-upload-document-drop-area.loaded{border-style:solid;border-color:var(--success-green);background:var(--success-bg);cursor:default;}
+  .clmc-upload-document-drop-area.loaded > svg{color:var(--success-green);}
+  .clmc-upload-document-drop-area .wl-file-name{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--success-green);margin-top:5px;}
+  .clmc-upload-document-drop-area .wl-file-name svg{width:12px;height:12px;}
+  .clmc-upload-documents-actions .clmc-btn-primary{flex:1;}
   /* Destello de atención en advertencias y rechazos */
   @keyframes pulseRed{0%{box-shadow:0 0 0 0 rgba(197,48,31,.5);}70%{box-shadow:0 0 0 10px rgba(197,48,31,0);}100%{box-shadow:0 0 0 0 rgba(197,48,31,0);}}
-  .doc-ic.st-rejected{animation:pulseRed 1.6s ease-out infinite;}
-  .status-banner.error .ic{animation:pulseRed 1.6s ease-out infinite;}
+  .clmc-user-document-icon.st-rejected{animation:pulseRed 1.6s ease-out infinite;}
+  .wl-status-banner.error .ic{animation:pulseRed 1.6s ease-out infinite;}
   /* Éxito: la palomita entra con pop, dibuja su trazo y emite una onda */
   @keyframes popIn{0%{transform:scale(.35);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
   @keyframes ringSuccess{0%{box-shadow:0 0 0 0 rgba(46,125,50,.4)}100%{box-shadow:0 0 0 16px rgba(46,125,50,0)}}
   @keyframes drawStroke{to{stroke-dashoffset:0}}
-  .pop-check{animation:popIn .45s var(--ease) both, ringSuccess .8s .4s ease-out both;}
-  .pop-check svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:drawStroke .35s .32s ease-out forwards;}
+  .wl-pop-check{animation:popIn .45s var(--ease) both, ringSuccess .8s .4s ease-out both;}
+  .wl-pop-check svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:drawStroke .35s .32s ease-out forwards;}
   /* Banner de identidad validada: pulso verde suave (homólogo al rojo/naranja de alerta) */
   @keyframes pulseSuccess{0%{box-shadow:0 0 0 0 rgba(46,125,50,.35)}70%{box-shadow:0 0 0 10px rgba(46,125,50,0)}100%{box-shadow:0 0 0 0 rgba(46,125,50,0)}}
-  .status-banner.success .ic{animation:pulseSuccess 2.4s ease-out infinite;}
+  .wl-status-banner.success .ic{animation:pulseSuccess 2.4s ease-out infinite;}
   /* Pasos del tracker como botones cuando tienen acción */
-  .step.clickable{cursor:pointer;transition:transform .12s var(--ease), box-shadow .15s var(--ease);}
-  .step.clickable:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(20,20,22,.08);}
+  .wl-step.clickable{cursor:pointer;transition:transform .12s var(--ease), box-shadow .15s var(--ease);}
+  .wl-step.clickable:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(20,20,22,.08);}
   /* Fila de documento rechazado: toda la card invita al clic */
   /* Filas accionables: al pasar el cursor, el contorno se "pinta" en el color de acción
      (naranja para pendientes, rojo para rechazadas). Fallback sin @property: borde coloreado simple. */
   @property --sweep{syntax:'<angle>';initial-value:0deg;inherits:false;}
-  .doc-row.row-action,.doc-row.row-alert{cursor:pointer;position:relative;animation:none;transition:transform .15s var(--ease);}
-  .doc-row.row-action{--paint:var(--winland-orange);}
-  .doc-row.row-alert{--paint:var(--error-red);}
-  .doc-row.row-action:hover,.doc-row.row-alert:hover{border-color:var(--paint);transform:translateY(-1px);}
-  .doc-row.row-action::after,.doc-row.row-alert::after{
+  .clmc-user-document-item.wl-row-action,.clmc-user-document-item.wl-row-alert{cursor:pointer;position:relative;animation:none;transition:transform .15s var(--ease);}
+  .clmc-user-document-item.wl-row-action{--paint:var(--winland-orange);}
+  .clmc-user-document-item.wl-row-alert{--paint:var(--error-red);}
+  .clmc-user-document-item.wl-row-action:hover,.clmc-user-document-item.wl-row-alert:hover{border-color:var(--paint);transform:translateY(-1px);}
+  .clmc-user-document-item.wl-row-action::after,.clmc-user-document-item.wl-row-alert::after{
     content:'';position:absolute;inset:-1px;border-radius:var(--radius-sm);padding:1.5px;
     background:conic-gradient(from 0deg, var(--paint) var(--sweep), transparent var(--sweep));
     -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite:xor;mask-composite:exclude;
     opacity:0;pointer-events:none;
   }
-  .doc-row.row-action:hover::after,.doc-row.row-alert:hover::after{opacity:1;animation:paintBorder .45s var(--ease) forwards;}
+  .clmc-user-document-item.wl-row-action:hover::after,.clmc-user-document-item.wl-row-alert:hover::after{opacity:1;animation:paintBorder .45s var(--ease) forwards;}
   @keyframes paintBorder{from{--sweep:0deg}to{--sweep:360deg}}
 
   /* FAQ hint footer */
-  .faq-hint{
+  .wl-faq-hint{
     margin-top:28px;padding-top:18px;border-top:1px solid var(--line-soft);
     display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;
   }
-  .faq-hint svg{width:15px;height:15px;color:var(--text-faint);flex-shrink:0;}
-  .faq-hint span{font-size:14px;color:var(--text-gray);}
-  .faq-hint a{
+  .wl-faq-hint svg{width:15px;height:15px;color:var(--text-faint);flex-shrink:0;}
+  .wl-faq-hint span{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);}
+  .wl-faq-hint a{
     color:var(--winland-orange);font-weight:700;cursor:pointer;text-decoration:none;
   }
-  .faq-hint a:hover{text-decoration:underline;}
+  .wl-faq-hint a:hover{text-decoration:underline;}
 
   .hide{display:none !important;}
 
   /* ═══════════ RESPONSIVE REAL (media queries) ═══════════ */
   @media (max-width:768px){
-    .w-body{padding:0;}
-    .w-card{border-radius:0;box-shadow:none;}
-    .w-tabs{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
-    .w-tabs::-webkit-scrollbar{display:none;}
-    .w-tab{font-size:13px;padding:12px 14px;white-space:nowrap;flex-shrink:0;}
-    .w-subtabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 8px;}
-    .w-subtabs::-webkit-scrollbar{display:none;}
-    .w-subtabs .sub{white-space:nowrap;flex-shrink:0;padding:0 12px;}
-    .w-content{padding:18px;}
-    .vh-sub{white-space:normal;}
-    .vh-title{font-size:18px;}
-    .tracker{flex-direction:column;gap:6px;margin-bottom:18px;}
-    .step{padding:9px 12px;gap:9px;border-radius:9px;}
-    .step .num{width:22px;height:22px;font-size:11px;}
-    .step .num svg{width:11px;height:11px;}
-    .step .meta .t{font-size:12px;}
-    .step .meta .s{display:none;}
-    .step.current .meta .s,.step.alert .meta .s,.step.invite .meta .s{display:block;font-size:11px;}
-    .truora-card p{white-space:normal;}
+    .wl-w-body{padding:0;}
+    .clmc-card{border-radius:0;box-shadow:none;}
+    .wl-w-tabs{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .wl-w-tabs::-webkit-scrollbar{display:none;}
+    .wl-w-tab{font-size:13px;padding:12px 14px;white-space:nowrap;flex-shrink:0;}
+    .wl-w-subtabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 8px;}
+    .wl-w-subtabs::-webkit-scrollbar{display:none;}
+    .wl-w-subtabs .sub{white-space:nowrap;flex-shrink:0;padding:0 12px;}
+    .wl-w-content{padding:18px;}
+    .wl-vh-sub{white-space:normal;}
+    .wl-vh-title{font-size:18px;}
+    .wl-tracker{flex-direction:column;gap:6px;margin-bottom:18px;}
+    .wl-step{padding:9px 12px;gap:9px;border-radius:9px;}
+    .wl-step .num{width:22px;height:22px;font-size:11px;}
+    .wl-step .num svg{width:11px;height:11px;}
+    .wl-step .meta .t{font-size:var(--clmc-text-xsmall, 12px);}
+    .wl-step .meta .s{display:none;}
+    .wl-step.current .meta .s,.wl-step.alert .meta .s,.wl-step.invite .meta .s{display:block;font-size:11px;}
+    .wl-truora-card p{white-space:normal;}
     /* Chip "Recomendado" como listón colgado del borde superior: no consume una línea */
-    .truora-head{flex-wrap:nowrap;margin-bottom:14px;}
-    .truora-card .badge{position:absolute;top:0;right:16px;border-radius:0 0 8px 8px;padding:4px 10px 5px 9px;font-size:11px;}
-    .truora-card .badge svg{width:10px;height:10px;}
-    .btn-white{width:100%;}
-    .doc-grid{grid-template-columns:1fr;}
+    .wl-truora-head{flex-wrap:nowrap;margin-bottom:14px;}
+    .wl-truora-card .badge{position:absolute;top:0;right:16px;border-radius:0 0 8px 8px;padding:4px 10px 5px 9px;font-size:11px;}
+    .wl-truora-card .badge svg{width:10px;height:10px;}
+    .clmc-btn-primary{width:100%;}
+    .clmc-user-documents-grid{grid-template-columns:1fr;}
     /* Tarjeta de mejora: convierte el paso 3 en beneficio ("olvídate de las filas") */
-  .upgrade-card{
+  .wl-upgrade-card{
     display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:20px;
     background:var(--orange-tint);border:1px solid var(--winland-orange);border-radius:var(--radius);padding:18px 20px;
   }
-  .upgrade-card .t{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;}
-  .upgrade-card .s{font-size:13px;color:var(--text-gray);line-height:1.5;}
-  .email-box{flex-direction:column;align-items:stretch;gap:12px;}
-    .email-box .btn-outline{width:100%;}
-    .modal{padding:20px;}
+  .wl-upgrade-card .t{font-size:var(--clmc-text-small, 14px);font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .wl-upgrade-card .s{font-size:13px;color:var(--text-gray);line-height:1.5;}
+  .wl-email-box{flex-direction:column;align-items:stretch;gap:12px;}
+    .wl-email-box .clmc-btn-primary-white{width:100%;}
+    .clmc-dialog{padding:20px;}
     /* Categorías de FAQ: scroll horizontal, una sola línea */
-    .faq-cats{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:26px;padding-bottom:0;}
-    .faq-cats::-webkit-scrollbar{display:none;}
-    .faq-cat{white-space:nowrap;flex-shrink:0;}
-    .faq-a{padding-right:24px;}
+    .wl-faq-cats{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:26px;padding-bottom:0;}
+    .wl-faq-cats::-webkit-scrollbar{display:none;}
+    .wl-faq-cat{white-space:nowrap;flex-shrink:0;}
+    .wl-faq-a-tx{padding-right:24px;}
     /* Acciones de modal apiladas: primario arriba, ancho completo */
-    .modal-actions{
+    .clmc-upload-documents-actions{
       flex-direction:column-reverse;gap:9px;
       bottom:0;margin:16px -18px 0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));
     }
-    .modal-actions .btn-outline,.modal-actions .btn-primary-disabled{width:100%;flex:none;padding-top:12px;padding-bottom:12px;}
+    .clmc-upload-documents-actions .clmc-btn-primary-white,.clmc-upload-documents-actions .clmc-btn-disabled{width:100%;flex:none;padding-top:12px;padding-bottom:12px;}
     /* Texto de dudas/preguntas alineado a la izquierda en mobile */
-    .upgrade-card{flex-direction:column;align-items:flex-start;gap:14px;}
-    .upgrade-card button{width:100%;}
-    .faq-hint{justify-content:flex-start;text-align:left;}
+    .wl-upgrade-card{flex-direction:column;align-items:flex-start;gap:14px;}
+    .wl-upgrade-card button{width:100%;}
+    .wl-faq-hint{justify-content:flex-start;text-align:left;}
     body{padding-bottom:70px;}
     /* Modales cortos (confirmación, selector de canal): centrados con margen */
-    .modal-overlay{padding:16px;align-items:center;}
-    .modal{max-width:100%;width:100%;max-height:90%;border-radius:14px;}
-    .modal h3{margin-top:28px;}
+    .wl-modal-overlay{padding:16px;align-items:center;}
+    .clmc-dialog{max-width:100%;width:100%;max-height:90%;border-radius:14px;}
+    .clmc-dialog h3{margin-top:28px;}
     /* Modales de carga de documentos (largos): full-screen tipo hoja, como producción */
-    .modal-overlay:has(.doc-modal),.modal-overlay:has(.truora-wide),.modal-overlay:has(.modal-center){padding:0;align-items:stretch;}
-    .doc-modal,.modal.truora-wide,.modal.modal-center{max-width:100%;width:100%;height:100%;max-height:100%;border-radius:0;padding:20px 18px 32px;}
+    .wl-modal-overlay:has(.wl-doc-modal),.wl-modal-overlay:has(.wl-truora-wide),.wl-modal-overlay:has(.wl-modal-center){padding:0;align-items:stretch;}
+    .wl-doc-modal,.clmc-dialog.wl-truora-wide,.clmc-dialog.wl-modal-center{max-width:100%;width:100%;height:100%;max-height:100%;border-radius:0;padding:20px 18px 32px;}
     /* ── Layout tipo app: contenido arriba, acciones ancladas abajo ── */
-    .modal.truora-wide{display:flex;flex-direction:column;}
-    .truora-wide .t-step{flex:1;display:flex;flex-direction:column;min-height:0;}
-    .truora-wide .t-step.hide{display:none;}
-    .truora-wide .t-step > .btn-white{margin-top:auto;}
+    .clmc-dialog.wl-truora-wide{display:flex;flex-direction:column;}
+    .wl-truora-wide .wl-t-step{flex:1;display:flex;flex-direction:column;min-height:0;}
+    .wl-truora-wide .wl-t-step.hide{display:none;}
+    .wl-truora-wide .wl-t-step > .clmc-btn-primary{margin-top:auto;}
     /* Consentimiento: el checkbox baja junto al CTA (a la mano del pulgar) */
-    .truora-wide [data-step="1"] .consent-check{margin-top:auto;margin-bottom:14px;}
-    .truora-wide [data-step="1"] .consent-check + .btn-white{margin-top:0;}
+    .wl-truora-wide [data-step="1"] .wl-consent-check{margin-top:auto;margin-bottom:14px;}
+    .wl-truora-wide [data-step="1"] .wl-consent-check + .clmc-btn-primary{margin-top:0;}
     /* Canales: el bloque de teléfono + "Enviar enlace" baja a la misma posición que el CTA */
-    .truora-wide #tPhoneBox{margin-top:auto;}
+    .wl-truora-wide #tPhoneBox{margin-top:auto;}
     /* Footnotes alineados a la izquierda, como app */
-    .truora-wide .modal-footnote{text-align:left;}
+    .wl-truora-wide .clmc-upload-documents-format-box{text-align:left;}
     /* Éxito biométrico: full-screen homologado, contenido centrado, ✕ arriba */
-    .modal.modal-center{display:flex;flex-direction:column;justify-content:center;padding:24px 22px;}
-    .modal-center .close{position:absolute;top:14px;right:14px;margin:0;}
-    .modal-center h3{margin-top:0;}
+    .clmc-dialog.wl-modal-center{display:flex;flex-direction:column;justify-content:center;padding:24px 22px;}
+    .wl-modal-center .clmc-closeIcon-popup{position:absolute;top:14px;right:14px;margin:0;}
+    .wl-modal-center h3{margin-top:0;}
 
     /* ── Header glass homologado en mobile: barra 62px + gap 20px = 82px ── */
-    .modal.doc-modal,.modal.truora-wide{padding:82px 0 0;}
-    .doc-modal .m-guia,.truora-wide .t-step{padding:0 18px 32px;}
-    .doc-modal .m-main{padding:0 18px 0;}
-    .doc-modal .close::before,.truora-wide .close::before{top:-16px;right:-18px;height:62px;}
-    .modal.doc-modal .close,.modal.truora-wide .close{top:16px;right:18px;}
-    .t-back{top:19px;left:18px;}
+    .clmc-dialog.wl-doc-modal,.clmc-dialog.wl-truora-wide{padding:82px 0 0;}
+    .wl-doc-modal .wl-m-guia,.wl-truora-wide .wl-t-step{padding:0 18px 32px;}
+    .wl-doc-modal .wl-m-main{padding:0 18px 0;}
+    .wl-doc-modal .clmc-closeIcon-popup::before,.wl-truora-wide .clmc-closeIcon-popup::before{top:-16px;right:-18px;height:62px;}
+    .clmc-dialog.wl-doc-modal .clmc-closeIcon-popup,.clmc-dialog.wl-truora-wide .clmc-closeIcon-popup{top:16px;right:18px;}
+    .wl-t-back{top:19px;left:18px;}
 
     /* ── Footer liquid glass: acciones fijas abajo con blur, como app ── */
-    .modal-actions{
+    .clmc-upload-documents-actions{
       background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
       border-top:1px solid rgba(0,0,0,.06);
     }
     /* Homologación: en banco/domicilio (contenido corto) las acciones también anclan abajo */
-    .doc-modal{display:flex;flex-direction:column;}
-    .doc-modal .m-main:not(.hide),.doc-modal .m-guia:not(.hide){flex:1;display:flex;flex-direction:column;min-height:0;}
-    .doc-modal .m-main .modal-actions{margin-top:auto;}
+    .wl-doc-modal{display:flex;flex-direction:column;}
+    .wl-doc-modal .wl-m-main:not(.hide),.wl-doc-modal .wl-m-guia:not(.hide){flex:1;display:flex;flex-direction:column;min-height:0;}
+    .wl-doc-modal .wl-m-main .clmc-upload-documents-actions{margin-top:auto;}
   }
 
   /* Navegador de estados flotante (demo, no entregable) */
@@ -851,7 +791,7 @@
     font-size:20px;line-height:1;cursor:pointer;font-family:inherit;}
   #stateNav button:hover:not(:disabled){background:rgba(255,255,255,.15);}
   #stateNav button:disabled{opacity:.3;cursor:default;}
-  #stateNav .sn-label{color:#c7ccd2;font-size:12px;font-weight:700;min-width:44px;text-align:center;font-family:'winland',sans-serif;}
+  #stateNav .wl-sn-label{color:#c7ccd2;font-size:var(--clmc-text-xsmall, 12px);font-weight:700;min-width:44px;text-align:center;font-family:'winland',sans-serif;}
   @media (max-width:768px){ #stateNav{bottom:82px;} }
 </style>
 </head>
@@ -879,22 +819,22 @@
            padding 40px; .privateLayout-content: border-radius 16px + sombra).
            El equipo de dev inserta este bloque dentro del layout privado.
            ═══════════════════════════════════════════════════════════════ -->
-      <div class="w-body">
-        <div class="w-card">
-          <div class="w-tabs">
-            <div class="w-tab active" id="miCuentaTab" onclick="render('inicial')">Mi cuenta</div>
-            <div class="w-tab">Historial</div>
-            <div class="w-tab">Bonos</div>
-            <div class="w-tab">Juego responsable</div>
-            <div class="w-tab" id="faqTab" onclick="render('faq')">Preguntas frecuentes</div>
+      <div class="wl-w-body">
+        <div class="clmc-card">
+          <div class="wl-w-tabs">
+            <div class="wl-w-tab active" id="miCuentaTab" onclick="render('inicial')">Mi cuenta</div>
+            <div class="wl-w-tab">Historial</div>
+            <div class="wl-w-tab">Bonos</div>
+            <div class="wl-w-tab">Juego responsable</div>
+            <div class="wl-w-tab" id="faqTab" onclick="render('faq')">Preguntas frecuentes</div>
           </div>
-          <div class="w-subtabs" id="subtabsRow">
+          <div class="wl-w-subtabs" id="subtabsRow">
             <div class="sub" data-sub="cuenta">Cuenta</div>
             <div class="sub active" data-sub="verificacion" id="verifSub" onclick="render('inicial')">Verificación</div>
             <div class="sub" data-sub="contrasena">Contraseña</div>
           </div>
 
-          <div class="w-content" style="position:relative;" id="content">
+          <div class="wl-w-content" style="position:relative;" id="content">
             <!-- injected per state -->
           </div>
         </div>
@@ -910,7 +850,7 @@
 							0% { transform: translateX(0); }
 							100% { transform: translateX(-50%); }
 						}
-					</style></div></div><div class="clmc-footer-divider"></div><div class="clmc-footer-inner clmc-pt-large clmc-pb-large"><div class="clmc-footer-grid"><div class="clmc-footer-column"><h3 class="clmc-footer-title">¿Necesitas ayuda?</h3><section><ul class="clmc-flex clmc-gap-small clmc-column" style="list-style: none; padding: 0px; margin: 0px;"><li><p class="clmc-link clmc-cursor-pointer clmc-text-small clmc-color-quinary" onclick="render('salas')">Nuestras salas</p></li><li><p class="clmc-link clmc-cursor-pointer clmc-text-small clmc-color-quinary">Chat de soporte</p></li><li><a class="clmc-color-primary clmc-text-small clmc-text-decoration-underline" href="mailto:clientes@winland.com.mx" title="Enviar correo a clientes@winland.com.mx">clientes@winland.com.mx</a></li><li><a title="Reglas" class="clmc-link clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Reglas</a></li></ul></section></div><div class="clmc-footer-column"><h3 class="clmc-footer-title">Legales</h3><section><ul class="clmc-flex clmc-gap-small clmc-column" style="list-style: none; padding: 0px; margin: 0px;"><li><a title="Aviso de privacidad" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Aviso de privacidad</a></li><li><a title="Términos y condiciones" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Términos y condiciones</a></li><li><a title="Juego responsable" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Juego responsable</a></li><li><a title="Política de cookies" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Política de cookies</a></li></ul></section></div><div class="clmc-footer-column"><h4 class="clmc-footer-title">Ajustes</h4><div class="MuiFormControl-root clmc-select-label clmc-w100 clmc-footer-odds-control css-1qk38wv"><div class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-formControl MuiInputBase-sizeSmall clmc-footer-odds-select MuiSelect-root css-98ra8i"><div tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-labelledby="currency-select-label" class="MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input css-uxvpzc">Americano</div><input aria-invalid="false" aria-hidden="true" tabindex="-1" class="MuiSelect-nativeInput css-147e5lo" id="_r_6_" value="2"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium MuiSelect-icon css-1l3b12y" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"></path></svg><fieldset aria-hidden="true" class="MuiOutlinedInput-notchedOutline css-5v2ak0"><legend class="css-w4cd9x"><span class="notranslate" aria-hidden="true">​</span></legend></fieldset></div></div></div></div></div><div class="clmc-footer-divider"></div><div class="clmc-footer-inner clmc-pt-large clmc-pb-large"><details class="clmc-footer-details" open=""><summary class="clmc-footer-summary"><h3 class="clmc-mb-medium">Más información sobre Winland</h3><span class="clmc-footer-caret" aria-hidden="true">⌃</span></summary><div class="clmc-footer-info"><p class="clmc-color-quinary">Winland Online: La Casa de Apuestas</p><p class="clmc-color-quinary">Deportivas y Casino en Línea más Segura de México</p><p class="clmc-color-quinary">Experiencia y Trayectoria En Winland Casino, somos una empresa consolidada en el sector del entretenimiento en México, con una sólida trayectoria en la creación de experiencias de juego de alta calidad. Nuestra plataforma, Winland Online, representa la evolución natural de nuestro compromiso con la innovación, llevando la emoción del mundo físico a tu dispositivo móvil.</p><p class="clmc-color-quinary">Las Mejores Apuestas Deportivas Nuestro Sportsbook está diseñado para el aficionado mexicano. Ofrecemos los momios más competitivos para tus deportes favoritos: desde la pasión de la Liga MX y el fútbol internacional (Champions League, La Liga), hasta la intensidad de la NFL, NBA, MLB y Boxeo. Disfruta de nuestra plataforma de Apuestas En Vivo con estadísticas en tiempo real para jugar minuto a minuto.</p><p class="clmc-color-quinary">Casino en Línea y Juegos en Vivo Nuestro portafolio incluye una amplia gama de opciones de entretenimiento. Vive la adrenalina en nuestro Casino en Vivo con crupieres reales en Ruleta, Blackjack y Baccarat, o explora cientos de Slots (Tragamonedas), Jackpots y juegos virtuales con tecnología de última generación</p><p class="clmc-color-quinary">Seguridad, Regulación y Confianza A través de Winland Online, ofrecemos un entorno digital seguro y 100% regulado por la SEGOB. Nos enfocamos en brindar valor y confianza, facilitando depósitos rápidos y seguros vía SPEI, tarjetas bancarias y efectivo en tiendas de conveniencia (como 7-Eleven y Walmart), garantizando el pago de tus premios. Nuestra misión es consolidar a Winland como el referente del entretenimiento responsable, transparente y orientado al cliente en México.</p></div></details><div class="clmc-footer-divider"></div><div class="clmc-footer-bottom "><div class="clmc-footer-social"><a href="https://www.facebook.com/profile.php?id=61578614082947&amp;mibextid=wwXIfr&amp;rdid=0KIFuWybq5ttbVTk&amp;share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F17pzR3BBaz%2F%3Fmibextid%3DwwXIfr#" aria-label="Facebook" title="Visitar Facebook de Winland" target="_blank" class="clmc-footer-social-link"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-q7mezt" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"></path></svg></a><a href="https://www.instagram.com/winland.com.mx/" aria-label="Instagram" title="Visitar Instagram de Winland" target="_blank" class="clmc-footer-social-link"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-q7mezt" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"></path></svg></a></div><div class="clmc-footer-badges"><img height="120" alt="+18 Responsable" title="+18 Responsable" src="assets/produccion/footer/juego-responsable.png"><img height="64" alt="ssl_certified" title="ssl_certified" src="assets/produccion/footer/ssl_certified.webp"></div></div><div class="clmc-footer-legal"><p class="clmc-color-quinary clmc-w100"><a href="#" title="Ir al inicio de Winland" class="clmc-text-decoration-underline clmc-color-secondary clmc-footer-legal-link">www.winland.com.mx</a>  es operado en México por Operadora de Salas Fortune de México, S.A. de C.V., operador autorizado conforme al oficio No. DGJS/682/2018, bajo el Permiso Federal No.DGJS/DGAAD/DCRCA/P-01/2017 otorgado a Operadora de Coincidencias Numéricas, S.A. de C.V., y cuenta con la autorización específica del sitio mediante el oficio No.DGJS/DCRCA/0149/2023 de fecha 9 de febrero de 2023. Juega responsablemente. El juego con apuesta está prohibido para menores de 18 años. Su finalidad es el entretenimiento; juega con moderación y dentro de tus límites.</p></div></div></footer>
+					</style></div></div><div class="clmc-footer-divider"></div><div class="clmc-footer-inner clmc-pt-large clmc-pb-large"><div class="clmc-footer-grid"><div class="clmc-footer-column"><h3 class="clmc-footer-title">¿Necesitas ayuda?</h3><section><ul class="clmc-flex clmc-gap-small clmc-column" style="list-style: none; padding: 0px; margin: 0px;"><li><p class="clmc-link clmc-cursor-pointer clmc-text-small clmc-color-quinary">Nuestras salas</p></li><li><p class="clmc-link clmc-cursor-pointer clmc-text-small clmc-color-quinary">Chat de soporte</p></li><li><a class="clmc-color-primary clmc-text-small clmc-text-decoration-underline" href="mailto:clientes@winland.com.mx" title="Enviar correo a clientes@winland.com.mx">clientes@winland.com.mx</a></li><li><a title="Reglas" class="clmc-link clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Reglas</a></li></ul></section></div><div class="clmc-footer-column"><h3 class="clmc-footer-title">Legales</h3><section><ul class="clmc-flex clmc-gap-small clmc-column" style="list-style: none; padding: 0px; margin: 0px;"><li><a title="Aviso de privacidad" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Aviso de privacidad</a></li><li><a title="Términos y condiciones" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Términos y condiciones</a></li><li><a title="Juego responsable" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Juego responsable</a></li><li><a title="Política de cookies" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Política de cookies</a></li></ul></section></div><div class="clmc-footer-column"><h4 class="clmc-footer-title">Ajustes</h4><div class="MuiFormControl-root clmc-select-label clmc-w100 clmc-footer-odds-control css-1qk38wv"><div class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-formControl MuiInputBase-sizeSmall clmc-footer-odds-select MuiSelect-root css-98ra8i"><div tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-labelledby="currency-select-label" class="MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input css-uxvpzc">Americano</div><input aria-invalid="false" aria-hidden="true" tabindex="-1" class="MuiSelect-nativeInput css-147e5lo" id="_r_6_" value="2"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium MuiSelect-icon css-1l3b12y" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"></path></svg><fieldset aria-hidden="true" class="MuiOutlinedInput-notchedOutline css-5v2ak0"><legend class="css-w4cd9x"><span class="notranslate" aria-hidden="true">​</span></legend></fieldset></div></div></div></div></div><div class="clmc-footer-divider"></div><div class="clmc-footer-inner clmc-pt-large clmc-pb-large"><details class="clmc-footer-details" open=""><summary class="clmc-footer-summary"><h3 class="clmc-mb-medium">Más información sobre Winland</h3><span class="clmc-footer-caret" aria-hidden="true">⌃</span></summary><div class="clmc-footer-info"><p class="clmc-color-quinary">Winland Online: La Casa de Apuestas</p><p class="clmc-color-quinary">Deportivas y Casino en Línea más Segura de México</p><p class="clmc-color-quinary">Experiencia y Trayectoria En Winland Casino, somos una empresa consolidada en el sector del entretenimiento en México, con una sólida trayectoria en la creación de experiencias de juego de alta calidad. Nuestra plataforma, Winland Online, representa la evolución natural de nuestro compromiso con la innovación, llevando la emoción del mundo físico a tu dispositivo móvil.</p><p class="clmc-color-quinary">Las Mejores Apuestas Deportivas Nuestro Sportsbook está diseñado para el aficionado mexicano. Ofrecemos los momios más competitivos para tus deportes favoritos: desde la pasión de la Liga MX y el fútbol internacional (Champions League, La Liga), hasta la intensidad de la NFL, NBA, MLB y Boxeo. Disfruta de nuestra plataforma de Apuestas En Vivo con estadísticas en tiempo real para jugar minuto a minuto.</p><p class="clmc-color-quinary">Casino en Línea y Juegos en Vivo Nuestro portafolio incluye una amplia gama de opciones de entretenimiento. Vive la adrenalina en nuestro Casino en Vivo con crupieres reales en Ruleta, Blackjack y Baccarat, o explora cientos de Slots (Tragamonedas), Jackpots y juegos virtuales con tecnología de última generación</p><p class="clmc-color-quinary">Seguridad, Regulación y Confianza A través de Winland Online, ofrecemos un entorno digital seguro y 100% regulado por la SEGOB. Nos enfocamos en brindar valor y confianza, facilitando depósitos rápidos y seguros vía SPEI, tarjetas bancarias y efectivo en tiendas de conveniencia (como 7-Eleven y Walmart), garantizando el pago de tus premios. Nuestra misión es consolidar a Winland como el referente del entretenimiento responsable, transparente y orientado al cliente en México.</p></div></details><div class="clmc-footer-divider"></div><div class="clmc-footer-bottom "><div class="clmc-footer-social"><a href="https://www.facebook.com/profile.php?id=61578614082947&amp;mibextid=wwXIfr&amp;rdid=0KIFuWybq5ttbVTk&amp;share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F17pzR3BBaz%2F%3Fmibextid%3DwwXIfr#" aria-label="Facebook" title="Visitar Facebook de Winland" target="_blank" class="clmc-footer-social-link"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-q7mezt" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"></path></svg></a><a href="https://www.instagram.com/winland.com.mx/" aria-label="Instagram" title="Visitar Instagram de Winland" target="_blank" class="clmc-footer-social-link"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-q7mezt" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"></path></svg></a></div><div class="clmc-footer-badges"><img height="120" alt="+18 Responsable" title="+18 Responsable" src="assets/produccion/footer/juego-responsable.png"><img height="64" alt="ssl_certified" title="ssl_certified" src="assets/produccion/footer/ssl_certified.webp"></div></div><div class="clmc-footer-legal"><p class="clmc-color-quinary clmc-w100"><a href="#" title="Ir al inicio de Winland" class="clmc-text-decoration-underline clmc-color-secondary clmc-footer-legal-link">www.winland.com.mx</a>  es operado en México por Operadora de Salas Fortune de México, S.A. de C.V., operador autorizado conforme al oficio No. DGJS/682/2018, bajo el Permiso Federal No.DGJS/DGAAD/DCRCA/P-01/2017 otorgado a Operadora de Coincidencias Numéricas, S.A. de C.V., y cuenta con la autorización específica del sitio mediante el oficio No.DGJS/DCRCA/0149/2023 de fecha 9 de febrero de 2023. Juega responsablemente. El juego con apuesta está prohibido para menores de 18 años. Su finalidad es el entretenimiento; juega con moderación y dentro de tus límites.</p></div></div></footer>
 
       <!-- Menú inferior real (solo móvil, como en producción) -->
       <div class="wl-solo-movil">
@@ -924,7 +864,6 @@ const I = {
   star:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8-5.1-4.7 6.9-.8L12 2z"/></svg>`,
   check:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12.5l5 5L19 7"/></svg>`,
   mail:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>`,
-  pin:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
   clock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>`,
   alertTriangle:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><rect x="11" y="6.5" width="2" height="7.5" rx="1" fill="#fff"/><circle cx="12" cy="17" r="1.35" fill="#fff"/></svg>`,
   lock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/></svg>`,
@@ -932,8 +871,9 @@ const I = {
   selfie:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3"/><path d="M8 6l1-2h6l1 2"/></svg>`,
   x:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
   chevronRight:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>`,
-  chevronDown:`<svg class="icon chev-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>`,
+  chevronDown:`<svg class="icon wl-chev-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>`,
   plus:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>`,
+  imagen:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-6 6-3-3-4 4"/></svg>`,
   whatsapp:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.74-.86-2-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.15-.17.2-.34.22-.63.08-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.05-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.66-1.6-.9-2.18-.24-.57-.48-.5-.66-.5l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.63.71.22 1.36.2 1.87.12.57-.08 1.74-.71 1.98-1.4.25-.68.25-1.27.17-1.4-.07-.12-.27-.2-.57-.34zM12.05 21.5h-.02a9.4 9.4 0 0 1-4.8-1.32l-.34-.2-3.57.93.96-3.48-.22-.36a9.4 9.4 0 0 1-1.44-5.02c0-5.19 4.23-9.42 9.44-9.42 2.52 0 4.89.98 6.67 2.77a9.35 9.35 0 0 1 2.76 6.66c0 5.2-4.23 9.43-9.44 9.43zm8.03-17.46A11.32 11.32 0 0 0 12.05.7C5.8.7.72 5.78.72 12.02c0 2 .52 3.95 1.52 5.68L.62 23.3l5.73-1.5a11.28 11.28 0 0 0 5.7 1.45h.01c6.24 0 11.32-5.08 11.32-11.32 0-3.03-1.18-5.87-3.32-8.01z"/></svg>`,
   message:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H8.5L4 21.5A1 1 0 0 1 2.3 20.8L2.3 5A2 2 0 0 1 4 3z"/><circle cx="8" cy="10.5" r="1.3" fill="#fff"/><circle cx="12" cy="10.5" r="1.3" fill="#fff"/><circle cx="16" cy="10.5" r="1.3" fill="#fff"/></svg>`,
   qr:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3"/></svg>`,
@@ -943,13 +883,13 @@ const I = {
 
 /* ═══ Flujo Truora multi-paso (réplica del widget real con diseño Winland) ═══ */
 function truoraStep(n){
-  document.querySelectorAll('.t-step').forEach(st=>st.classList.toggle('hide', st.dataset.step!=String(n)));
+  document.querySelectorAll('.wl-t-step').forEach(st=>st.classList.toggle('hide', st.dataset.step!=String(n)));
   const box=document.getElementById('tPhoneBox'); if(box) box.classList.add('hide');
-  document.querySelectorAll('.channel-list .ch.selected').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.wl-channel-list .ch.selected').forEach(c=>c.classList.remove('selected'));
   if(n===3) qrStart();
 }
 function truoraChannel(row, name){
-  document.querySelectorAll('.channel-list .ch').forEach(c=>c.classList.toggle('selected', c===row));
+  document.querySelectorAll('.wl-channel-list .ch').forEach(c=>c.classList.toggle('selected', c===row));
   document.getElementById('tChannelName').textContent=name;
   document.getElementById('tPhoneBox').classList.remove('hide');
 }
@@ -979,148 +919,99 @@ function qrStart(){
 }
 
 /* ═══ Filas de documento homologadas: íconos de producción + estados consistentes ═══ */
-const DOCICON={email:['email_verified','email_pending'],identity:['identify_verified','identify_pending'],bank:['bank_verified','bank_pending'],home:['other_verified','other_pending']};
+/* Familia de íconos de Calímaco: un archivo por documento y estado.
+   Los *_denied se derivaron de los suyos (misma forma, relleno #D32F2F ≡
+   --clmc-bg-color-error); hoy no existen en producción. Ver docs/calimaco. */
+const DOCICON={email:'email',identity:'identify',bank:'bank',home:'other'};
+const DOCESTADO={verified:'verified',rejected:'denied'};
 function docIcon(type,status){
-  if(status==='rejected') return I.alertTriangle;
-  if(status==='blocked')  return I.lock;
-  const [v,p]=DOCICON[type];
-  return `<img src="assets/produccion/${status==='verified'?v:p}.svg" alt="" style="width:17px;height:17px;display:block;">`;
+  if(status==='blocked') return I.lock;
+  const archivo = `${DOCICON[type]}_${DOCESTADO[status]||'pending'}`;
+  return `<img src="assets/produccion/${archivo}.svg" alt="" style="width:17px;height:17px;display:block;">`;
 }
 function mkRow(type,title,status,sub,opts={}){
   const scMap={verified:'s-verified',pending:'s-pending',progress:'s-progress',rejected:'s-rejected',blocked:'s-blocked'};
   const noChev = status==='verified' || status==='blocked' || opts.chev===false;
-  const chev = noChev ? '' : `<div class="chev">${I.chevronRight}</div>`;
-  return `<div class="doc-row ${status==='blocked'?'disabled':''}"><div class="doc-ic st-${status}">${docIcon(type,status)}</div><div class="doc-meta"><div class="t">${title}</div><div class="s ${scMap[status]}">${sub}</div></div>${chev}</div>`;
+  const chev = noChev ? '' : `<div class="wl-chev">${I.chevronRight}</div>`;
+  return `<div class="clmc-user-document-item ${status==='blocked'?'disabled':''}"><div class="clmc-user-document-icon st-${status}">${docIcon(type,status)}</div><div class="wl-doc-meta"><div class="t">${title}</div><div class="s ${scMap[status]}">${sub}</div></div>${chev}</div>`;
 }
 
 /* Guía visual del modal: imagen inline en desktop, tarjeta que abre visor en mobile */
 const guiaVisual = (img, titulo) => `
-  <div class="guia-cta" onclick="openGuia(this,'${img}','${titulo}')">
-    <img class="guia-thumb" src="assets/infografias/${img}" alt="">
+  <div class="wl-guia-cta" onclick="openGuia(this,'${img}','${titulo}')">
+    <img class="wl-guia-thumb" src="assets/infografias/${img}" alt="">
     <span><b>${titulo}</b><small>Consulta la guía visual antes de subir</small></span>
     ${I.chevronRight}
   </div>
 `;
 /* Vista de guía DENTRO del mismo modal (sin apilar modales) */
 function openGuia(el,img,titulo){
-  const m=el.closest('.modal');
-  m.querySelector('.m-main').classList.add('hide');
-  const g=m.querySelector('.m-guia');
+  const m=el.closest('.clmc-dialog');
+  m.querySelector('.wl-m-main').classList.add('hide');
+  const g=m.querySelector('.wl-m-guia');
   g.querySelector('.g-title').textContent=titulo;
   g.querySelector('img').src='assets/infografias/'+img;
   g.classList.remove('hide');
   m.scrollTop=0;
 }
 function closeGuia(el){
-  const m=el.closest('.modal');
-  m.querySelector('.m-guia').classList.add('hide');
-  m.querySelector('.m-main').classList.remove('hide');
+  const m=el.closest('.clmc-dialog');
+  m.querySelector('.wl-m-guia').classList.add('hide');
+  m.querySelector('.wl-m-main').classList.remove('hide');
 }
 /* FAQ: item con acordeón. Los interlinks van embebidos en la redacción con <a> */
-const faqItem = (q, a) => `
-  <div class="faq-item">
-    <div class="faq-q" onclick="faqOpen(this.parentElement)">${q} ${I.plus}</div>
-    <div class="faq-a">${a}</div>
+/* El texto de las respuestas es el autorizado por el cliente y no se altera.
+   `guia` es una capa aparte: agrega la infografía sin tocar ese copy. */
+const faqItem = (q, a, guia) => `
+  <div class="wl-faq-item">
+    <div class="wl-faq-q" onclick="faqOpen(this.parentElement)">${q} ${I.plus}</div>
+    <div class="wl-faq-a"><div class="wl-faq-a-in"><div class="wl-faq-a-tx">${a}${guia ? `
+      <a class="wl-faq-guia" onclick="event.stopPropagation();faqInfo('${guia[0]}','${guia[1]}')">${I.imagen}Ver guía visual</a>` : ''}</div></div></div>
   </div>
 `;
+/* Lista dentro de una respuesta: respeta los guiones con que vino el texto original */
+const faqLista = items => `<ul class="wl-faq-lista">${items.map(x=>`<li>${x}</li>`).join('')}</ul>`;
 /* Acordeón exclusivo: solo una respuesta abierta a la vez */
 function faqOpen(item){
   const wasOpen=item.classList.contains('open');
-  item.closest('.faq-group').querySelectorAll('.faq-item.open').forEach(i=>i.classList.remove('open'));
+  item.closest('.wl-faq-group').querySelectorAll('.wl-faq-item.open').forEach(i=>i.classList.remove('open'));
   if(!wasOpen) item.classList.add('open');
 }
 /* Visor de infografía dentro de FAQ: informa sin sacar al usuario de la sección */
 function faqInfo(img, titulo){
   const ov=document.createElement('div');
   ov.className='faq-visor-overlay';
-  ov.innerHTML=`<div class="faq-visor"><div class="fv-head"><b>${titulo}</b><div class="fv-close">${I.x}</div></div><img src="assets/infografias/${img}" alt="${titulo}"></div>`;
-  ov.addEventListener('click', e=>{ if(e.target===ov||e.target.closest('.fv-close')) ov.remove(); });
+  ov.innerHTML=`<div class="wl-faq-visor"><div class="wl-fv-head"><b>${titulo}</b><div class="wl-fv-close">${I.x}</div></div><img src="assets/infografias/${img}" alt="${titulo}"></div>`;
+  ov.addEventListener('click', e=>{ if(e.target===ov||e.target.closest('.wl-fv-close')) ov.remove(); });
   document.body.appendChild(ov);
 }
-/* Catálogo de salas. API: alimentar desde el catálogo de sucursales.
-   Coordenadas aproximadas a nivel calle — confirmar con operación. */
-const SALAS = [
-  {m:'Winland', c:'Monterrey',  e:'Nuevo León',          f:'monterrey.jpg',  d:'Av. Eugenio Garza Sada 3640, Col. 42, 64770 Monterrey, N.L.',      lat:25.6510, lng:-100.2890},
-  {m:'Winland', c:'Cuernavaca', e:'Morelos',             f:'cuernavaca.jpg', d:'Lomas de la Selva, 62270 Cuernavaca, Morelos',                     lat:18.9300, lng:-99.2280},
-  {m:'Winland', c:'Chihuahua',  e:'Chihuahua',           f:'chihuahua.jpg',  d:'Perif. de la Juventud 6300, Saucito, 31165 Chihuahua, Chih.',      lat:28.6640, lng:-106.1300},
-  {m:'Fortune', c:'La Paz',     e:'Baja California Sur', f:'lapaz.jpg',      d:'Blvd. Forjadores 303, Bellavista, 23050 La Paz, B.C.S.',           lat:24.1050, lng:-110.3120},
-  {m:'Fortune', c:'Hermosillo', e:'Sonora',              f:'hermosillo.jpg', d:'Av. Luis Donaldo Colosio 357, Santa Fe, 83249 Hermosillo, Sonora', lat:29.0950, lng:-110.9700},
-];
-const mapsUrl = s => `https://www.google.com/maps/search/${encodeURIComponent(s.m+' '+s.c+' '+s.d)}`;
-
-/* ── Mapa de salas (Leaflet). Se reinicializa en cada render del estado 'salas'. ── */
-let mapaSalas=null, marcadoresSalas=[], salaActiva=null;
-function initMapaSalas(){
-  const cont=document.getElementById('mapaSalas');
-  if(!cont || typeof L==='undefined') return;   /* sin conexión: la página sigue usable */
-  mapaSalas = L.map(cont,{scrollWheelZoom:false, zoomControl:true});
-  /* Tiles oscuros: el naranja de marca resalta mucho más y el bloque hace juego
-     con el footer negro del sitio. Cambiar a 'voyager' para la versión clara. */
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:19
-  }).addTo(mapaSalas);
-  marcadoresSalas = SALAS.map((x,i)=>{
-    const icono = L.divIcon({
-      className:'', iconSize:[15,15], iconAnchor:[7,7], popupAnchor:[0,-12],
-      html:`<div class="pin-sala ${x.m==='Fortune'?'fortune':''}" style="animation-delay:${i*.09}s"></div>`
-    });
-    return L.marker([x.lat,x.lng],{icon:icono, riseOnHover:true})
-      .addTo(mapaSalas)
-      .bindPopup(`<div class="pop-sala">
-          <div class="pm ${x.m==='Fortune'?'fortune':''}">${x.m}</div>
-          <div class="pc">${x.c}</div>
-          <div class="pd">${x.d}</div>
-          <a class="pb" href="${mapsUrl(x)}" target="_blank" rel="noopener">${I.pin}Cómo llegar</a>
-        </div>`,{closeButton:true, offset:[0,-2]})
-      .on('click',()=>seleccionarSala(i,true))
-      .on('mouseover',()=>document.querySelector(`.sala-card[data-sala="${i}"]`)?.classList.add('senalada'))
-      .on('mouseout', ()=>document.querySelector(`.sala-card[data-sala="${i}"]`)?.classList.remove('senalada'));
-  });
-  verTodasLasSalas(false);   /* primer encuadre sin animación: el mapa aún no tiene centro */
+/* Entra a la pestaña de FAQ abriendo una categoría concreta. Útil cuando el
+   usuario llega desde el flujo de verificación: aterriza en el tema que traía. */
+function irAFaq(cat){
+  render('faq');
+  const chip = document.querySelector(`#faqCats .wl-faq-cat[data-cat="${cat}"]`);
+  if(chip) faqCat(chip);
 }
-/* Acerca el mapa a la sala y sincroniza el resaltado con su tarjeta */
-function seleccionarSala(i, desdeMapa){
-  salaActiva=i;
-  marcadoresSalas.forEach((m,j)=>m.getElement()?.querySelector('.pin-sala')?.classList.toggle('activo', j===i));
-  document.querySelectorAll('.sala-item').forEach(c=>c.classList.toggle('activa', c.dataset.sala==String(i)));
-  mapaSalas?.flyTo([SALAS[i].lat,SALAS[i].lng], 14, {duration:1.1});
-  setTimeout(()=>marcadoresSalas[i]?.openPopup(), desdeMapa?0:600);
-  if(desdeMapa){
-    const it=document.querySelector(`.sala-item[data-sala="${i}"]`), panel=document.querySelector('.salas-lista');
-    if(it&&panel) panel.scrollTo({top:it.offsetTop-panel.offsetTop-70, behavior:'smooth'});
-  }
-}
-function irASala(i){ seleccionarSala(i,false); }
-/* Espejo entre lista y mapa: al pasar el cursor por una tarjeta, su pin se ilumina */
-function senalarPin(i, on){
-  marcadoresSalas[i]?.getElement()?.querySelector('.pin-sala')?.classList.toggle('senalado', on);
-}
-function verTodasLasSalas(animar=true){
-  if(!mapaSalas) return;
-  salaActiva=null;
-  mapaSalas.closePopup();
-  const bounds=SALAS.map(x=>[x.lat,x.lng]), opts={padding:[50,50]};
-  if(animar) mapaSalas.flyToBounds(bounds,{...opts, duration:.9});
-  else       mapaSalas.fitBounds(bounds,opts);
-  document.querySelectorAll('.sala-item').forEach(c=>c.classList.remove('activa'));
-  marcadoresSalas.forEach(m=>m.getElement()?.querySelector('.pin-sala')?.classList.remove('activo'));
-}
-
 function faqCat(el){
-  document.querySelectorAll('#faqCats .faq-cat').forEach(c=>c.classList.toggle('active', c===el));
-  document.querySelectorAll('.faq-group').forEach(g=>g.classList.toggle('hide', g.dataset.cat!==el.dataset.cat));
+  document.querySelectorAll('#faqCats .wl-faq-cat').forEach(c=>c.classList.toggle('active', c===el));
+  document.querySelectorAll('.wl-faq-group').forEach(g=>g.classList.toggle('hide', g.dataset.cat!==el.dataset.cat));
+  /* En mobile los chips hacen scroll horizontal: dejar el activo a la vista */
+  const cont=el.parentElement;
+  if(cont.scrollWidth>cont.clientWidth){
+    cont.scrollLeft = el.offsetLeft-(cont.clientWidth-el.offsetWidth)/2;
+  }
 }
 
 const headerHTML = (title, sub) => `
-  <div class="vh-title">${title}</div>
-  <div class="vh-sub">${sub}</div>
+  <div class="wl-vh-title">${title}</div>
+  <div class="wl-vh-sub">${sub}</div>
 `;
 
 const tracker = (a,b,c) => `
-  <div class="tracker">
-    <div class="step ${a.cls}"><div class="num">${a.cls==='done'?I.check:'1'}</div><div class="meta"><div class="t">Paso 1 — Identidad</div><div class="s">${a.s}</div></div></div>
-    <div class="step ${b.cls}"><div class="num">${b.cls==='done'?I.check:'2'}</div><div class="meta"><div class="t">Paso 2 — Domicilio</div><div class="s">${b.s}</div></div></div>
-    <div class="step ${c.cls}"><div class="num">${c.cls==='done'?I.check:'3'}</div><div class="meta"><div class="t">Paso 3 — Cuenta bancaria</div><div class="s">${c.s}</div></div></div>
+  <div class="wl-tracker">
+    <div class="wl-step ${a.cls}"><div class="num">${a.cls==='done'?I.check:'1'}</div><div class="meta"><div class="t">Paso 1 — Identidad</div><div class="s">${a.s}</div></div></div>
+    <div class="wl-step ${b.cls}"><div class="num">${b.cls==='done'?I.check:'2'}</div><div class="meta"><div class="t">Paso 2 — Domicilio</div><div class="s">${b.s}</div></div></div>
+    <div class="wl-step ${c.cls}"><div class="num">${c.cls==='done'?I.check:'3'}</div><div class="meta"><div class="t">Paso 3 — Cuenta bancaria</div><div class="s">${c.s}</div></div></div>
   </div>
 `;
 
@@ -1128,41 +1019,41 @@ const tracker = (a,b,c) => `
 const TRUORA_MARK = `<img src="assets/produccion/truora-icon-black.svg" alt="Truora" style="width:20px;height:20px;display:block;">`;
 
 const truoraHero = (ctaLabel) => `
-  <div class="truora-card">
-    <div class="truora-head">
-      <div class="truora-id">
-        <div class="truora-icon">${TRUORA_MARK}</div>
+  <div class="wl-truora-card">
+    <div class="wl-truora-head">
+      <div class="wl-truora-id">
+        <div class="wl-truora-icon">${TRUORA_MARK}</div>
         <div>
-          <div class="truora-name">Truora</div>
-          <div class="truora-tagline">Verificación instantánea en 2 minutos</div>
+          <div class="wl-truora-name">Truora</div>
+          <div class="wl-truora-tagline">Verificación instantánea en 2 minutos</div>
         </div>
       </div>
       <span class="badge">${I.star}Recomendado</span>
     </div>
     <h2>Verificación rápida con Truora</h2>
     <p>Valida tu identidad desde tu celular en pocos minutos mediante un proceso guiado y seguro.</p>
-    <div class="truora-benefits">
+    <div class="wl-truora-benefits">
       <span>${I.check}Proceso 100% digital, sin visita física</span><span>${I.check}Resultado disponible en minutos</span><span>${I.check}Seguridad certificada</span>
     </div>
-    <button class="btn-white">${ctaLabel || 'Iniciar verificación'}</button>
+    <button class="clmc-btn-primary">${ctaLabel || 'Iniciar verificación'}</button>
   </div>
 `;
 
 const altAccordion = (open, identityState, emailRestricted=false) => `
-  <div class="alt-toggle ${open?'open':''}" onclick="this.classList.toggle('open');document.getElementById('altPanel').classList.toggle('hide')">
+  <div class="wl-alt-toggle ${open?'open':''}" onclick="this.classList.toggle('open');document.getElementById('altPanel').classList.toggle('hide')">
     <span>¿No puedes completar tu verificación con Truora? Ver opciones alternativas</span>${I.chevronDown}
   </div>
-  <div class="alt-panel ${open?'':'hide'}" id="altPanel">
-    <div class="alt-note">También puedes usar la verificación manual o enviar tus documentos por correo. Estos métodos pueden tardar más tiempo en revisarse.</div>
+  <div class="wl-alt-panel ${open?'':'hide'}" id="altPanel">
+    <div class="wl-alt-note">También puedes usar la verificación manual o enviar tus documentos por correo. Estos métodos pueden tardar más tiempo en revisarse.</div>
     ${docGrid(identityState)}
     ${emailRestricted ? `
-    <div class="email-box restricted">
+    <div class="wl-email-box restricted">
       <div><div class="t">${I.lock}Verificación por correo · disponible parcialmente</div><div class="s">Tu identidad se está validando con Truora, así que por ahora <b>solo puedes enviar comprobante de domicilio y estado de cuenta bancario</b> por este medio.</div></div>
-      <button class="btn-outline">${I.mail}Enviar domicilio y edo. de cuenta</button>
+      <button class="clmc-btn-primary-white">${I.mail}Enviar domicilio y edo. de cuenta</button>
     </div>` : `
-    <div class="email-box">
+    <div class="wl-email-box">
       <div><div class="t">Verificación por correo electrónico</div><div class="s">Manda tu documentación por email y recibirás respuesta en 24–48 horas.</div></div>
-      <button class="btn-outline">${I.mail}Abrir email</button>
+      <button class="clmc-btn-primary-white">${I.mail}Abrir email</button>
     </div>`}
   </div>
 `;
@@ -1173,19 +1064,19 @@ const altAccordion = (open, identityState, emailRestricted=false) => `
    Nace bloqueado y Back Office lo habilita por usuario; al activarse abre la firma digital.
    API: bandera de activación desde BO + estado de firma (pendiente | firmado). */
 const altaAccordion = (active=false, open=false) => `
-  <div class="alt-toggle alta-toggle ${active?'':'is-locked'} ${open?'open':''}" onclick="this.classList.toggle('open');document.getElementById('altaPanel').classList.toggle('hide')">
+  <div class="wl-alt-toggle wl-alta-toggle ${active?'':'is-locked'} ${open?'open':''}" onclick="this.classList.toggle('open');document.getElementById('altaPanel').classList.toggle('hide')">
     <span>${active?'':I.lock}Formato de alta de cliente${active?'':' · próximamente'}</span>${I.chevronDown}
   </div>
-  <div class="alt-panel ${open?'':'hide'}" id="altaPanel">
-    <div class="alt-note">Documento de alta que se firma de forma digital, sin imprimir ni escanear nada. Toma un par de minutos y queda guardado en tu cuenta.</div>
+  <div class="wl-alt-panel ${open?'':'hide'}" id="altaPanel">
+    <div class="wl-alt-note">Documento de alta que se firma de forma digital, sin imprimir ni escanear nada. Toma un par de minutos y queda guardado en tu cuenta.</div>
     ${active ? `
-    <div class="email-box">
+    <div class="wl-email-box">
       <div><div class="t">Firma tu formato de alta de cliente</div><div class="s">Ya puedes completarlo. Al firmarlo queda registrado automáticamente en tu expediente.</div></div>
-      <button class="btn-outline">Firmar formato</button>
+      <button class="clmc-btn-primary-white">Firmar formato</button>
     </div>` : `
-    <div class="email-box restricted">
+    <div class="wl-email-box restricted">
       <div><div class="t">${I.lock}Disponible próximamente</div><div class="s">Estamos habilitando la firma digital de este formato. <b>Te avisaremos en cuanto puedas firmarlo</b>; no necesitas hacer nada por ahora.</div></div>
-      <button class="btn-outline" disabled>Firmar formato</button>
+      <button class="clmc-btn-primary-white" disabled>Firmar formato</button>
     </div>`}
   </div>
 `;
@@ -1216,7 +1107,7 @@ function docGrid(identityState, docsState='pending', bankState){
     ? mkRow('bank','Cuenta bancaria',bnkDone?'verified':'pending',bankSub)
     : mkRow('bank','Cuenta bancaria','blocked','Disponible después de validar tu identidad');
   return `
-  <div class="doc-grid">
+  <div class="clmc-user-documents-grid">
     ${mkRow('email','Email','verified','Verificado')}
     ${mkRow('identity','Identidad',idStatus,idSub)}
     ${homeRow}
@@ -1225,8 +1116,8 @@ function docGrid(identityState, docsState='pending', bankState){
 }
 
 const faqHint = `
-  <div class="faq-hint">
-    <span>¿Tienes dudas sobre el proceso? <a onclick="render('faq')">Consulta las preguntas frecuentes</a></span>
+  <div class="wl-faq-hint">
+    <span>¿Tienes dudas sobre el proceso? <a onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></span>
   </div>
 `;
 
@@ -1250,71 +1141,71 @@ inicial: () => `
   ${altaAccordion()}
   ${faqHint}
 
-  <div class="modal-overlay">
-    <div class="modal truora-wide">
-      <div class="close">${I.x}</div>
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-truora-wide">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
 
       <!-- Paso 1 · Consentimiento (equivalente al "Autorizo datos biométricos" de Truora) -->
-      <div class="t-step" data-step="1">
-        <div class="modal-truora-head">
-          <div class="truora-icon">${TRUORA_MARK}</div>
+      <div class="wl-t-step" data-step="1">
+        <div class="wl-modal-truora-head">
+          <div class="wl-truora-icon">${TRUORA_MARK}</div>
           <div>
             <h3 style="margin-bottom:2px;">Verificaremos tu identidad</h3>
             <p class="lead" style="margin-bottom:0;">Proceso guiado y seguro con Truora · toma ~2 minutos</p>
           </div>
         </div>
         <p class="lead">Capturaremos fotos de tu identificación oficial y una prueba de vida. Para continuar necesitamos tu autorización.</p>
-        <label class="consent-check">
+        <label class="wl-consent-check">
           <input type="checkbox" onchange="document.getElementById('tConsentBtn').disabled=!this.checked">
           <span>Autorizo el uso de mis <b>datos biométricos</b> para verificar mi identidad.</span>
         </label>
-        <button class="btn-white" id="tConsentBtn" style="width:100%;" disabled onclick="truoraStep(2)">Continuar</button>
-        <div class="modal-footnote">Consulta nuestra <a class="faq-link">política de privacidad</a> · Impulsado por Truora</div>
+        <button class="clmc-btn-primary" id="tConsentBtn" style="width:100%;" disabled onclick="truoraStep(2)">Continuar</button>
+        <div class="clmc-upload-documents-format-box">Consulta nuestra <a class="wl-faq-link">política de privacidad</a> · Impulsado por Truora</div>
       </div>
 
       <!-- Paso 2 · Canal: enlace al celular (número registrado precargado), QR o este dispositivo -->
-      <div class="t-step hide" data-step="2">
+      <div class="wl-t-step hide" data-step="2">
         <h3>Verifica tu identidad desde tu celular</h3>
         <p class="lead">Te recomendamos continuar en tu celular para tomar fotos con mejor calidad. Elige cómo recibir el enlace:</p>
-        <div class="channel-list">
+        <div class="wl-channel-list">
           <div class="ch" onclick="truoraChannel(this,'WhatsApp')"><div class="ch-ic">${I.whatsapp}</div><div class="ch-meta"><div class="t">WhatsApp</div><div class="s">Te enviamos un enlace a tu WhatsApp</div></div>${I.chevronRight}</div>
           <div class="ch" onclick="truoraChannel(this,'SMS')"><div class="ch-ic">${I.message}</div><div class="ch-meta"><div class="t">SMS</div><div class="s">Recibe el enlace por mensaje de texto</div></div>${I.chevronRight}</div>
           <div class="ch" onclick="truoraStep(3)"><div class="ch-ic">${I.qr}</div><div class="ch-meta"><div class="t">Código QR</div><div class="s">Escanéalo con la cámara de tu celular</div></div>${I.chevronRight}</div>
           <div class="ch" onclick="truoraStep(4)"><div class="ch-ic">${I.monitor}</div><div class="ch-meta"><div class="t">Este dispositivo</div><div class="s">Continúa aquí mismo, sin cambiar de equipo</div></div>${I.chevronRight}</div>
         </div>
-        <div class="t-phone hide" id="tPhoneBox">
-          <div class="tp-label">Enviaremos el enlace por <b id="tChannelName">WhatsApp</b> a tu número registrado:</div>
-          <div class="tp-row">
-            <span class="tp-flag">🇲🇽 +52</span>
+        <div class="wl-t-phone hide" id="tPhoneBox">
+          <div class="wl-tp-label">Enviaremos el enlace por <b id="tChannelName">WhatsApp</b> a tu número registrado:</div>
+          <div class="wl-tp-row">
+            <span class="wl-tp-flag">🇲🇽 +52</span>
             <input type="tel" value="55 1234 5678" aria-label="Número de celular">
           </div>
-          <div class="tp-hint">Es el número de tu cuenta Winland. Puedes editarlo si lo necesitas.</div>
+          <div class="wl-tp-hint">Es el número de tu cuenta Winland. Puedes editarlo si lo necesitas.</div>
           <!-- API: enviar enlace de verificación Truora al teléfono indicado -->
-          <button class="btn-white" style="width:100%;" onclick="render('confirmando')">Enviar enlace</button>
+          <button class="clmc-btn-primary" style="width:100%;" onclick="render('confirmando')">Enviar enlace</button>
         </div>
       </div>
 
       <!-- Paso 3 · Código QR -->
-      <div class="t-step hide" data-step="3">
-        <div class="t-back" onclick="truoraStep(2)">${I.chevronRight}Regresar</div>
-        <h3 class="qr-title">Escanea el código QR desde tu celular</h3>
-        <p class="lead qr-lead">Válido por <b id="qrTimer">05:00</b> min</p>
-        <div class="qr-box" id="qrBox"></div>
-        <div class="modal-footnote">Al escanearlo, el proceso continúa en tu celular y esta pantalla se actualizará sola.<br><a class="faq-link" onclick="render('confirmando')">Simular escaneo (demo)</a></div>
+      <div class="wl-t-step hide" data-step="3">
+        <div class="wl-t-back" onclick="truoraStep(2)">${I.chevronRight}Regresar</div>
+        <h3 class="wl-qr-title">Escanea el código QR desde tu celular</h3>
+        <p class="lead wl-qr-lead">Válido por <b id="qrTimer">05:00</b> min</p>
+        <div class="wl-qr-box" id="qrBox"></div>
+        <div class="clmc-upload-documents-format-box">Al escanearlo, el proceso continúa en tu celular y esta pantalla se actualizará sola.<br><a class="wl-faq-link" onclick="render('confirmando')">Simular escaneo (demo)</a></div>
       </div>
 
       <!-- Paso 4 · Este dispositivo -->
-      <div class="t-step hide" data-step="4">
-        <div class="t-back" onclick="truoraStep(2)">${I.chevronRight}Regresar</div>
+      <div class="wl-t-step hide" data-step="4">
+        <div class="wl-t-back" onclick="truoraStep(2)">${I.chevronRight}Regresar</div>
         <h3>Continúa en este dispositivo</h3>
         <p class="lead">Usaremos la cámara de este equipo para capturar tu identificación y tu prueba de vida. Antes de comenzar, asegúrate de:</p>
-        <div class="t-checklist">
+        <div class="wl-t-checklist">
           <span>${I.check}Tener tu INE, pasaporte o forma migratoria a la mano</span>
           <span>${I.check}Contar con cámara disponible en este equipo</span>
           <span>${I.check}Estar en un lugar bien iluminado</span>
         </div>
-        <button class="btn-white" style="width:100%;" onclick="render('confirmando')">Comenzar verificación</button>
-        <div class="modal-footnote">Si cierras esta ventana antes de terminar, deberás reiniciar el proceso.</div>
+        <button class="clmc-btn-primary" style="width:100%;" onclick="render('confirmando')">Comenzar verificación</button>
+        <div class="clmc-upload-documents-format-box">Si cierras esta ventana antes de terminar, deberás reiniciar el proceso.</div>
       </div>
 
     </div>
@@ -1323,7 +1214,7 @@ inicial: () => `
 
 confirmando: () => `
   ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
-  <div class="status-banner info">
+  <div class="wl-status-banner info">
     <div class="ic">${I.clock}</div>
     <div><div class="t">Estamos confirmando tu identidad</div><div class="s">Tu proceso con Truora finalizó y estamos actualizando tu estado. Esto puede tardar unos minutos.</div>
     <!-- API: re-consultar estado de la validación biométrica --><div class="cta"><a>Actualizar estado</a></div></div>
@@ -1341,20 +1232,20 @@ confirmando: () => `
   ${docGrid('done')}
   ${faqHint}
 
-  <div class="modal-overlay">
-    <div class="modal modal-center" style="text-align:center;">
-      <div class="close">${I.x}</div>
-      <div class="pop-check" style="width:54px;height:54px;border-radius:50%;background:var(--success-bg);color:var(--success-green);display:flex;align-items:center;justify-content:center;margin:4px auto 16px;">${I.check}</div>
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-modal-center" style="text-align:center;">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-pop-check" style="width:54px;height:54px;border-radius:50%;background:var(--success-bg);color:var(--success-green);display:flex;align-items:center;justify-content:center;margin:4px auto 16px;">${I.check}</div>
       <h3 style="padding-right:0;">¡Validación biométrica exitosa!</h3>
       <p class="lead">Tu identidad quedó confirmada. Solo falta subir tu comprobante de domicilio y tu estado de cuenta bancario.</p>
-      <button class="btn-white" style="width:100%;" onclick="idMethod='truora';render('validada')">Adjuntar documentos</button>
+      <button class="clmc-btn-primary" style="width:100%;" onclick="idMethod='truora';render('validada')">Adjuntar documentos</button>
     </div>
   </div>
 `,
 
 validada: () => `
   ${headerHTML('Identidad validada correctamente','Ya completaste la validación de identidad. Ahora sube tu comprobante de domicilio para activar tus retiros.')}
-  <div class="status-banner success">
+  <div class="wl-status-banner success">
     <div class="ic">${I.check}</div>
     <div><div class="t">Identidad validada ${idMethod==='manual'?'manualmente':'con Truora'}</div><div class="s">Continúa con los documentos pendientes para activar tus retiros.</div></div>
   </div>
@@ -1368,13 +1259,13 @@ validada: () => `
 'docs-validacion': () => `
   ${headerHTML('Estamos revisando tus documentos','Tu comprobante de domicilio está en revisión. Te avisaremos en cuanto quede validado.')}
   ${tracker({cls:'done',s:'Validada por Truora'},{cls:'current',s:'En revisión'},{cls:'invite',s:'Cobra sin ir a sala'})}
-  <div class="status-banner info">
+  <div class="wl-status-banner info">
     <div class="ic">${I.clock}</div>
     <div><div class="t">Documento en revisión</div><div class="s">Normalmente toma menos de 24 horas. Te avisaremos por correo en cuanto tengamos el resultado.</div>
     <!-- API: re-consultar el estado de la revisión documental -->
     <div class="cta"><a>Actualizar estado</a></div></div>
   </div>
-  <div class="doc-grid">
+  <div class="clmc-user-documents-grid">
     ${mkRow('email','Email','verified','Verificado')}
     ${mkRow('identity','Identidad','verified','Validado por Truora')}
     ${mkRow('home','Domicilio','progress','En revisión',{chev:false})}
@@ -1388,19 +1279,19 @@ validada: () => `
    físicas); la cuenta bancaria se ofrece como mejora del método de cobro, no como requisito. */
 'pre-verificada': () => `
   ${headerHTML('¡Tu cuenta ya está pre-verificada!','Por ahora, tus retiros solo pueden ser cobrados en nuestras salas físicas.')}
-  <div class="status-banner success">
+  <div class="wl-status-banner success">
     <div class="ic">${I.partyPopper}</div>
-    <div><div class="t">Identidad y domicilio validados</div><div class="s">Ya puedes cobrar tus retiros en cualquiera de <a onclick="render('salas')">nuestras salas físicas</a>.</div></div>
+    <div><div class="t">Identidad y domicilio validados</div><div class="s">Ya puedes cobrar tus retiros en cualquiera de nuestras salas físicas.</div></div>
   </div>
   ${tracker({cls:'done',s:idMethod==='manual'?'Validada manualmente':'Validada por Truora'},{cls:'done',s:'Validado'},{cls:'invite',s:'Cobra sin ir a sala'})}
   ${docGrid('done','done','pending')}
 
-  <div class="upgrade-card">
+  <div class="wl-upgrade-card">
     <div>
       <div class="t">¿Prefieres recibir tu dinero por depósito directo?</div>
       <div class="s">Sube tu información bancaria y olvídate de las filas.</div>
     </div>
-    <button class="btn-white">Subir mi cuenta bancaria</button>
+    <button class="clmc-btn-primary">Subir mi cuenta bancaria</button>
   </div>
   ${altaAccordion()}
 
@@ -1410,12 +1301,12 @@ validada: () => `
 rechazado: () => `
   ${headerHTML('Hay un documento que requiere acción','Uno de tus documentos no pudo validarse. Corrígelo para continuar con tu verificación.')}
   ${tracker({cls:'done',s:'Validada por Truora'},{cls:'alert',s:'Requiere acción'},{cls:'invite',s:'Cobra sin ir a sala'})}
-  <div class="status-banner error">
+  <div class="wl-status-banner error">
     <div class="ic">${I.alertTriangle}</div>
     <div><div class="t">Comprobante de domicilio rechazado</div><div class="s">El documento estaba ilegible. Sube nuevamente un comprobante claro, no mayor a 3 meses.</div>
     <div class="cta"><a>Subir de nuevo</a></div></div>
   </div>
-  <div class="doc-grid">
+  <div class="clmc-user-documents-grid">
     ${mkRow('email','Email','verified','Verificado')}
     ${mkRow('identity','Identidad','verified','Validado por Truora')}
     ${mkRow('home','Domicilio','rejected','Rechazado — requiere acción')}
@@ -1428,7 +1319,7 @@ rechazado: () => `
 verificada: () => `
   ${headerHTML('Tu cuenta está verificada','Ya recibes tus retiros por depósito directo, sin pasar a sala.')}
   ${tracker({cls:'done',s:'Validada'},{cls:'done',s:'Validada'},{cls:'done',s:'Validada'})}
-  <div class="status-banner success">
+  <div class="wl-status-banner success">
     <div class="ic">${I.partyPopper}</div>
     <div><div class="t">Cuenta verificada</div><div class="s">Identidad, comprobante de domicilio y cuenta bancaria fueron validados correctamente.</div></div>
   </div>
@@ -1440,7 +1331,7 @@ verificada: () => `
 
 interrumpida: () => `
   ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
-  <div class="status-banner error">
+  <div class="wl-status-banner error">
     <div class="ic">${I.alertTriangle}</div>
     <div><div class="t">Verificación interrumpida</div><div class="s">Cerraste el proceso de Truora. Para continuar con tu validación de identidad, inicia nuevamente.</div></div>
   </div>
@@ -1452,42 +1343,6 @@ interrumpida: () => `
     ${faqHint}
   `,
 
-/* Página PÚBLICA de salas (fuera del módulo privado, indexable): intención
-   transaccional —cómo cobrar un premio— para no competir con el listado
-   institucional de winlandcasino.com. */
-salas: () => `
-  ${headerHTML('Nuestros casinos','Cinco casinos en México, con salas de slots, mesas de juego y apuestas deportivas. Encuentra el más cercano y consulta cómo llegar.')}
-
-  <div class="salas-app">
-    <div id="mapaSalas"></div>
-    <button class="mapa-reset" onclick="verTodasLasSalas()">Ver todo México</button>
-  </div>
-
-  <div class="sala-grid">
-    ${SALAS.map((x,i)=>`
-    <div class="sala-card ${x.m==='Fortune'?'es-fortune':''}" data-sala="${i}" onclick="irASala(${i})"
-         onmouseenter="senalarPin(${i},true)" onmouseleave="senalarPin(${i},false)">
-      <div class="sala-foto">
-        <img src="assets/salas/${x.f}" alt="Casino ${x.m} ${x.c}" loading="lazy">
-        <span class="sala-marca">${x.m}</span>
-        <span class="ciudad">${x.c}</span>
-      </div>
-      <div class="sala-body">
-        <div class="edo">${x.e}</div>
-        <div class="dir">${x.d}</div>
-        <a class="ir" href="${mapsUrl(x)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${I.pin}Cómo llegar</a>
-      </div>
-    </div>`).join('')}
-  </div>
-
-  <div class="salas-cobro">
-    ${I.check}
-    <div>
-      <div class="t">¿Vas a cobrar un premio?</div>
-      <div class="s">Con tu cuenta pre-verificada puedes cobrar tus retiros en efectivo en cualquiera de nuestras salas. Lleva tu identificación oficial vigente y el folio de tu retiro; el pago se entrega únicamente al titular de la cuenta.</div>
-    </div>
-  </div>
-`,
 
 /* Firma digital del formato de alta de cliente, con el módulo ya habilitado desde BO */
 'modal-firma': () => `
@@ -1498,20 +1353,20 @@ salas: () => `
   ${altaAccordion(true,true)}
   ${faqHint}
 
-  <div class="modal-overlay">
-    <div class="modal truora-wide">
-      <div class="close">${I.x}</div>
-      <div class="t-step">
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-truora-wide">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-t-step">
         <h3>Firma tu formato de alta de cliente</h3>
         <p class="lead">Vas a firmar digitalmente tu documento de alta. No necesitas imprimir ni escanear nada: se firma desde aquí y queda guardado en tu expediente.</p>
-        <div class="t-checklist">
+        <div class="wl-t-checklist">
           <span>${I.check}Revisa que tus datos personales sean correctos</span>
           <span>${I.check}Firma con tu dedo o mouse, o con tu firma electrónica</span>
           <span>${I.check}Recibirás una copia del documento firmado por correo</span>
         </div>
         <!-- API: abrir la sesión del proveedor de firma digital y devolver el acuse al expediente -->
-        <button class="btn-white" style="width:100%;">Continuar a la firma</button>
-        <div class="modal-footnote">Si cierras esta ventana puedes retomar la firma más tarde desde esta misma sección.</div>
+        <button class="clmc-btn-primary" style="width:100%;">Continuar a la firma</button>
+        <div class="clmc-upload-documents-format-box">Si cierras esta ventana puedes retomar la firma más tarde desde esta misma sección.</div>
       </div>
     </div>
   </div>
@@ -1523,43 +1378,43 @@ salas: () => `
   ${truoraHero()}
   ${faqHint}
 
-  <div class="modal-overlay">
-    <div class="modal doc-modal">
-      <div class="close">${I.x}</div>
-      <div class="m-main">
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-doc-modal">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-m-main">
       <h3>Verificación manual de identidad</h3>
       <p class="lead">Sube tu identificación oficial por ambos lados y una selfie sosteniéndola a la altura de la barbilla.</p>
 
-      <div class="doc-select">
+      <div class="wl-doc-select">
         <label>Selecciona el tipo de documento</label>
         <select><option>INE / IFE</option><option>Pasaporte</option><option>Forma migratoria</option></select>
       </div>
 
-      <div class="req-line">${I.check}<span><b>Requisitos:</b> Vigente · Legible, sin reflejos · Sin alteraciones · Las 4 esquinas visibles</span></div>
+      <div class="wl-req-line">${I.check}<span><b>Requisitos:</b> Vigente · Legible, sin reflejos · Sin alteraciones · Las 4 esquinas visibles</span></div>
 
       ${guiaVisual('guia-identidad-tipos.jpg','Documentos de identificación aceptados')}
 
-      <div class="upload-grid">
-        <div class="upload-box">${I.upload}Frontal</div>
-        <div class="upload-box">${I.upload}Reverso</div>
-        <div class="upload-box full">${I.selfie}Selfie con documento</div>
+      <div class="clmc-upload-documents-grid">
+        <div class="clmc-upload-document-drop-area">${I.upload}Frontal</div>
+        <div class="clmc-upload-document-drop-area">${I.upload}Reverso</div>
+        <div class="clmc-upload-document-drop-area full">${I.selfie}Selfie con documento</div>
       </div>
 
       ${guiaVisual('guia-selfie.jpg','Cómo tomar tu selfie con la identificación')}
 
-      <div class="modal-footnote" style="text-align:left;">Formatos: JPG, PNG, PDF · Máx. 5MB</div>
-      <div class="modal-faq-line">¿Dudas con este documento? <a class="faq-link" onclick="render('faq')">Consulta las preguntas frecuentes</a></div>
-      <div class="modal-actions">
-        <button class="btn-outline">Cancelar</button>
-        <button class="btn-primary-disabled">Subir documentos</button>
+      <div class="clmc-upload-documents-format-box" style="text-align:left;">Formatos: JPG, PNG, PDF · Máx. 5MB</div>
+      <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
+      <div class="clmc-upload-documents-actions">
+        <button class="clmc-btn-primary-white">Cancelar</button>
+        <button class="clmc-btn-disabled">Subir documentos</button>
       </div>
       </div><!-- /m-main -->
 
-      <div class="m-guia hide">
-        <div class="t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
+      <div class="wl-m-guia hide">
+        <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
         <h3 class="g-title" style="margin-bottom:14px;"></h3>
-        <img src="" alt="" class="g-img">
-        <button class="btn-white" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+        <img src="" alt="" class="wl-g-img">
+        <button class="clmc-btn-primary" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
       </div>
     </div>
   </div>
@@ -1571,32 +1426,32 @@ salas: () => `
   ${docGrid('done')}
   ${faqHint}
 
-  <div class="modal-overlay">
-    <div class="modal doc-modal">
-      <div class="close">${I.x}</div>
-      <div class="m-main">
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-doc-modal">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-m-main">
       <h3>Estado de cuenta bancario</h3>
       <p class="lead">Documento oficial de una institución bancaria tradicional, a nombre del titular de la cuenta en Winland.</p>
 
-      <div class="req-line">${I.check}<span><b>Requisitos:</b> Banco tradicional (no fintech) · A tu nombre · Máx. 3 meses · Completo, sin recortes</span></div>
+      <div class="wl-req-line">${I.check}<span><b>Requisitos:</b> Banco tradicional (no fintech) · A tu nombre · Máx. 3 meses · Completo, sin recortes</span></div>
 
       ${guiaVisual('guia-bancaria.jpg','Estados de cuenta aceptados')}
 
-      <div class="upload-grid"><div class="upload-box full">${I.upload}Estado de cuenta</div></div>
+      <div class="clmc-upload-documents-grid"><div class="clmc-upload-document-drop-area full">${I.upload}Estado de cuenta</div></div>
 
-      <div class="modal-footnote" style="text-align:left;">Formato: PDF · Máx. 5MB · Puedes ocultar tus saldos si lo prefieres</div>
-      <div class="modal-faq-line">¿Dudas con este documento? <a class="faq-link" onclick="render('faq')">Consulta las preguntas frecuentes</a></div>
-      <div class="modal-actions">
-        <button class="btn-outline">Cancelar</button>
-        <button class="btn-primary-disabled">Subir documento</button>
+      <div class="clmc-upload-documents-format-box" style="text-align:left;">Formato: PDF · Máx. 5MB · Puedes ocultar tus saldos si lo prefieres</div>
+      <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
+      <div class="clmc-upload-documents-actions">
+        <button class="clmc-btn-primary-white">Cancelar</button>
+        <button class="clmc-btn-disabled">Subir documento</button>
       </div>
       </div><!-- /m-main -->
 
-      <div class="m-guia hide">
-        <div class="t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
+      <div class="wl-m-guia hide">
+        <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
         <h3 class="g-title" style="margin-bottom:14px;"></h3>
-        <img src="" alt="" class="g-img">
-        <button class="btn-white" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+        <img src="" alt="" class="wl-g-img">
+        <button class="clmc-btn-primary" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
       </div>
     </div>
   </div>
@@ -1608,32 +1463,32 @@ salas: () => `
   ${docGrid('done')}
   ${faqHint}
 
-  <div class="modal-overlay">
-    <div class="modal doc-modal">
-      <div class="close">${I.x}</div>
-      <div class="m-main">
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-doc-modal">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-m-main">
       <h3>Comprobante de domicilio</h3>
       <p class="lead">Recibo de luz (CFE), gas natural o teléfono/internet (Telmex, Izzi, Totalplay, Megacable), con antigüedad máxima de 3 meses.</p>
 
-      <div class="req-line">${I.check}<span><b>Requisitos:</b> Luz, gas o teléfono/internet · Máx. 3 meses · Dirección y titular legibles</span></div>
+      <div class="wl-req-line">${I.check}<span><b>Requisitos:</b> Luz, gas o teléfono/internet · Máx. 3 meses · Dirección y titular legibles</span></div>
 
       ${guiaVisual('guia-domicilio-tipos.jpg','Comprobantes de domicilio aceptados')}
 
-      <div class="upload-grid"><div class="upload-box full">${I.upload}Comprobante de domicilio</div></div>
+      <div class="clmc-upload-documents-grid"><div class="clmc-upload-document-drop-area full">${I.upload}Comprobante de domicilio</div></div>
 
-      <div class="modal-footnote" style="text-align:left;">Formato: PDF · Máx. 5MB</div>
-      <div class="modal-faq-line">¿Dudas con este documento? <a class="faq-link" onclick="render('faq')">Consulta las preguntas frecuentes</a></div>
-      <div class="modal-actions">
-        <button class="btn-outline">Cancelar</button>
-        <button class="btn-primary-disabled">Subir comprobante</button>
+      <div class="clmc-upload-documents-format-box" style="text-align:left;">Formato: PDF · Máx. 5MB</div>
+      <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
+      <div class="clmc-upload-documents-actions">
+        <button class="clmc-btn-primary-white">Cancelar</button>
+        <button class="clmc-btn-disabled">Subir comprobante</button>
       </div>
       </div><!-- /m-main -->
 
-      <div class="m-guia hide">
-        <div class="t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
+      <div class="wl-m-guia hide">
+        <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
         <h3 class="g-title" style="margin-bottom:14px;"></h3>
-        <img src="" alt="" class="g-img">
-        <button class="btn-white" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+        <img src="" alt="" class="wl-g-img">
+        <button class="clmc-btn-primary" style="width:100%;margin-top:16px;" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
       </div>
     </div>
   </div>
@@ -1641,42 +1496,96 @@ salas: () => `
 
 faq: () => `
   ${headerHTML('Preguntas frecuentes','Resuelve tus dudas sin salir de tu cuenta. Elige un tema.')}
-  <div class="faq-cats" id="faqCats">
-    <div class="faq-cat active" data-cat="verificacion" onclick="faqCat(this)">Verificación</div>
-    <div class="faq-cat" data-cat="retiros" onclick="faqCat(this)">Retiros</div>
-    <div class="faq-cat" data-cat="depositos" onclick="faqCat(this)">Depósitos</div>
-    <div class="faq-cat" data-cat="bonos" onclick="faqCat(this)">Bonos</div>
+  <div class="wl-faq-cats" id="faqCats">
+    <div class="wl-faq-cat active" data-cat="bonos" onclick="faqCat(this)">Bonos y promociones</div>
+    <div class="wl-faq-cat" data-cat="verificacion" onclick="faqCat(this)">Verificación de cuenta / KYC</div>
+    <div class="wl-faq-cat" data-cat="retiros-depositos" onclick="faqCat(this)">Consultas sobre retiros/depósitos</div>
+    <div class="wl-faq-cat" data-cat="juego-responsable" onclick="faqCat(this)">Juego responsable</div>
+    <div class="wl-faq-cat" data-cat="historial" onclick="faqCat(this)">Historial de jugador y privacidad</div>
+    <div class="wl-faq-cat" data-cat="cuenta" onclick="faqCat(this)">Cuenta</div>
   </div>
 
-  <div class="faq-group" data-cat="verificacion">
-    ${faqItem('¿Cómo verifico mi cuenta en Winland?','La forma más rápida es <a class="faq-link" onclick="event.stopPropagation();render(&quot;inicial&quot;)">verificarte con Truora</a>: validas tu identidad desde tu celular en unos 2 minutos y después adjuntas tu comprobante de domicilio (con eso ya puedes cobrar en sala) y, si quieres depósito directo, tu estado de cuenta bancario.')}
-    ${faqItem('¿Cuánto tarda la verificación de mi cuenta?','La validación de identidad con Truora toma solo unos minutos. La revisión del comprobante de domicilio y el estado de cuenta puede tardar hasta 24–48 horas.')}
-    ${faqItem('¿Qué documentos necesito para verificarme?','Necesitas una <a class="faq-link" onclick="event.stopPropagation();faqInfo(&quot;guia-identidad-tipos.jpg&quot;,&quot;Identificaciones aceptadas&quot;)">identificación oficial vigente</a> (INE/IFE, pasaporte o forma migratoria), un comprobante de domicilio no mayor a 3 meses y, para recibir tus retiros por depósito directo, un estado de cuenta bancario a tu nombre.')}
-    ${faqItem('¿Por qué fue rechazado mi documento?','Las causas más comunes son documento vencido, foto borrosa o con reflejos, datos cubiertos o recortados, comprobantes con más de 3 meses o estados de cuenta de apps fintech. Puedes corregirlo y volver a subirlo desde la sección de Verificación; ahí verás el motivo exacto del rechazo.')}
-    ${faqItem('¿Qué comprobantes de domicilio aceptan?','Recibos de luz (CFE), gas natural o teléfono/internet (Telmex, Izzi, Totalplay, Megacable) con antigüedad máxima de 3 meses. Antes de subir el tuyo, revisa los <a class="faq-link" onclick="event.stopPropagation();faqInfo(&quot;guia-domicilio-tipos.jpg&quot;,&quot;Comprobantes de domicilio aceptados&quot;)">ejemplos de comprobantes válidos</a>. No se aceptan predial, contratos de arrendamiento ni escrituras.')}
-    ${faqItem('¿Por qué no puedo subir mis documentos manualmente?','Si iniciaste tu validación biométrica con Truora, la carga manual de identidad se bloquea temporalmente (~5 minutos) para evitar documentos duplicados. Se libera automáticamente al terminar el proceso.')}
-    ${faqItem('¿Truora es seguro? ¿Qué hace con mis datos?','Sí. Truora es un proveedor certificado de verificación biométrica que solo valida tu identidad; tus datos se tratan conforme al aviso de privacidad de Winland.')}
+  <!-- Contenido autorizado por el cliente (tabla "Preguntas frecuentes autorizadas").
+       El texto de las respuestas se reproduce sin cambios de fondo; lo único añadido
+       es el enlace "Ver guía visual" donde existe una infografía que corresponde. -->
+
+  <div class="wl-faq-group" data-cat="bonos">
+    ${faqItem('¿Cuáles son las reglas y requisitos para un bono?','Cada promoción tiene sus propios Términos y Condiciones que puedes consultar a detalle directamente en el apartado de "Promociones" y "Leer más".')}
+    ${faqItem('¿Qué es el rollover?','Es la cantidad de veces que debes jugar el monto de un bono recibido antes de poder convertir las ganancias en saldo retirable.<p class="wl-faq-p">Ejemplo: con un bono de $100 MXN y rollover de x20, debes apostar un total de $2,000 MXN ($100 x 20) antes de poder convertir y retirar tu saldo.</p>')}
+    ${faqItem('¿Por qué se canceló o desapareció mi bono?','Los motivos más comunes son:' + faqLista([
+      'Venció el plazo límite de la oferta.',
+      'Se liberó y pasó a tu saldo real.',
+      'Se anuló al retirar saldo antes.',
+      'No se cumplieron los "términos y condiciones promocionales".'
+    ]))}
+    ${faqItem('¿Dónde puedo consultar el avance de mi rollover?','Ingresa a Perfil → Bonos → Promos personales. Al tener un bono activo, visualizarás una barra que indica el avance y el saldo restante por apostar.')}
+    ${faqItem('¿Cómo activo un bono disponible?','Dirígete a Perfil → Bonos → Promos personales. En la pestaña "Disponibles" verás las ofertas para activar, y en "Activas" podrás consultar la información del bono en curso.')}
   </div>
 
-  <div class="faq-group hide" data-cat="retiros">
-    ${faqItem('¿Por qué no puedo retirar mi dinero?','Para activar tus retiros necesitas al menos tu identidad y tu comprobante de domicilio validados: con eso tu cuenta queda <b>pre-verificada</b> y puedes cobrar en nuestras salas físicas. Si además registras tu cuenta bancaria, recibes el dinero por depósito directo. <a class="faq-link" onclick="event.stopPropagation();render(&quot;inicial&quot;)">Completa tu verificación aquí</a>.')}
-    ${faqItem('¿Qué es una cuenta pre-verificada?','Es la cuenta que ya tiene validada la identidad y el comprobante de domicilio. Con ese nivel <b>ya puedes cobrar tus retiros en nuestras salas físicas</b>. Para recibirlos por depósito directo en tu banco —y evitarte las filas— solo falta que subas tu estado de cuenta bancario.')}
-    ${faqItem('¿Cómo hago un retiro?','Entra a tu saldo y elige Retirar. Si tu cuenta está pre-verificada, cobras el dinero en una de nuestras <a class="faq-link" onclick="event.stopPropagation();render(&quot;salas&quot;)">salas físicas</a>. Si ya registraste tu cuenta bancaria, el pago se envía por SPEI a esa cuenta, siempre a tu nombre.')}
-    ${faqItem('¿Cuánto tarda en llegar mi retiro?','Los retiros vía SPEI suelen procesarse el mismo día hábil una vez aprobados.')}
-    ${faqItem('¿Puedo retirar a una cuenta que no está a mi nombre?','No. Por seguridad y normativa, los retiros solo se procesan a cuentas bancarias a nombre del titular registrado en Winland.')}
-    ${faqItem('Gané un premio, ¿necesito hacer algo más?','Para premios relevantes puede requerirse la firma de un formulario antes de procesar el pago. Te avisaremos en tu cuenta cuando aplique.')}
+  <div class="wl-faq-group hide" data-cat="verificacion">
+    ${faqItem('¿Cuáles son los métodos de verificación?', faqLista([
+      '<b>Verificación por Truora (recomendada):</b> proceso automático que toma 2 minutos.',
+      '<b>Verificación manual:</b> carga de documentos a través de la página web (tiempo de respuesta de 24 a 72 horas).',
+      '<b>Correo electrónico:</b> envío de información a <a class="wl-faq-link" href="mailto:verificacion@winland.mx">verificacion@winland.mx</a>.'
+    ]))}
+    ${faqItem('¿Cuáles son las identificaciones oficiales aceptadas?', faqLista([
+      'INE vigente', 'Pasaporte mexicano vigente', 'Formato migratorio vigente'
+    ]), ['guia-identidad-tipos.jpg','Identificaciones oficiales aceptadas'])}
+    ${faqItem('¿Cuáles son los comprobantes de domicilio aceptados?', faqLista([
+      'Recibo de agua, luz o teléfono.',
+      'El documento no debe tener una antigüedad mayor a 3 meses.'
+    ]), ['guia-domicilio-tipos.jpg','Comprobantes de domicilio aceptados'])}
+    ${faqItem('¿Cuáles son los comprobantes bancarios aceptados?',
+      'Aceptamos los estados de cuenta de bancos tradicionales.' + faqLista([
+      'No se aceptan estados de cuenta de tarjeta de crédito.',
+      'No se aceptan estados de cuentas Fintech.'
+    ]), ['guia-bancaria.jpg','Comprobantes bancarios aceptados'])}
+    ${faqItem('¿Cómo debo tomar mi selfie de verificación?',
+      'Para validar su identidad de forma segura, le solicitamos una fotografía sosteniendo su identificación oficial (INE, Pasaporte o FM) a la altura de la barbilla, considerando lo siguiente:' + faqLista([
+      '<b>Legibilidad:</b> tanto su rostro como los datos del documento deben apreciarse claramente.',
+      '<b>Sin ediciones ni accesorios:</b> la foto debe ser original, sin filtros, recortes, ni el uso de gorras o lentes.'
+    ]), ['guia-selfie.jpg','Cómo tomar tu selfie de verificación'])}
+    ${faqItem('¿Cuáles son los requisitos para la aceptación de mi INE?', faqLista([
+      'Capturar el documento por ambos lados donde se visualicen los 4 bordes.',
+      'Asegurarse de que toda la información sea completamente legible.'
+    ]), ['guia-identidad-calidad.jpg','Requisitos de calidad de tu identificación'])}
   </div>
 
-  <div class="faq-group hide" data-cat="depositos">
-    ${faqItem('¿Cómo puedo depositar en Winland?','Puedes depositar vía SPEI, con tarjetas bancarias o en efectivo en tiendas de conveniencia como 7-Eleven y Walmart.')}
-    ${faqItem('¿Cuánto tarda en reflejarse mi depósito?','Los depósitos por SPEI y tarjeta suelen reflejarse en minutos. Los depósitos en efectivo pueden tardar un poco más según la tienda.')}
-    ${faqItem('¿Necesito estar verificado para depositar?','Puedes depositar antes de verificarte, pero necesitarás la verificación completa para retirar tus ganancias. Te recomendamos <a class="faq-link" onclick="event.stopPropagation();render(&quot;inicial&quot;)">verificarte desde el inicio</a> para no tener contratiempos.')}
+  <div class="wl-faq-group hide" data-cat="retiros-depositos">
+    <div class="wl-faq-sub">Retiros</div>
+    ${faqItem('¿En cuánto tiempo se procesa el retiro?','El tiempo de aprobación es de máximo 72 horas. Si ya pasó el tiempo comentado, favor de contactarse a nuestro chat de atención.')}
+    ${faqItem('¿Por qué no veo reflejado mi retiro?','El tiempo puede variar dependiendo de la institución bancaria.')}
+    ${faqItem('¿Cuál es el retiro mínimo?','El retiro mínimo es de $50 MXN.')}
+    ${faqItem('¿Cuáles son las opciones de retiro?','Contamos con 2 opciones:' + faqLista([
+      'SPEI (transferencia bancaria).',
+      'Directamente en punto físico.'
+    ]))}
+    ${faqItem('¿Cómo puedo retirar?','Para solicitar un retiro:' + faqLista([
+      'Contar con su verificación completa.',
+      'Presionar el botón de balance para desplegar el menú de saldos disponibles.',
+      'La cantidad indicada en "Retirable" es el saldo que puede solicitar.'
+    ]))}
+    <div class="wl-faq-sub">Depósito</div>
+    ${faqItem('¿Cuáles son los métodos de depósito?','Puedes consultar todas las opciones de pago disponibles ingresando a tu cuenta en la sección "Depósito".')}
+    ${faqItem('¿Qué puedo hacer si no se reflejó mi depósito?','Contacta a nuestro equipo de soporte, disponible 24/7; con gusto te apoyamos a revisar.')}
+    ${faqItem('¿Qué es el balance "Retirable"?','Son las ganancias obtenidas disponibles para retirar.')}
+    ${faqItem('¿Qué es el balance "Efectivo"?','Es el dinero depositado disponible para juego.')}
   </div>
 
-  <div class="faq-group hide" data-cat="bonos">
-    ${faqItem('¿Cómo activo un bono?','Los bonos disponibles aparecen en la pestaña Bonos de tu cuenta. Revisa los términos de cada promoción antes de activarlo.')}
-    ${faqItem('¿Dónde veo el avance de mi bono?','En la pestaña Bonos puedes consultar tus bonos activos, su vigencia y los requisitos de apuesta pendientes.')}
-    ${faqItem('¿Puedo retirar el dinero de un bono?','El saldo de bono se convierte en saldo retirable al cumplir los requisitos de apuesta indicados en los términos de la promoción.')}
+  <div class="wl-faq-group hide" data-cat="juego-responsable">
+    ${faqItem('¿Dónde puedo recibir ayuda sobre Juego responsable y hábitos?','Te recomendamos ingresar al apartado "Juego responsable"; ahí podrás encontrar información de ayuda para su situación.')}
+  </div>
+
+  <div class="wl-faq-group hide" data-cat="historial">
+    ${faqItem('¿Puedo consultar mi historial?','Accede a Perfil → Historial, selecciona la pestaña "Operaciones" o "Depósitos y retiradas" e introduce el rango de fechas que deseas revisar.')}
+  </div>
+
+  <div class="wl-faq-group hide" data-cat="cuenta">
+    ${faqItem('¿Cómo recupero mi contraseña?','Da clic en "Ingresar" y selecciona "¿Olvidé mi contraseña?". Ingresa tu correo registrado y recibirás un enlace con las instrucciones para crear una nueva contraseña.')}
+    ${faqItem('¿Cómo contacto al soporte de Winland?', faqLista([
+      '<b>Chat en vivo:</b> disponible las 24 horas del día en el sitio web.',
+      '<b>Correo electrónico:</b> <a class="wl-faq-link" href="mailto:clientes@winland.com.mx">clientes@winland.com.mx</a>'
+    ]))}
   </div>
 `,
 
@@ -1703,7 +1612,6 @@ const TOUR = [
   {g:'Nuevas secciones'},
   {s:'modal-firma',    t:'Formato de alta de cliente (firma digital)',n:'Módulo paralelo al KYC, no un cuarto paso. Nace bloqueado ("próximamente") y Back Office lo habilita; al activarse abre este modal y el CTA entrega el control al proveedor de firma digital.'},
   {s:'faq',            t:'Pestaña: Preguntas frecuentes',            n:'FAQ dentro del perfil para no sacar al usuario del embudo.'},
-  {s:'salas',          t:'Página pública: nuestras salas',           n:'Cierra el hueco del nuevo flujo (le decimos "cobra en sala" sin decirle dónde). Va FUERA del área privada para que sea indexable: SEO local sobre las 5 sucursales. Enfoque transaccional (cómo cobrar un premio), distinto al listado institucional de winlandcasino.com para no canibalizarlo.'},
 ];
 const TOUR_STEPS = TOUR.filter(x=>x.s);
 
@@ -1711,29 +1619,35 @@ let currentState='inicial';
 let idMethod='truora'; /* 'truora' | 'manual' — cómo se validó la identidad */
 let returnState='inicial'; /* última pantalla NO modal: para regresar al cancelar */
 function render(stateKey){
+  const vieneDeModal = currentState.startsWith('modal-');
   if(!stateKey.startsWith('modal-') && !currentState.startsWith('modal-')) returnState=currentState;
   if(!stateKey.startsWith('modal-')) returnState=stateKey;
   currentState=stateKey;
   const idx = TOUR_STEPS.findIndex(x=>x.s===stateKey);
   document.getElementById('content').innerHTML = states[stateKey]();
-  /* 'salas' es una página PÚBLICA: se muestra sin las pestañas del área privada */
-  const esPublica = stateKey==='salas';
-  document.querySelector('.w-tabs').style.display = esPublica ? 'none' : 'flex';
+  /* Al cambiar de sección, subir al inicio: si el usuario venía leyendo abajo,
+     aterrizar a media pantalla hace creer que no pasó nada. No aplica al cerrar
+     un modal (ahí se regresa a lo que ya estaba leyendo) ni al abrirlo, porque
+     el modal es una capa fija y el scroll de la página no lo mueve. */
+  if(!stateKey.startsWith('modal-') && !vieneDeModal && window.scrollY > 0){
+    const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({top:0, behavior: suave ? 'smooth' : 'auto'});
+  }
   document.getElementById('faqTab').classList.toggle('active', stateKey==='faq');
-  document.getElementById('miCuentaTab').classList.toggle('active', stateKey!=='faq' && !esPublica);
+  document.getElementById('miCuentaTab').classList.toggle('active', stateKey!=='faq');
   /* En mobile los tabs hacen scroll horizontal: centrar el tab activo al navegar.
      Diferido tras el render y con asignación directa (el scroll "smooth" programático
      se cancela o no corre en algunos WebViews). */
-  const activeTab=document.querySelector('.w-tabs .w-tab.active');
+  const activeTab=document.querySelector('.wl-w-tabs .wl-w-tab.active');
   if(activeTab){ const tc=activeTab.parentElement;
     setTimeout(()=>{ tc.scrollLeft = activeTab.offsetLeft-(tc.clientWidth-activeTab.offsetWidth)/2; },80); }
-  document.getElementById('subtabsRow').style.display = (stateKey==='faq'||esPublica) ? 'none' : 'flex';
+  document.getElementById('subtabsRow').style.display = stateKey==='faq' ? 'none' : 'flex';
   document.querySelectorAll('#subtabsRow .sub').forEach(s=>{
     s.classList.toggle('active', s.dataset.sub==='verificacion');
   });
   const nav=document.getElementById('stateNav');
   if(nav){
-    nav.querySelector('.sn-label').textContent = idx>=0 ? (idx+1)+' / '+TOUR_STEPS.length : '';
+    nav.querySelector('.wl-sn-label').textContent = idx>=0 ? (idx+1)+' / '+TOUR_STEPS.length : '';
     nav.querySelector('.sn-prev').disabled = idx<=0;
     nav.querySelector('.sn-next').disabled = idx===TOUR_STEPS.length-1;
   }
@@ -1760,30 +1674,29 @@ function byText(txt, sel){
 function go(el, state){ if(el){ el.style.cursor='pointer'; el.addEventListener('click', e=>{e.stopPropagation(); render(state);}); } }
 function wireDemo(state){
   const c=document.getElementById('content');
-  c.querySelectorAll('.btn-white').forEach(b=>{ if(!b.closest('.modal') && b.textContent.match(/verificaci/i)) go(b,'truora-modal'); });
+  c.querySelectorAll('.clmc-btn-primary').forEach(b=>{ if(!b.closest('.clmc-dialog') && b.textContent.match(/verificaci/i)) go(b,'truora-modal'); });
   if(state==='truora-modal'){
-    c.querySelectorAll('.modal .close').forEach(x=>go(x,'interrumpida'));
+    c.querySelectorAll('.clmc-dialog .clmc-closeIcon-popup').forEach(x=>go(x,'interrumpida'));
   }
   if(state==='confirmando') byText('Actualizar estado','a').forEach(a=>go(a,'exito-biometria'));
   if(state==='docs-validacion') byText('Actualizar estado','a').forEach(a=>go(a,'pre-verificada'));
   if(state==='pre-verificada') byText('Subir mi cuenta bancaria','button').forEach(b=>go(b,'modal-bancaria'));
-  if(state==='salas') initMapaSalas();
-  if(state==='exito-biometria') c.querySelectorAll('.modal .close').forEach(x=>go(x,'validada'));
+  if(state==='exito-biometria') c.querySelectorAll('.clmc-dialog .clmc-closeIcon-popup').forEach(x=>go(x,'validada'));
 
   /* Filas de documentos → su modal (pendientes y rechazadas) */
-  c.querySelectorAll('.doc-row:not(.disabled)').forEach(r=>{
+  c.querySelectorAll('.clmc-user-document-item:not(.disabled)').forEach(r=>{
     const t=r.textContent;
     const rejected=/Rechazado/i.test(t);
-    if(rejected) r.classList.add('row-alert');
+    if(rejected) r.classList.add('wl-row-alert');
     let dest=null;
     if(/Identidad/i.test(t) && !/correo/i.test(t) && !/Validado/i.test(t)) dest='modal-identidad';
     else if(/bancaria/i.test(t) && (/Pendiente/i.test(t)||rejected)) dest='modal-bancaria';
     else if(/Domicilio/i.test(t) && (/Pendiente/i.test(t)||rejected)) dest='modal-domicilio';
-    if(dest){ if(!rejected) r.classList.add('row-action'); go(r,dest); }
+    if(dest){ if(!rejected) r.classList.add('wl-row-action'); go(r,dest); }
   });
 
   /* Pasos del tracker como accesos directos cuando tienen acción pendiente */
-  c.querySelectorAll('.step').forEach(st=>{
+  c.querySelectorAll('.wl-step').forEach(st=>{
     const t=st.textContent;
     const accionable=/Pendiente|pendiente|Requiere acción|Reiniciar|Cobra sin ir/.test(t) && !/Disponible después/i.test(t);
     if(!accionable) return;
@@ -1798,14 +1711,14 @@ function wireDemo(state){
 
   /* Modales de carga: zonas clickeables que habilitan "Subir" */
   if(state.startsWith('modal-')){
-    c.querySelectorAll('.modal .close').forEach(x=>go(x,returnState));
+    c.querySelectorAll('.clmc-dialog .clmc-closeIcon-popup').forEach(x=>go(x,returnState));
     byText('Cancelar','button').forEach(b=>go(b,returnState));
-    const boxes=[...c.querySelectorAll('.upload-box')];
+    const boxes=[...c.querySelectorAll('.clmc-upload-document-drop-area')];
     const subir=[...c.querySelectorAll('button')].find(b=>/Subir/.test(b.textContent));
     const FILES=[['Frontal','ine_frontal.jpg'],['Reverso','ine_reverso.jpg'],['Selfie','selfie_con_ine.jpg'],['Estado de cuenta','estado_de_cuenta.pdf'],['Comprobante','comprobante_cfe.pdf']];
     function habilitar(){
       if(!boxes.every(b=>b.classList.contains('loaded'))) return;
-      subir.classList.add('ready');
+      subir.classList.add('wl-ready');
       /* Domicilio (paso 2) → revisión · Cuenta bancaria (paso 3) → cuenta completa */
       const submitTarget = state==='modal-identidad'
         ? ()=>{ idMethod='manual'; render('validada'); }
@@ -1833,8 +1746,8 @@ function wireDemo(state){
   /* Cerrar al tocar el fondo oscuro: dispara el mismo destino que la ✕ para que ambos
      caminos nunca se desincronicen (documentos → pantalla previa, biometría de
      Truora → "verificación interrumpida"). */
-  c.querySelectorAll('.modal-overlay').forEach(ov=>{
-    ov.addEventListener('click', e=>{ if(e.target===ov) ov.querySelector('.close')?.click(); });
+  c.querySelectorAll('.wl-modal-overlay').forEach(ov=>{
+    ov.addEventListener('click', e=>{ if(e.target===ov) ov.querySelector('.clmc-closeIcon-popup')?.click(); });
   });
 }
 
@@ -1842,7 +1755,7 @@ function wireDemo(state){
 (function(){
   const nav=document.createElement('div');
   nav.id='stateNav';
-  nav.innerHTML='<button class="sn-prev" aria-label="Estado anterior">&#8249;</button><span class="sn-label"></span><button class="sn-next" aria-label="Siguiente estado">&#8250;</button>';
+  nav.innerHTML='<button class="sn-prev" aria-label="Estado anterior">&#8249;</button><span class="wl-sn-label"></span><button class="sn-next" aria-label="Siguiente estado">&#8250;</button>';
   document.body.appendChild(nav);
   nav.querySelector('.sn-prev').addEventListener('click',()=>tourGo(-1));
   nav.querySelector('.sn-next').addEventListener('click',()=>tourGo(1));
