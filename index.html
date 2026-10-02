@@ -1165,6 +1165,25 @@
     .wl-m-guia .wl-g-img{max-height:none;width:100%;margin:auto 0;}
     .wl-m-guia .wl-g-cta{width:100%;min-width:0;margin:24px 0 0;flex-shrink:0;}
   }
+
+  /* ═══ Botón de cerrar: idéntico a producción ═══
+     Producción pinta el círculo en el propio <svg> (winland-prod.css 885):
+     #f5f7f7, 5px de relleno, X negra que pasa a naranja al pasar el cursor.
+     Antes el círculo iba en el contenedor y, en los modales con barra
+     translúcida, la barra quedaba encima y lo tapaba: por eso unos modales lo
+     mostraban y otros no. Ahora el contenedor es transparente (solo área de
+     toque) y el círculo vive en el ícono, por encima de la barra. */
+  .clmc-dialog .clmc-closeIcon-popup,
+  .clmc-dialog .clmc-closeIcon-popup:hover,
+  .wl-fv-close{background:transparent;box-shadow:none;}
+  .clmc-dialog .clmc-closeIcon-popup > svg,
+  .wl-fv-close > svg{
+    width:24px !important;height:24px !important;box-sizing:content-box;padding:5px;
+    background:#f5f7f7;border-radius:100%;color:#000;cursor:pointer;transition:all 250ms ease-in-out;
+  }
+  .clmc-dialog .clmc-closeIcon-popup > svg:hover,
+  .wl-fv-close > svg:hover{color:var(--clmc-color-primary);}
+  .wl-fv-close{display:flex;align-items:center;justify-content:center;}
 </style>
 </head>
 <body>
@@ -1240,7 +1259,8 @@ const I = {
   lock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>`,
   upload:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4.5M7.5 9 12 4.5 16.5 9"/><path d="M4.5 15v2.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg>`,
   selfie:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5a2 2 0 0 1 2-2h1.6l1.4-2h6l1.4 2H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.2"/></svg>`,
-  x:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>`,
+  /* Cerrar: el CloseIcon de MUI, el mismo glifo que pinta producción */
+  x:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`,
   chevronRight:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>`,
   chevronDown:`<svg class="icon wl-chev-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
   plus:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,

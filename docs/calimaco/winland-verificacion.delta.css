@@ -1138,3 +1138,22 @@ de este archivo. NO se implementan:
     .wl-m-guia .wl-g-img{max-height:none;width:100%;margin:auto 0;}
     .wl-m-guia .wl-g-cta{width:100%;min-width:0;margin:24px 0 0;flex-shrink:0;}
   }
+
+  /* ═══ Botón de cerrar: idéntico a producción ═══
+     Producción pinta el círculo en el propio <svg> (winland-prod.css 885):
+     #f5f7f7, 5px de relleno, X negra que pasa a naranja al pasar el cursor.
+     Antes el círculo iba en el contenedor y, en los modales con barra
+     translúcida, la barra quedaba encima y lo tapaba: por eso unos modales lo
+     mostraban y otros no. Ahora el contenedor es transparente (solo área de
+     toque) y el círculo vive en el ícono, por encima de la barra. */
+  .clmc-dialog .clmc-closeIcon-popup,
+  .clmc-dialog .clmc-closeIcon-popup:hover,
+  .wl-fv-close{background:transparent;box-shadow:none;}
+  .clmc-dialog .clmc-closeIcon-popup > svg,
+  .wl-fv-close > svg{
+    width:24px !important;height:24px !important;box-sizing:content-box;padding:5px;
+    background:#f5f7f7;border-radius:100%;color:#000;cursor:pointer;transition:all 250ms ease-in-out;
+  }
+  .clmc-dialog .clmc-closeIcon-popup > svg:hover,
+  .wl-fv-close > svg:hover{color:var(--clmc-color-primary);}
+  .wl-fv-close{display:flex;align-items:center;justify-content:center;}

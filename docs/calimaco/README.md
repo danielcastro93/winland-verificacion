@@ -155,6 +155,9 @@ Lo que conviene saber al integrar:
   validadas llevan una palomita al final (`.wl-row-ok`). Producción ya pinta una ahí
   con el `CheckIcon` relleno de MUI; para que case con la familia nueva conviene
   sustituirlo por el SVG de línea del prototipo (`I.check`).
+- **Botón de cerrar.** Queda idéntico a producción: el `CloseIcon` de MUI con el
+  círculo `#f5f7f7` pintado en el propio ícono, como lo define `winland-prod.css`. No
+  hay delta que aplicar.
 - **Iconografía.** Una sola familia de línea: 24×24, trazo 1.8, puntas y uniones
   redondeadas, `stroke="currentColor"`. Las únicas excepciones son el logo de
   WhatsApp, el de Truora y el disco de éxito del pop-up biométrico.
