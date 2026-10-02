@@ -1,12 +1,12 @@
 # Entrega técnica · Centro de verificación de Winland
 
-Para el equipo de Calímaco. 1 de octubre de 2026.
+Para el equipo de Calímaco. 2 de octubre de 2026.
 
 Este módulo es un **rediseño de algo que ya existe**, no una construcción desde cero.
 La pantalla de hoy (`/privado/perfil#/overview`, pestaña Verificación) ya trae el
 bloque de Truora, la rejilla de documentos y el diálogo de carga. La mayor parte de
-lo que sigue es reestilizar eso. Lo verdaderamente nuevo son cinco componentes, y
-están marcados como tales.
+lo que sigue es reestilizar eso. Lo verdaderamente nuevo lleva el prefijo `.wl-`
+y está listado en el paso 3.
 
 ## Qué hay en esta carpeta
 
@@ -135,7 +135,7 @@ métodos de cobro se ofrecen:
 
 La condición de pre-verificada es **identidad + domicilio**. La cuenta bancaria **no
 bloquea** el retiro: es una mejora del método de cobro, y así se comunica en la
-interfaz (paso punteado y tarjeta de mejora, nunca candado de error).
+interfaz (paso 3 en naranja atenuado y tarjeta de mejora, nunca candado de error).
 
 Hace falta un campo con el nivel alcanzado, por ejemplo `none | pre-verified | verified`.
 
@@ -177,6 +177,24 @@ Lo que conviene saber al integrar:
   del archivo y "Cambiar". Sustituye a las cajas grandes y vacías.
 - **Acciones.** En móvil queda solo el botón principal: la X ya cierra el modal, así
   que "Cancelar" se oculta. En escritorio se conserva, alineado a la derecha.
+
+## Accesibilidad y metadatos
+
+- **Diálogos.** Cada modal lleva `role="dialog"`, `aria-modal="true"` y
+  `aria-labelledby` apuntando a su título. Escape lo cierra igual que la X. En
+  React esto ya lo da `<Dialog>` de MUI; basta con pasarle el título.
+- **Controles que no son botón.** Filas de documento, pasos del tracker, chips y
+  preguntas de FAQ, filas de carga, la X y el chevron de regresar se anuncian como
+  botón (`role="button"`, `tabindex="0"`) y responden a Enter y Espacio. Las
+  preguntas y los acordeones informan `aria-expanded`. En el sitio lo natural es
+  usar `<button>` o `<IconButton>` y ahorrarse los atributos.
+- **Título de la pantalla.** El encabezado de cada estado es el `<h1>` de la
+  página (`.wl-vh-title`).
+- **Metadatos.** Es un área privada de Mi cuenta, así que el prototipo lleva
+  `robots: noindex, nofollow`. Si el sitio ya define título y metadatos por ruta,
+  se sugiere `Verificación de cuenta | Winland` y la descripción que trae el
+  `<head>` del prototipo. El favicon y la imagen para compartir de `assets/meta/`
+  son solo para la liga del prototipo; producción conserva los suyos.
 
 ## Puntos abiertos
 

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- ═══════════════════════════════════════════════════════════════════════════
-  WINLAND · MÓDULO DE VERIFICACIÓN DE CUENTA (KYC) — Propuesta UX/UI v1
+  WINLAND · MÓDULO DE VERIFICACIÓN DE CUENTA (KYC) · Propuesta UX/UI v2
   ═══════════════════════════════════════════════════════════════════════════
 
   QUÉ ES ESTE ARCHIVO
@@ -15,6 +15,10 @@
     modales de carga, acordeones, FAQ, etc.
 
   GUÍA DE INTEGRACIÓN (Calímaco)
+  · La guía completa está en docs/calimaco/README.md (tokens a dar de alta,
+    delta de CSS, componentes existentes vs. nuevos, reglas de backend).
+    Convención de nombres: .clmc-* = componente que ya existe en Calímaco
+    (aquí solo el delta) · .wl-* = componente nuevo.
   · Stack destino: Next.js + React + Material UI, clases utilitarias clmc-*
     y variables CSS de client_custom.css. Los design-tokens de este archivo
     (:root) están mapeados a los de producción:
@@ -38,22 +42,27 @@
       --radius-sm 8px            ≡ --clmc-border-radius-small
       --radius 12px              ≡ --clmc-border-radius-large
       --radius-lg 16px           ≡ contenedor privateLayout
+      16 / 20px                  → PROPUESTO (v2): filas de carga, tarjetas
+                                   accionables y modales que flotan. Los
+                                   modales a pantalla completa en móvil, 0.
 
     TIPOGRAFÍA — fuente 'winland' (Denim INK, VARIABLE 300-900: declarar
     font-weight:300 900 en el @font-face para pesos reales).
-      Escala (px):  12 · 13 · 14 · 16 · 18 · 20 · 22   (todo entero)
-        12 ≡ --clmc-text-xsmall   → meta, subtextos, chips
-        14 ≡ --clmc-text-small    → cuerpo, títulos de fila, preguntas FAQ
-        16 ≡ --clmc-text-medium   → nombre de proveedor, leads destacados
-        13 / 18 / 20 / 22         → intermedios usados también por producción
-                                    (aparecen en profile.css / components.css)
+      Escala (px), todo entero:
+        12 ≡ --clmc-text-xsmall   → meta y subtextos
+        14 ≡ --clmc-text-small    → texto secundario, requisitos, etiquetas
+        16 ≡ --clmc-text-medium   → preguntas de FAQ, nombre de proveedor
+        24 ≡ --clmc-text-large    → título de pantalla en escritorio
+        13 / 15 / 18–22           → intermedios: 15 es el cuerpo de la v2,
+                                    20–22 los títulos de modal y de móvil
       Pesos: 700 solo títulos · 600 subtítulos/etiquetas/links · 400 cuerpo.
       Mínimo móvil: 11px (solo micro-metadatos).
 
-    BOTONES
-      botón primario    ≡ .clmc-btn-primary (hover: brightness(1.1)+opacity .8;
-                          disabled: #d1d1d1 / #adadad)
-      botón outline     ≡ .clmc-btn-primary
+    BOTONES (se usan las clases de producción; el delta solo acomoda)
+      primario          ≡ .clmc-btn-primary (hover: brightness(1.1)+opacity .8)
+      contorno          ≡ .clmc-btn-primary-white
+      deshabilitado     ≡ .clmc-btn-disabled (#d1d1d1 / #adadad)
+      cerrar (modales)  ≡ .clmc-closeIcon-popup, idéntico a producción
   · HEADER, FOOTER y MENÚ INFERIOR son el HTML REAL del sitio (clmc / MUI),
     servidos con sus propias hojas: assets/emotion.css + assets/winland-prod.css
     + chrome.css, enlazadas ANTES del <style> de este archivo. NO se implementan:
@@ -92,8 +101,8 @@
       Verificada (+ cuenta bancaria)       → retira por DEPÓSITO DIRECTO (SPEI)
   · Por eso el orden de pasos es: 1 Identidad · 2 Domicilio · 3 Cuenta bancaria.
     El paso 3 NO bloquea el retiro: es una mejora del método de cobro. En la UI se
-    comunica con el estilo `.wl-step.invite` (punteado) y la `.wl-upgrade-card`, nunca
-    con candado de error.
+    comunica con el segmento `.wl-step.invite` (naranja atenuado) y la
+    `.wl-upgrade-card`, nunca con candado de error.
   · API: el backend debe exponer el nivel alcanzado (none | pre-verified | verified)
     para decidir qué estado renderizar y qué métodos de cobro ofrecer.
 
@@ -123,17 +132,41 @@
     proceso en curso).
 
   ASSETS
-  · assets/produccion/   → extraídos del sitio real (logo, iconos, fuente)
-  · assets/infografias/  → guías visuales de Marketing (la de domicilio
-                           contiene un error reportado; al corregirse solo
-                           se sobrescribe guia-domicilio-tipos.jpg)
-  · Ver docs/OBSERVACIONES.md para hallazgos reportados al cliente.
+  · assets/produccion/   → del sitio real (logo, header, footer, menú
+                           inferior, fuente) y los 12 íconos de documento
+                           redibujados en línea con los MISMOS nombres de
+                           archivo que usa producción (email/identify/bank/
+                           other × verified/pending/denied).
+  · assets/infografias/  → guías visuales de Marketing. Winland enviará las
+                           corregidas (escritorio y móvil); basta sobrescribir
+                           los archivos con el mismo nombre.
+  · docs/calimaco/       → entrega técnica para la integración.
+  · docs/OBSERVACIONES.md → hallazgos reportados al cliente.
 ═══════════════════════════════════════════════════════════════════════════ -->
-<html lang="es">
+<html lang="es-MX">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Winland — Centro de verificación (Propuesta UX/UI)</title>
+<title>Verificación de cuenta | Winland</title>
+<meta name="description" content="Verifica tu identidad, tu domicilio y tu cuenta bancaria en Winland para activar tus retiros y recibirlos por depósito directo." />
+<!-- Área privada de Mi cuenta: no se indexa ni se siguen sus enlaces -->
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#E85B10" />
+<meta name="format-detection" content="telephone=no" />
+<link rel="icon" type="image/png" sizes="64x64" href="assets/meta/favicon.png">
+<link rel="apple-touch-icon" href="assets/meta/apple-touch-icon.png">
+<!-- Vista previa al compartir el enlace (WhatsApp, Slack, correo) -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Winland" />
+<meta property="og:locale" content="es_MX" />
+<meta property="og:title" content="Verificación de cuenta | Winland" />
+<meta property="og:description" content="Verifica tu identidad, tu domicilio y tu cuenta bancaria para activar tus retiros." />
+<meta property="og:url" content="https://danielcastro93.github.io/winland-verificacion/" />
+<meta property="og:image" content="https://danielcastro93.github.io/winland-verificacion/assets/meta/og-verificacion.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Winland, centro de verificación" />
+<meta name="twitter:card" content="summary_large_image" />
 <!-- ═══ CHROME REAL DE PRODUCCIÓN ═══
      Hojas reales del sitio (header, footer y menú inferior). El ORDEN importa:
      estas tres van primero y la hoja del módulo (<style> de abajo) al final,
@@ -230,41 +263,31 @@
   .wl-w-content{padding:32px;}
 
   /* ===== Verification module ===== */
-  .wl-vh-title{font-size:22px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:-0.015em;}
-  .wl-vh-sub{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);margin-bottom:26px;max-width:none;line-height:1.55;white-space:nowrap;}
+  .wl-vh-title{font-weight:700;color:var(--ink);margin:0;}
+  .wl-vh-sub{color:var(--text-gray);max-width:none;}
 
   /* progress tracker */
-  .wl-tracker{display:flex;gap:12px;margin-bottom:26px;}
+
   .wl-step{
-    flex:1;background:var(--page-bg);border-radius:var(--radius-sm);padding:14px 15px;
-    display:flex;align-items:center;gap:12px;border:1px solid var(--line-soft);
+    flex:1;
+    align-items:center;gap:12px;
   }
-  .wl-step .num{
-    width:28px;height:28px;border-radius:50%;background:#fff;color:var(--mid-gray);border:1.5px solid var(--mid-gray);
-    font-size:var(--clmc-text-xsmall, 12px);font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'winland',sans-serif;
-  }
-  .wl-step.done{border-color:var(--success-green);background:var(--success-bg);}
-  .wl-step.done .num{background:var(--success-green);border-color:var(--success-green);color:#fff;}
-  .wl-step.current{border-color:var(--winland-orange);background:var(--orange-tint);}
-  /* Paso opcional (mejora, no requisito): borde punteado, no compite con el paso actual */
-  .wl-step.invite{border-color:var(--winland-orange);border-style:dashed;background:var(--surface);}
-  .wl-step.invite .num{background:var(--orange-tint);border-color:var(--winland-orange);color:var(--winland-orange);}
+
+  /* Paso opcional (mejora, no requisito): no compite con el paso actual */
+
   .wl-step.invite .meta .s{color:var(--winland-orange);}
-  .wl-step.alert{border-color:var(--error-red);background:var(--error-bg);}
-  .wl-step.alert .num{background:var(--error-red);border-color:var(--error-red);color:#fff;}
+
   .wl-step.alert .meta .s{color:var(--error-red);}
-  .wl-step.current .num{background:var(--winland-orange);border-color:var(--winland-orange);color:#fff;}
   .wl-step .meta{flex:1;min-width:0;}
-  .wl-step .meta .t{font-size:13px;font-weight:600;color:var(--ink);}
-  .wl-step .meta .s{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-gray);margin-top:3px;line-height:1.35;}
-  .wl-step .num svg{width:14px;height:14px;}
+  .wl-step .meta .t{font-weight:600;}
+  .wl-step .meta .s{color:var(--text-gray);line-height:1.35;}
 
   /* truora hero card */
   .wl-truora-card{
     background:#fff;
-    border:1.5px solid var(--winland-orange);
-    border-radius:var(--radius-lg);padding:24px;color:var(--ink);margin-bottom:24px;position:relative;
-    box-shadow:0 1px 3px rgba(232,91,16,.06);
+
+    color:var(--ink);position:relative;
+
   }
   .wl-truora-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
   .wl-truora-id{display:flex;align-items:center;gap:12px;}
@@ -274,28 +297,19 @@
     display:flex;align-items:center;justify-content:center;overflow:hidden;
     border:1px solid rgba(0,0,0,.08);
   }
-  .wl-truora-icon svg{width:18px;height:18px;}
+
   .wl-truora-name{font-size:var(--clmc-text-medium, 16px);font-weight:700;letter-spacing:-0.005em;color:var(--ink);}
   .wl-truora-tagline{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);margin-top:3px;}
   .wl-truora-card .badge{
-    display:inline-flex;align-items:center;gap:5px;background:var(--winland-orange);color:#fff;
-    border-radius:20px;padding:5px 12px 5px 10px;font-size:var(--clmc-text-xsmall, 12px);font-weight:700;letter-spacing:.02em;flex-shrink:0;
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:var(--clmc-text-xsmall, 12px);flex-shrink:0;
     position:relative;overflow:hidden;
   }
-  .wl-truora-card .badge svg{width:11px;height:11px;}
-  /* Destello que recorre el chip cada ~3s + estrella que titila, para atraer la vista al canal recomendado */
-  .wl-truora-card .badge::after{
-    content:'';position:absolute;top:0;bottom:0;left:-60%;width:45%;
-    background:linear-gradient(105deg,transparent,rgba(255,255,255,.55),transparent);
-    transform:skewX(-20deg);animation:badgeShine 3.2s ease-in-out infinite;
-  }
-  @keyframes badgeShine{0%,55%{left:-60%}80%,100%{left:130%}}
-  .wl-truora-card .badge svg{animation:starTwinkle 3.2s ease-in-out infinite;transform-origin:center;}
-  @keyframes starTwinkle{0%,50%,86%,100%{transform:scale(1) rotate(0deg)}64%{transform:scale(1.4) rotate(20deg)}}
-  .wl-truora-card h2{font-size:18px;font-weight:700;margin-bottom:9px;letter-spacing:-0.01em;color:var(--ink);}
-  .wl-truora-card p{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);line-height:1.6;max-width:none;margin-bottom:16px;white-space:nowrap;}
+
+  .wl-truora-card h2{font-weight:700;color:var(--ink);}
+  .wl-truora-card p{color:var(--text-gray);line-height:1.6;max-width:none;margin-bottom:16px;white-space:nowrap;}
   .wl-truora-benefits{display:flex;flex-direction:column;gap:10px;margin:0 0 22px;}
-  .wl-truora-benefits span{font-size:var(--clmc-text-small, 14px);font-weight:500;color:var(--ink);display:flex;align-items:center;gap:9px;}
+  .wl-truora-benefits span{font-weight:500;color:var(--ink);display:flex;align-items:center;gap:9px;}
   .wl-truora-benefits svg{width:16px;height:16px;color:var(--success-green);flex-shrink:0;}
   /* .clmc-btn-primary — DELTA.
      Producción ya define fondo, color, alto, min-width, radio, peso, tamaño de
@@ -311,13 +325,13 @@
 
   .wl-alt-toggle{
     display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:10px;
-    padding:15px 17px;background:var(--page-bg);border-radius:var(--radius-sm);font-size:var(--clmc-text-small, 14px);font-weight:600;color:var(--text-gray);
-    border:1px solid var(--line-soft);transition:background .15s var(--ease);
+    font-weight:600;
+    transition:background .15s var(--ease);
   }
-  .wl-alt-toggle:hover{background:#EEF1F2;}
+
   /* Módulo aún no habilitado por Back Office: se puede abrir para entender qué es,
      pero su acción está deshabilitada */
-  .wl-alta-toggle{margin-top:12px;}
+
   .wl-alta-toggle span{display:flex;align-items:center;gap:8px;}
   .wl-alta-toggle.is-locked{color:var(--text-faint);}
   .wl-alta-toggle.is-locked svg:not(.wl-chev-down){width:15px;height:15px;flex-shrink:0;}
@@ -325,50 +339,50 @@
   .wl-alt-toggle svg.wl-chev-down{width:16px;height:16px;color:var(--text-faint);flex-shrink:0;transition:transform .2s var(--ease);}
   .wl-alt-toggle.open svg.wl-chev-down{transform:rotate(180deg);}
   .wl-alt-panel{
-    margin-top:10px;border:1px solid var(--line-soft);border-radius:var(--radius-sm);padding:18px;
-    display:flex;flex-direction:column;gap:12px;background:#FAFBFB;
+
+    display:flex;flex-direction:column;
   }
-  .wl-alt-note{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-gray);line-height:1.5;margin-bottom:4px;}
+  .wl-alt-note{color:var(--text-gray);margin-bottom:4px;}
 
   .clmc-user-documents-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .clmc-user-document-item{
-    display:flex;align-items:center;gap:13px;background:var(--surface);
-    border-radius:var(--radius-sm);padding:16px;border:1px solid var(--line-soft);
+    display:flex;align-items:center;
+
   }
-  .clmc-user-document-item.disabled{opacity:.55;}
-  .clmc-user-document-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .clmc-user-document-icon svg{width:18px;height:18px;}
+
+  .clmc-user-document-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
   /* Recuadro del ícono por estado (homologado) */
-  .clmc-user-document-icon.email,.clmc-user-document-icon.st-verified{background:var(--success-bg);color:var(--success-green);}
-  .clmc-user-document-icon.st-pending,.clmc-user-document-icon.st-progress{background:var(--orange-tint);color:var(--winland-orange);}
-  .clmc-user-document-icon.st-rejected{background:var(--error-bg);color:var(--error-red);}
-  .clmc-user-document-icon.st-blocked{background:var(--page-bg);color:var(--text-faint);}
+  .clmc-user-document-icon.st-verified{color:var(--success-green);}
+  .clmc-user-document-icon.st-pending,.clmc-user-document-icon.st-progress{color:var(--winland-orange);}
+  .clmc-user-document-icon.st-rejected{color:var(--error-red);}
+
   .wl-doc-meta{flex:1;min-width:0;}
-  .wl-doc-meta .t{font-size:var(--clmc-text-small, 14px);font-weight:600;color:var(--ink);line-height:1.3;}
-  .wl-doc-meta .s{font-size:var(--clmc-text-xsmall, 12px);margin-top:4px;line-height:1.4;}
+  .wl-doc-meta .t{font-weight:600;color:var(--ink);line-height:1.3;}
+  .wl-doc-meta .s{line-height:1.4;}
   .s-pending{color:var(--text-gray);}
   .s-verified{color:var(--success-green);}
   .s-progress{color:var(--winland-orange);}
   .s-rejected{color:var(--error-red);}
   .s-blocked{color:var(--text-faint);}
-  .clmc-user-document-item.disabled{opacity:.7;background:var(--page-bg);border-style:dashed;}
-  .wl-chev{color:var(--mid-gray);width:16px;height:16px;flex-shrink:0;}
+
+  .wl-chev{flex-shrink:0;}
 
   /* Tarjeta de mejora: convierte el paso 3 en beneficio ("olvídate de las filas") */
   .wl-upgrade-card{
-    display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:20px;
-    background:var(--orange-tint);border:1px solid var(--winland-orange);border-radius:var(--radius);padding:18px 20px;
+    display:flex;align-items:center;justify-content:space-between;gap:18px;
+
   }
-  .wl-upgrade-card .t{font-size:var(--clmc-text-small, 14px);font-weight:600;color:var(--ink);margin-bottom:4px;}
-  .wl-upgrade-card .s{font-size:13px;color:var(--text-gray);line-height:1.5;}
+  .wl-upgrade-card .t{font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .wl-upgrade-card .s{color:var(--text-gray);line-height:1.5;}
   .wl-email-box{
-    margin-top:8px;background:var(--surface);border-radius:var(--radius-sm);padding:18px 20px;
-    display:flex;justify-content:space-between;align-items:center;gap:16px;border:1px solid var(--line-soft);
+
+    display:flex;justify-content:space-between;align-items:center;gap:16px;
   }
-  .wl-email-box .t{font-size:var(--clmc-text-small, 14px);font-weight:600;margin-bottom:6px;display:flex;align-items:flex-start;gap:7px;line-height:1.4;}
+  .wl-email-box .t{font-weight:600;margin-bottom:6px;display:flex;align-items:flex-start;gap:7px;line-height:1.4;}
   .wl-email-box .t svg{width:14px;height:14px;color:var(--text-faint);flex-shrink:0;margin-top:2px;}
-  .wl-email-box.restricted{background:var(--warning-bg);border-color:#F0D9C4;}
-  .wl-email-box .s{font-size:13px;color:var(--text-gray);line-height:1.6;}
+
+  .wl-email-box .s{color:var(--text-gray);line-height:1.6;}
   /* .clmc-btn-primary-white — DELTA.
      Producción ya da el contorno naranja, el texto naranja, el fondo blanco, el
      radio y el hover (base.css 492-531). Aquí solo el acomodo interno. */
@@ -379,42 +393,40 @@
   .clmc-btn-primary-white svg{width:15px;height:15px;}
 
   .wl-status-banner{
-    border-radius:var(--radius-sm);padding:16px 18px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start;
+    display:flex;
   }
-  .wl-status-banner .ic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .wl-status-banner .ic svg{width:18px;height:18px;}
-  .wl-status-banner .t{font-weight:600;font-size:var(--clmc-text-small, 14px);margin-bottom:5px;color:var(--ink);}
-  .wl-status-banner .s{font-size:13px;line-height:1.6;color:var(--text-gray);}
-  .wl-status-banner.success{background:var(--success-bg);} .wl-status-banner.success .ic{background:#CFEAD6;color:var(--success-green);}
-  .wl-status-banner.error{background:var(--error-bg);} .wl-status-banner.error .ic{background:#F6D2CD;color:var(--error-red);}
-  .wl-status-banner.info{background:var(--info-bg);} .wl-status-banner.info .ic{background:#CFE0F4;color:var(--info-blue);}
+  .wl-status-banner .ic{border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+  .wl-status-banner .t{font-weight:600;color:var(--ink);}
+  .wl-status-banner .s{color:var(--text-gray);}
+   .wl-status-banner.success .ic{color:var(--success-green);}
+   .wl-status-banner.error .ic{color:var(--error-red);}
+   .wl-status-banner.info .ic{color:var(--info-blue);}
   .wl-status-banner .cta{margin-top:10px;}
   .wl-status-banner .cta a{color:var(--winland-orange);font-weight:600;font-size:13px;cursor:pointer;}
   /* Enlace embebido en la frase del banner: evita una línea extra de CTA */
-  .wl-status-banner .s a{color:var(--winland-orange);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
-  .wl-status-banner .s a:hover{color:var(--orange-dark);}
 
   /* FAQ */
   .wl-faq-cats{display:flex;gap:9px;margin-bottom:34px;flex-wrap:wrap;}
-  .wl-faq-cat{padding:9px 16px;border-radius:20px;font-size:13px;font-weight:600;background:var(--page-bg);color:#3a4047;cursor:default;border:1px solid transparent;}
+  .wl-faq-cat{padding:9px 16px;border-radius:20px;font-size:13px;font-weight:600;background:var(--page-bg);color:#3a4047;border:1px solid transparent;}
   .wl-faq-cat.active{background:var(--winland-orange);color:#fff;}
   .wl-faq-item{border-bottom:1px solid var(--line-soft);padding:19px 4px;}
   .wl-faq-item:first-child{padding-top:0;}
   .wl-faq-q{font-size:var(--clmc-text-medium, 16px);font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--ink);padding-right:8px;line-height:1.4;}
-  .wl-faq-q svg{width:16px;height:16px;color:var(--text-faint);flex-shrink:0;}
+  .wl-faq-q svg{width:16px;height:16px;color:var(--text-faint);}
   .wl-faq-a-tx{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);padding-top:11px;line-height:1.7;padding-right:48px;}
 
   /* Modal */
   /* Modales a pantalla completa (sobre todo el sitio, no solo el módulo) */
   .wl-modal-overlay{
-    position:fixed;inset:0;background:rgba(12,12,14,.6);
+    position:fixed;inset:0;
     display:flex;align-items:center;justify-content:center;padding:24px;
     /* Por encima del header real de producción (MuiAppBar, z-index 1100) */
-    backdrop-filter:blur(2px);z-index:1200;
+    z-index:1200;
   }
   .clmc-dialog{
-    background:#fff;border-radius:12px;max-width:480px;width:100%;padding:28px;position:relative;
-    max-height:88%;overflow-y:auto;box-shadow:0 30px 70px rgba(0,0,0,.35);
+    background:#fff;max-width:480px;width:100%;padding:28px;position:relative;
+    max-height:88%;overflow-y:auto;
   }
   /* Modales de documento: layout horizontal en escritorio */
   .clmc-dialog.wl-doc-modal{max-width:820px;}
@@ -456,56 +468,54 @@
   }
   /* Línea de requisitos: discreta, escaneable, una sola línea */
   .wl-req-line{
-    display:flex;align-items:flex-start;gap:8px;background:var(--page-bg);border-radius:8px;
-    padding:11px 14px;margin-bottom:14px;font-size:13px;color:var(--text-gray);line-height:1.5;
+    align-items:flex-start;gap:8px;
+    line-height:1.5;
   }
   .wl-req-line svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;margin-top:1px;}
   .wl-req-line b{color:var(--ink);}
   .clmc-dialog .clmc-closeIcon-popup{
-    position:sticky;top:0;margin-left:auto;margin-bottom:-32px;width:32px;height:32px;border-radius:50%;background:var(--page-bg);
+    position:sticky;top:0;margin-left:auto;margin-bottom:-32px;width:32px;height:32px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;color:var(--ink);cursor:pointer;
-    z-index:6;box-shadow:0 0 0 4px #fff; /* halo para leerse sobre contenido al hacer scroll */
+    z-index:6; /* halo para leerse sobre contenido al hacer scroll */
     transition:background .15s var(--ease);
   }
-  .clmc-dialog .clmc-closeIcon-popup:hover{background:#E6EAEC;}
+
   /* Producción le pinta al <svg> su propio círculo de fondo (winland-prod.css
      885). Encima del nuestro quedaban dos círculos concéntricos y la × se leía
      diminuta. El contenedor ya hace de botón, así que el glifo va limpio. */
-  .clmc-dialog .clmc-closeIcon-popup > svg{
-    width:15px;height:15px;background:none;padding:0;border-radius:0;color:inherit;
-  }
-  .clmc-dialog h3{font-size:18px;font-weight:700;margin:22px 0 14px;padding-right:44px;color:var(--ink);letter-spacing:-0.01em;}
-  .clmc-dialog .lead{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);margin-bottom:20px;line-height:1.65;}
+
+  .clmc-dialog h3{font-weight:700;margin:22px 0 14px;padding-right:44px;color:var(--ink);}
+  .clmc-dialog .lead{color:var(--text-gray);}
   /* Tres columnas: los tres archivos de identidad caben en una línea y se leen
      como lo que son, tres piezas del mismo trámite. Con una sola caja, .full
      la hace ocupar el ancho completo. */
-  .clmc-upload-documents-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}
+  .clmc-upload-documents-grid{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:14px;}
   .clmc-upload-document-drop-area{
-    border:1.5px dashed var(--mid-gray);border-radius:var(--radius-sm);padding:20px 12px;text-align:center;font-size:var(--clmc-text-small, 14px);
-    color:var(--text-gray);font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    padding:20px 12px;text-align:center;font-size:var(--clmc-text-small, 14px);
+    font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
     min-height:148px;
   }
-  .clmc-upload-document-drop-area svg{width:26px;height:26px;color:var(--text-faint);}
-  .clmc-upload-document-drop-area.full{grid-column:1/-1;}
+  .clmc-upload-document-drop-area svg{width:26px;height:26px;}
+
   /* Modal Truora: lista de canales limpia */
-  .wl-modal-truora-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-right:34px;}
+  .wl-modal-truora-head{display:flex;align-items:center;padding-right:34px;}
   .wl-modal-truora-head .wl-truora-icon{border:1px solid var(--line);}
   .wl-channel-list{border-top:1px solid var(--line-soft);}
   .wl-channel-list .ch{
-    display:flex;align-items:center;gap:14px;padding:15px 4px;border-bottom:1px solid var(--line-soft);
-    cursor:pointer;transition:background .12s var(--ease);border-radius:6px;
+    display:flex;align-items:center;border-bottom:1px solid var(--line-soft);
+    cursor:pointer;transition:background .12s var(--ease);
   }
   .wl-channel-list .ch:hover{background:var(--page-bg);}
   .wl-channel-list .ch-ic{
-    width:38px;height:38px;border-radius:8px;background:var(--orange-tint);color:var(--winland-orange);
+    border-radius:8px;
     display:flex;align-items:center;justify-content:center;flex-shrink:0;
   }
-  .wl-channel-list .ch-ic svg{width:18px;height:18px;}
+
   .wl-channel-list .ch-meta{flex:1;min-width:0;}
-  .wl-channel-list .ch-meta .t{font-size:var(--clmc-text-small, 14px);font-weight:600;color:var(--ink);}
-  .wl-channel-list .ch-meta .s{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-gray);margin-top:3px;line-height:1.4;}
+  .wl-channel-list .ch-meta .t{font-weight:600;color:var(--ink);}
+  .wl-channel-list .ch-meta .s{color:var(--text-gray);margin-top:3px;line-height:1.4;}
   .wl-channel-list .ch > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
-  .clmc-upload-documents-format-box{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);margin-top:16px;text-align:center;line-height:1.55;}
+  .clmc-upload-documents-format-box{margin-top:16px;text-align:center;line-height:1.55;}
 
     /* Acciones fijas al fondo: siempre a la mano aunque el contenido tenga scroll */
   .clmc-upload-documents-actions{
@@ -559,12 +569,10 @@
   .wl-faq-guia:hover{background:var(--orange-tint);border-color:var(--winland-orange);}
   .wl-faq-guia svg{width:15px;height:15px;flex-shrink:0;}
 
-  
-
   @media (max-width:768px){
     .wl-faq-item{padding:22px 2px;}
     .wl-faq-q{gap:14px;line-height:1.45;}
-    .wl-faq-a-tx{padding-top:12px;padding-right:14px;}
+    .wl-faq-a-tx{padding-top:12px;}
   }
 
   /* Flujo Truora multi-paso */
@@ -585,9 +593,9 @@
   .wl-tp-flag{padding:12px 12px;background:var(--page-bg);font-size:var(--clmc-text-small, 14px);font-weight:600;border-right:1px solid var(--line-soft);white-space:nowrap;}
   .wl-tp-row input{flex:1;border:none;outline:none;padding:12px 14px;font-size:var(--clmc-text-small, 14px);font-family:inherit;color:var(--ink);letter-spacing:.03em;}
   .wl-tp-hint{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);line-height:1.45;margin-bottom:16px;}
-  .wl-t-checklist{display:flex;flex-direction:column;gap:11px;margin:6px 0 20px;}
-  .wl-t-checklist span{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text-gray);}
-  .wl-t-checklist svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;}
+  .wl-t-checklist{display:flex;flex-direction:column;}
+  .wl-t-checklist span{display:flex;gap:9px;}
+  .wl-t-checklist svg{color:var(--success-green);flex-shrink:0;}
   .wl-qr-title,.wl-qr-lead{text-align:center;}
   @media (max-width:768px){ .wl-qr-title,.wl-qr-lead{text-align:left;} }
   .wl-qr-box{width:190px;height:190px;margin:6px auto 10px;padding:12px;border:1px solid var(--line-soft);border-radius:12px;background:#fff;}
@@ -599,10 +607,10 @@
   .wl-consent-check b{color:var(--ink);}
 
   /* Modal de documentos v2: selector, guía visual, línea FAQ */
-  .wl-doc-select{margin-bottom:16px;}
-  .wl-doc-select label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:8px;}
+
+  .wl-doc-select label{display:block;font-weight:600;color:var(--ink);margin-bottom:8px;}
   .wl-doc-select select{
-    width:100%;border:1.5px solid var(--line);border-radius:8px;padding:12px 14px;font-size:var(--clmc-text-small, 14px);
+    width:100%;
     font-family:inherit;color:var(--ink);background:#fff;appearance:none;cursor:pointer;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%235B6470' stroke-width='2' fill='none'/></svg>");
     background-repeat:no-repeat;background-position:right 14px center;
@@ -610,21 +618,21 @@
   .wl-doc-select select:focus{outline:none;border-color:var(--winland-orange);}
   /* Tarjeta de guía visual: abre lightbox — misma UI en desktop y mobile */
   .wl-guia-cta{
-    display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:10px;
-    padding:10px 14px 10px 10px;cursor:pointer;background:#fff;margin-bottom:14px;
+    display:flex;align-items:center;border:1px solid var(--line);
+    cursor:pointer;background:#fff;
     transition:border-color .15s var(--ease), background .15s var(--ease);
   }
   .wl-guia-cta:hover{border-color:var(--winland-orange);background:#FFFBF8;}
-  .wl-guia-thumb{width:52px;height:44px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--line-soft);flex-shrink:0;}
-  .wl-guia-cta span{flex:1;display:flex;flex-direction:column;gap:2px;line-height:1.3;}
-  .wl-guia-cta span b{font-size:13px;color:var(--ink);}
-  .wl-guia-cta span small{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);}
+  .wl-guia-thumb{object-fit:cover;border:1px solid var(--line-soft);flex-shrink:0;}
+  .wl-guia-cta span{flex:1;display:flex;flex-direction:column;line-height:1.3;}
+  .wl-guia-cta span b{color:var(--ink);}
+
   .wl-guia-cta > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
   .wl-modal-faq-line{font-size:13px;color:var(--text-gray);margin:14px 0 16px;}
 
   /* Vista de guía interna del modal */
   .wl-m-main.hide,.wl-m-guia.hide{display:none;}
-  .wl-m-guia .wl-g-img{display:block;max-width:100%;max-height:60vh;width:auto;margin:0 auto;border-radius:10px;border:1px solid var(--line-soft);}
+  .wl-m-guia .wl-g-img{display:block;max-width:100%;width:auto;margin:0 auto;border:1px solid var(--line-soft);}
 
   /* Línea de ayuda de selfie (fuera del dropzone) */
   /* Botón "Subir" habilitado: conserva la clase base para no deformarse en mobile */
@@ -637,16 +645,9 @@
   /* ── Interacciones v2 ── */
   /* Zonas de carga clickeables (simulan la selección de archivo) */
   .clmc-upload-document-drop-area{cursor:pointer;transition:border-color .15s var(--ease), background .15s var(--ease);}
-  .clmc-upload-document-drop-area:hover{border-color:var(--winland-orange);background:#FFFBF8;}
-  .clmc-upload-document-drop-area.loaded{border-style:solid;border-color:var(--success-green);background:var(--success-bg);cursor:default;}
-  .clmc-upload-document-drop-area.loaded > svg{color:var(--success-green);}
-  .clmc-upload-document-drop-area .wl-file-name{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--success-green);margin-top:5px;}
-  .clmc-upload-document-drop-area .wl-file-name svg{width:12px;height:12px;}
-  .clmc-upload-documents-actions .clmc-btn-primary{flex:1;}
-  /* Destello de atención en advertencias y rechazos */
-  @keyframes pulseRed{0%{box-shadow:0 0 0 0 rgba(197,48,31,.5);}70%{box-shadow:0 0 0 10px rgba(197,48,31,0);}100%{box-shadow:0 0 0 0 rgba(197,48,31,0);}}
-  .clmc-user-document-icon.st-rejected{animation:pulseRed 1.6s ease-out infinite;}
-  .wl-status-banner.error .ic{animation:pulseRed 1.6s ease-out infinite;}
+
+  .clmc-upload-document-drop-area.loaded{cursor:default;}
+
   /* Éxito: la palomita entra con pop, dibuja su trazo y emite una onda */
   @keyframes popIn{0%{transform:scale(.35);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
   @keyframes ringSuccess{0%{box-shadow:0 0 0 0 rgba(46,125,50,.4)}100%{box-shadow:0 0 0 16px rgba(46,125,50,0)}}
@@ -658,36 +659,17 @@
   .wl-pop-check svg{width:100%;height:100%;}
   /* El trazo de la palomita se dibuja; los discos del badge entran con el pop */
   .wl-pop-check svg path{stroke-dasharray:14;stroke-dashoffset:14;animation:drawStroke .34s .3s ease-out forwards;}
-  /* Banner de identidad validada: pulso verde suave (homólogo al rojo/naranja de alerta) */
-  @keyframes pulseSuccess{0%{box-shadow:0 0 0 0 rgba(46,125,50,.35)}70%{box-shadow:0 0 0 10px rgba(46,125,50,0)}100%{box-shadow:0 0 0 0 rgba(46,125,50,0)}}
-  .wl-status-banner.success .ic{animation:pulseSuccess 2.4s ease-out infinite;}
-  /* Pasos del tracker como botones cuando tienen acción */
-  .wl-step.clickable{cursor:pointer;transition:transform .12s var(--ease), box-shadow .15s var(--ease);}
-  .wl-step.clickable:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(20,20,22,.08);}
-  /* Fila de documento rechazado: toda la card invita al clic */
-  /* Filas accionables: al pasar el cursor, el contorno se "pinta" en el color de acción
-     (naranja para pendientes, rojo para rechazadas). Fallback sin @property: borde coloreado simple. */
-  @property --sweep{syntax:'<angle>';initial-value:0deg;inherits:false;}
-  .clmc-user-document-item.wl-row-action,.clmc-user-document-item.wl-row-alert{cursor:pointer;position:relative;animation:none;transition:transform .15s var(--ease);}
-  .clmc-user-document-item.wl-row-action{--paint:var(--winland-orange);}
-  .clmc-user-document-item.wl-row-alert{--paint:var(--error-red);}
-  .clmc-user-document-item.wl-row-action:hover,.clmc-user-document-item.wl-row-alert:hover{border-color:var(--paint);transform:translateY(-1px);}
-  .clmc-user-document-item.wl-row-action::after,.clmc-user-document-item.wl-row-alert::after{
-    content:'';position:absolute;inset:-1px;border-radius:var(--radius-sm);padding:1.5px;
-    background:conic-gradient(from 0deg, var(--paint) var(--sweep), transparent var(--sweep));
-    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite:xor;mask-composite:exclude;
-    opacity:0;pointer-events:none;
-  }
-  .clmc-user-document-item.wl-row-action:hover::after,.clmc-user-document-item.wl-row-alert:hover::after{opacity:1;animation:paintBorder .45s var(--ease) forwards;}
-  @keyframes paintBorder{from{--sweep:0deg}to{--sweep:360deg}}
+
+  /* Pasos del tracker y filas de documento que llevan a una acción */
+  .wl-step.clickable{cursor:pointer;}
+  .clmc-user-document-item.wl-row-action,.clmc-user-document-item.wl-row-alert{cursor:pointer;}
 
   /* FAQ hint footer */
   .wl-faq-hint{
-    margin-top:28px;padding-top:18px;border-top:1px solid var(--line-soft);
+
     display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;
   }
-  .wl-faq-hint svg{width:15px;height:15px;color:var(--text-faint);flex-shrink:0;}
+
   .wl-faq-hint span{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);}
   .wl-faq-hint a{
     color:var(--winland-orange);font-weight:700;cursor:pointer;text-decoration:none;
@@ -706,31 +688,25 @@
     .wl-w-subtabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 8px;}
     .wl-w-subtabs::-webkit-scrollbar{display:none;}
     .wl-w-subtabs .sub{white-space:nowrap;flex-shrink:0;padding:0 12px;}
-    .wl-w-content{padding:18px;}
-    .wl-vh-sub{white-space:normal;}
-    .wl-vh-title{font-size:18px;}
-    .wl-tracker{flex-direction:column;gap:6px;margin-bottom:18px;}
-    .wl-step{padding:9px 12px;gap:9px;border-radius:9px;}
-    .wl-step .num{width:22px;height:22px;font-size:11px;}
-    .wl-step .num svg{width:11px;height:11px;}
-    .wl-step .meta .t{font-size:var(--clmc-text-xsmall, 12px);}
-    .wl-step .meta .s{display:none;}
+
+    .wl-tracker{flex-direction:column;}
+    .wl-step{gap:9px;}
+
     .wl-step.current .meta .s,.wl-step.alert .meta .s,.wl-step.invite .meta .s{display:block;font-size:11px;}
     .wl-truora-card p{white-space:normal;}
     /* Chip "Recomendado" como listón colgado del borde superior: no consume una línea */
     .wl-truora-head{flex-wrap:nowrap;margin-bottom:14px;}
-    .wl-truora-card .badge{position:absolute;top:0;right:16px;border-radius:0 0 8px 8px;padding:4px 10px 5px 9px;font-size:11px;}
-    .wl-truora-card .badge svg{width:10px;height:10px;}
+
     .clmc-btn-primary{width:100%;}
     .clmc-user-documents-grid{grid-template-columns:1fr;}
     /* Tarjeta de mejora: convierte el paso 3 en beneficio ("olvídate de las filas") */
   .wl-upgrade-card{
-    display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:20px;
-    background:var(--orange-tint);border:1px solid var(--winland-orange);border-radius:var(--radius);padding:18px 20px;
+    display:flex;justify-content:space-between;
+
   }
-  .wl-upgrade-card .t{font-size:var(--clmc-text-small, 14px);font-weight:600;color:var(--ink);margin-bottom:4px;}
-  .wl-upgrade-card .s{font-size:13px;color:var(--text-gray);line-height:1.5;}
-  .wl-email-box{flex-direction:column;align-items:stretch;gap:12px;}
+  .wl-upgrade-card .t{font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .wl-upgrade-card .s{color:var(--text-gray);line-height:1.5;}
+
     .wl-email-box .clmc-btn-primary-white{width:100%;}
     .clmc-dialog{padding:20px;}
     /* Categorías de FAQ: scroll horizontal, una sola línea */
@@ -745,13 +721,13 @@
     }
     .clmc-upload-documents-actions .clmc-btn-primary-white,.clmc-upload-documents-actions .clmc-btn-disabled{width:100%;flex:none;padding-top:12px;padding-bottom:12px;}
     /* Texto de dudas/preguntas alineado a la izquierda en mobile */
-    .wl-upgrade-card{flex-direction:column;align-items:flex-start;gap:14px;}
+
     .wl-upgrade-card button{width:100%;}
     .wl-faq-hint{justify-content:flex-start;text-align:left;}
     body{padding-bottom:70px;}
     /* Modales cortos (confirmación, selector de canal): centrados con margen */
     .wl-modal-overlay{padding:16px;align-items:center;}
-    .clmc-dialog{max-width:100%;width:100%;max-height:90%;border-radius:14px;}
+    .clmc-dialog{max-width:100%;width:100%;max-height:90%;}
     .clmc-dialog h3{margin-top:28px;}
     /* Modales de carga de documentos (largos): full-screen tipo hoja, como producción */
     .wl-modal-overlay:has(.wl-doc-modal),.wl-modal-overlay:has(.wl-truora-wide),.wl-modal-overlay:has(.wl-modal-center){padding:0;align-items:stretch;}
@@ -781,17 +757,15 @@
     .clmc-dialog.wl-doc-modal .clmc-closeIcon-popup,.clmc-dialog.wl-truora-wide .clmc-closeIcon-popup{top:16px;right:18px;}
     /* En teléfono el cerrar debe ser un objetivo de toque real, no un adorno */
     .clmc-dialog .clmc-closeIcon-popup{width:40px;height:40px;margin-bottom:-40px;}
-    .clmc-dialog .clmc-closeIcon-popup > svg{width:18px;height:18px;}
 
     /* Zonas de carga: en teléfono van una por fila y con más altura. Dos
        columnas dejaban cajas muy bajas y un objetivo de toque pobre justo en
        el paso que más importa del flujo. */
-    .clmc-upload-documents-grid{grid-template-columns:1fr;gap:12px;}
+    .clmc-upload-documents-grid{grid-template-columns:1fr;}
     .clmc-upload-document-drop-area{
       padding:26px 14px;font-size:var(--clmc-text-small, 14px);gap:10px;min-height:104px;justify-content:center;
     }
     .clmc-upload-document-drop-area svg{width:24px;height:24px;}
-    .wl-t-back{top:19px;left:18px;}
 
     /* ── Footer liquid glass: acciones fijas abajo con blur, como app ── */
     .clmc-upload-documents-actions{
@@ -854,8 +828,10 @@
   }
   .clmc-user-document-item.disabled .wl-doc-meta .t{color:var(--text-faint);}
   .clmc-user-document-icon,
-  .clmc-user-document-icon.email,.clmc-user-document-icon.st-verified,.clmc-user-document-icon.st-pending,
-  .clmc-user-document-icon.st-progress,.clmc-user-document-icon.st-rejected{
+  .clmc-user-document-icon.st-verified,
+  .clmc-user-document-icon.st-pending,
+  .clmc-user-document-icon.st-progress,
+  .clmc-user-document-icon.st-rejected{
     width:24px;height:24px;border-radius:0;background:transparent;animation:none;
   }
   .clmc-user-document-icon.st-blocked{width:24px;height:24px;background:transparent;color:var(--text-faint);}
@@ -865,9 +841,7 @@
   .wl-row-ok{display:flex;width:20px;height:20px;color:var(--success-green);flex-shrink:0;}
   .wl-row-ok svg{width:20px;height:20px;}
   .wl-chev{width:18px;height:18px;color:var(--mid-gray);transition:transform .15s var(--ease), color .15s var(--ease);}
-  /* Sin caja no hay contorno que pintar: el hover lo cuenta el chevron */
-  .clmc-user-document-item.wl-row-action::after,.clmc-user-document-item.wl-row-alert::after{display:none;}
-  .clmc-user-document-item.wl-row-action:hover,.clmc-user-document-item.wl-row-alert:hover{transform:none;}
+  /* Sin caja, el hover lo cuentan el chevron y el título */
   .clmc-user-document-item[data-accionable]:hover .wl-chev{transform:translateX(3px);color:var(--winland-orange);}
   .clmc-user-document-item[data-accionable]:hover .wl-doc-meta .t{color:var(--winland-orange);}
 
@@ -903,7 +877,6 @@
     background:var(--orange-tint);color:var(--orange-dark);font-weight:600;letter-spacing:0;
     padding:5px 11px;border-radius:999px;
   }
-  .wl-truora-card .badge::after{display:none;}
   .wl-upgrade-card{
     background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px 22px;margin-top:28px;
     box-shadow:0 1px 2px rgba(20,20,22,.04), 0 10px 28px rgba(20,20,22,.05);
@@ -987,12 +960,10 @@
     .wl-step.current::before{background:var(--winland-orange);}
     .wl-step.alert::before{background:var(--error-red);}
     .wl-step.invite::before{background:#F8CAB2;background:color-mix(in srgb, var(--winland-orange) 34%, #fff);}
-    .wl-step .num{display:none;}
     .wl-step .meta .t{font-size:14px;color:var(--text-gray);}
     .wl-step.done .meta .t,.wl-step.current .meta .t,.wl-step.alert .meta .t{color:var(--ink);}
     .wl-step .meta .s{font-size:13px;margin-top:4px;}
     .wl-step.done .meta .s{color:var(--success-green);}
-    .wl-step.clickable:hover{transform:none;box-shadow:none;}
     .wl-step.clickable:hover .meta .t{color:var(--winland-orange);}
 
     /* Documentos a dos columnas: el divisor superior va en la primera fila de cada una */
@@ -1022,7 +993,6 @@
        se distingue del gris de "pendiente" y del naranja pleno de "actual" sin
        meter texturas. La diferencia la termina de contar la etiqueta. */
     .wl-step.invite{background:#F8CAB2;background:color-mix(in srgb, var(--winland-orange) 34%, #fff);}
-    .wl-step .num{display:none;}
     .wl-step .meta{display:none;position:absolute;left:0;right:0;top:16px;}
     .wl-step.current .meta,.wl-step.alert .meta,.wl-step.invite .meta{
       display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
@@ -1270,13 +1240,12 @@ const I = {
   message:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5h14A1.5 1.5 0 0 1 20.5 7v9a1.5 1.5 0 0 1-1.5 1.5H9l-4.5 3.5V7A1.5 1.5 0 0 1 5 5.5z"/></svg>`,
   qr:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5M14 14v2.5M17.5 17.5H20V20M14 20h2.5M20 14v.01"/></svg>`,
   monitor:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></svg>`,
-  /* Disco sólido con palomita y halo: una sola forma, sin círculo contenedor
-     que la encierre otra vez. Es el gesto de "listo" que usan hoy iOS y
-     Material, y lee al instante a cualquier tamaño. */
+  /* Sello con palomita: "cuenta verificada", del mismo trazo que el resto del set */
   badgeCheck:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76z"/><path d="m9 12 2 2 4-4"/></svg>`,
+  /* Disco sólido con palomita y halo (pop-up de éxito): una sola forma, sin
+     círculo contenedor que la encierre otra vez; lee al instante a cualquier tamaño. */
   checkBadge:`<svg class="icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".14"/><circle cx="12" cy="12" r="8" fill="currentColor"/><path d="M8.6 12.2l2.3 2.3 4.5-4.9" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-  /* Escudo con palomita: "cuenta validada", del mismo trazo geométrico que el
-     resto del set. Sustituye al matasuegras, que leía como clip art. */
+  /* Escudo con palomita: "cuenta pre-verificada", del mismo trazo que el resto del set */
   shieldCheck:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8l7.2 2.7v5.6c0 4.4-3 8.5-7.2 9.6-4.2-1.1-7.2-5.2-7.2-9.6V5.5z"/><path d="M8.9 12.1l2.2 2.2 4.1-4.6"/></svg>`,
 };
 
@@ -1357,6 +1326,7 @@ function openGuia(el,img,titulo){
   const g=m.querySelector('.wl-m-guia');
   g.querySelector('.g-title').textContent=titulo;
   g.querySelector('img').src='assets/infografias/'+img;
+  g.querySelector('img').alt=titulo;
   g.classList.remove('hide');
   m.scrollTop=0;
 }
@@ -1394,19 +1364,18 @@ function faqOpen(item){
   const wasOpen=item.classList.contains('open');
   item.closest('.wl-faq-group').querySelectorAll('.wl-faq-item.open').forEach(i=>i.classList.remove('open'));
   if(!wasOpen) item.classList.add('open');
+  item.closest('.wl-faq-group').querySelectorAll('.wl-faq-item').forEach(i=>
+    i.querySelector('.wl-faq-q').setAttribute('aria-expanded', i.classList.contains('open')));
 }
-/* Visor de infografía dentro de FAQ: informa sin sacar al usuario de la sección */
-/* Mientras hay una capa encima, el fondo no debe moverse. overflow:hidden en
-   <html> conserva la posición de lectura (position:fixed la perdería y habría
-   que recomponerla), y se compensa el ancho de la barra de scroll para que el
-   contenido no dé un brinco lateral al bloquear. */
 let capasAbiertas = 0;
 let capaDeEstado = false;   /* si la pantalla actual dibuja una capa encima */
 /* Bloqueo del fondo mientras hay una capa encima. overflow:hidden en <html> no
    basta en iOS: Safari y Chrome siguen desplazando el fondo y, al hacerlo,
    esconden o muestran su barra inferior, lo que deja el modal más corto que la
    pantalla. Fijar el <body> en su posición (position:fixed con top negativo)
-   es la técnica que iOS respeta; al soltarlo se devuelve el scroll exacto. */
+   es la técnica que iOS respeta; al soltarlo se devuelve el scroll exacto.
+   Se compensa el ancho de la barra de scroll para que el contenido no dé un
+   brinco lateral al bloquear. */
 function bloquearFondo(activar){
   const h = document.documentElement, b = document.body;
   if(activar){
@@ -1480,6 +1449,7 @@ function faqInfo(img, titulo){
         <img src="assets/infografias/${img}" alt="${titulo}" class="wl-g-img">
       </div>
     </div>`;
+  accesible(ov);
   ov.addEventListener('click', e=>{ if(e.target===ov||e.target.closest('.clmc-closeIcon-popup')) cerrarVisor(); });
   document.addEventListener('keydown', visorEscape);
   document.body.appendChild(ov);
@@ -1502,15 +1472,15 @@ function faqCat(el){
 }
 
 const headerHTML = (title, sub) => `
-  <div class="wl-vh-title">${title}</div>
+  <h1 class="wl-vh-title">${title}</h1>
   <div class="wl-vh-sub">${sub}</div>
 `;
 
 const tracker = (a,b,c) => `
   <div class="wl-tracker">
-    <div class="wl-step ${a.cls}"><div class="num">${a.cls==='done'?I.check:'1'}</div><div class="meta"><div class="t">Paso 1 — Identidad</div><div class="s">${a.s}</div></div></div>
-    <div class="wl-step ${b.cls}"><div class="num">${b.cls==='done'?I.check:'2'}</div><div class="meta"><div class="t">Paso 2 — Domicilio</div><div class="s">${b.s}</div></div></div>
-    <div class="wl-step ${c.cls}"><div class="num">${c.cls==='done'?I.check:'3'}</div><div class="meta"><div class="t">Paso 3 — Cuenta bancaria</div><div class="s">${c.s}</div></div></div>
+    <div class="wl-step ${a.cls}"><div class="meta"><div class="t">Paso 1: Identidad</div><div class="s">${a.s}</div></div></div>
+    <div class="wl-step ${b.cls}"><div class="meta"><div class="t">Paso 2: Domicilio</div><div class="s">${b.s}</div></div></div>
+    <div class="wl-step ${c.cls}"><div class="meta"><div class="t">Paso 3: Cuenta bancaria</div><div class="s">${c.s}</div></div></div>
   </div>
 `;
 
@@ -1539,7 +1509,7 @@ const truoraHero = (ctaLabel) => `
 `;
 
 const altAccordion = (open, identityState, emailRestricted=false) => `
-  <div class="wl-alt-toggle ${open?'open':''}" onclick="this.classList.toggle('open');document.getElementById('altPanel').classList.toggle('hide')">
+  <div class="wl-alt-toggle ${open?'open':''}" onclick="this.classList.toggle('open');this.setAttribute('aria-expanded',this.classList.contains('open'));document.getElementById('altPanel').classList.toggle('hide')">
     <span>¿No puedes completar tu verificación con Truora? Ver opciones alternativas</span>${I.chevronDown}
   </div>
   <div class="wl-alt-panel ${open?'':'hide'}" id="altPanel">
@@ -1563,7 +1533,7 @@ const altAccordion = (open, identityState, emailRestricted=false) => `
    Nace bloqueado y Back Office lo habilita por usuario; al activarse abre la firma digital.
    API: bandera de activación desde BO + estado de firma (pendiente | firmado). */
 const altaAccordion = (active=false, open=false) => `
-  <div class="wl-alt-toggle wl-alta-toggle ${active?'':'is-locked'} ${open?'open':''}" onclick="this.classList.toggle('open');document.getElementById('altaPanel').classList.toggle('hide')">
+  <div class="wl-alt-toggle wl-alta-toggle ${active?'':'is-locked'} ${open?'open':''}" onclick="this.classList.toggle('open');this.setAttribute('aria-expanded',this.classList.contains('open'));document.getElementById('altaPanel').classList.toggle('hide')">
     <span>${active?'':I.lock}Formato de alta de cliente${active?'':' · próximamente'}</span>${I.chevronDown}
   </div>
   <div class="wl-alt-panel ${open?'':'hide'}" id="altaPanel">
@@ -1586,7 +1556,7 @@ function docGrid(identityState, docsState='pending', bankState){
     pending: ['pending','0 de 3 documentos subidos'],
     blocked: ['blocked','Deshabilitada temporalmente · biometría en proceso (~5 min)'],
     done:    ['verified', idDoneLabel],
-    rejected:['rejected','Documento rechazado — vuelve a subirlo'],
+    rejected:['rejected','Documento rechazado, vuelve a subirlo'],
     progress:['blocked','Bloqueado temporalmente · validación biométrica en proceso (~5 min)'],
   };
   const [idStatus,idSub]=idMap[identityState];
@@ -1808,7 +1778,7 @@ rechazado: () => `
   <div class="clmc-user-documents-grid">
     ${mkRow('email','Email','verified','Verificado')}
     ${mkRow('identity','Identidad','verified','Validado por Truora')}
-    ${mkRow('home','Domicilio','rejected','Rechazado — requiere acción')}
+    ${mkRow('home','Domicilio','rejected','Rechazado, requiere acción')}
     ${mkRow('bank','Cuenta bancaria','pending','Recibe tus retiros directo en tu banco')}
   </div>
 
@@ -2167,6 +2137,29 @@ function render(stateKey){
     nav.querySelector('.sn-next').disabled = idx===TOUR_STEPS.length-1;
   }
   wireDemo(stateKey);
+  accesible(document.getElementById('content'));
+}
+
+/* Accesibilidad. Cada capa se anuncia como diálogo modal con su título, y los
+   controles que no son <button> ni <a href> (filas, pasos, chips, cajas de
+   carga, tache, chevron) se anuncian como botón, entran al orden de tabulación
+   y responden a Enter y Espacio. En React esto lo dan <Dialog> e <IconButton>. */
+const CONTROLES = '.clmc-closeIcon-popup,.wl-t-back,.wl-faq-q,.wl-faq-cat,.wl-alt-toggle,'
+  + '.wl-guia-cta,.ch,.wl-slot,a:not([href]),[onclick]:not(button)';
+function accesible(raiz){
+  raiz.querySelectorAll('.clmc-dialog').forEach((d,i)=>{
+    d.setAttribute('role','dialog'); d.setAttribute('aria-modal','true');
+    const t=d.querySelector('h3');
+    if(t){ t.id = t.id || 'wl-dialogo-'+(raiz.id||'capa')+'-'+i; d.setAttribute('aria-labelledby', t.id); }
+  });
+  raiz.querySelectorAll(CONTROLES).forEach(el=>{
+    if(el.closest('button')) return;
+    el.setAttribute('role','button'); el.tabIndex=0;
+  });
+  raiz.querySelectorAll('.clmc-closeIcon-popup').forEach(x=>x.setAttribute('aria-label','Cerrar'));
+  raiz.querySelectorAll('.wl-t-back').forEach(x=>x.setAttribute('aria-label','Regresar'));
+  raiz.querySelectorAll('.wl-faq-q').forEach(q=>q.setAttribute('aria-expanded', q.parentElement.classList.contains('open')));
+  raiz.querySelectorAll('.wl-alt-toggle').forEach(q=>q.setAttribute('aria-expanded', q.classList.contains('open')));
 }
 
 /* ═══ Navegación de estados — AYUDA DE DEMO (no forma parte del módulo) ═══ */
@@ -2177,6 +2170,15 @@ function tourGo(delta){
 }
 document.addEventListener('keydown', e=>{
   if(e.target instanceof Element && e.target.matches('input,textarea,select')) return;
+  /* Enter y Espacio activan los controles que no son <button> */
+  if((e.key==='Enter'||e.key===' ') && e.target instanceof Element && e.target.matches('[role="button"]')){
+    e.preventDefault(); e.target.click(); return;
+  }
+  /* Escape cierra la capa abierta como si se tocara el tache (el visor de las
+     preguntas tiene su propio manejador) */
+  if(e.key==='Escape' && !document.querySelector('body > .wl-visor')){
+    document.querySelector('#content .clmc-dialog .clmc-closeIcon-popup')?.click(); return;
+  }
   if(e.key==='ArrowRight') tourGo(1);
   if(e.key==='ArrowLeft') tourGo(-1);
 });
@@ -2186,7 +2188,9 @@ function byText(txt, sel){
   return [...document.getElementById('content').querySelectorAll(sel||'button,a,div')]
     .filter(e=>e.textContent.trim().toLowerCase().includes(txt.toLowerCase()));
 }
-function go(el, state){ if(el){ el.style.cursor='pointer'; el.addEventListener('click', e=>{e.stopPropagation(); render(state);}); } }
+function go(el, state){ if(el){ el.style.cursor='pointer';
+  if(!el.matches('button,a[href]')){ el.setAttribute('role','button'); el.tabIndex=0; }
+  el.addEventListener('click', e=>{e.stopPropagation(); render(state);}); } }
 function wireDemo(state){
   const c=document.getElementById('content');
   c.querySelectorAll('.clmc-btn-primary').forEach(b=>{ if(!b.closest('.clmc-dialog') && b.textContent.match(/verificaci/i)) go(b,'truora-modal'); });

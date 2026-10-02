@@ -18,11 +18,24 @@ dependencias externas.
 ```
 index.html                 Prototipo completo (15 estados) + guía de integración comentada
 chrome.css                 Pegamento entre el chrome real del sitio y el módulo
-assets/produccion/         Assets y CSS extraídos del sitio en producción
+assets/produccion/         Assets extraídos del sitio en producción (logo, fuente, íconos)
 assets/infografias/        Guías visuales de Marketing, usadas en modales y FAQ
+assets/meta/               Favicon e imagen para compartir la liga del prototipo
+assets/*.css               Hojas reales del header, footer y menú inferior
 docs/OBSERVACIONES.md      Hallazgos y pendientes reportados al cliente
 docs/calimaco/             Entrega técnica para el equipo de desarrollo
-_backup/                   Versiones previas (no forma parte de la entrega)
+_backup/                   Versiones previas y archivos fuera de uso (no se versiona)
+```
+
+## Qué va en la carpeta para Calímaco
+
+Todo lo que está versionado en este repositorio, y nada más. Fuera de la entrega
+quedan `_backup/` (casinos, versiones previas, íconos originales, assets sin uso),
+`_pres/` (material de presentación), `.claude/` (herramientas locales) y cualquier
+archivo de sistema. Para armarla limpia:
+
+```
+git archive --format=zip -o winland-verificacion.zip HEAD
 ```
 
 ## Para desarrollo

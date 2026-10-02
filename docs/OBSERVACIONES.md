@@ -75,7 +75,7 @@ El flujo pasa de dos niveles (verificado / no verificado) a **tres**, y el orden
 | Verificada | + **Cuenta bancaria** | Retiros por **depósito directo** (SPEI) |
 
 - **Orden nuevo de pasos:** 1 Identidad · 2 Comprobante de domicilio · 3 Cuenta bancaria.
-- **El paso 3 deja de ser un requisito bloqueante** y se comunica como *mejora del método de cobro*, no como candado: paso con borde punteado (`.step.invite`), fila con la leyenda "Opcional · para recibir por depósito directo" y una tarjeta de invitación con el copy del cliente ("Sube tu información bancaria y olvídate de las filas").
+- **El paso 3 deja de ser un requisito bloqueante** y se comunica como *mejora del método de cobro*, no como candado: paso 3 en naranja atenuado (`.wl-step.invite`) con la leyenda "Cobra sin ir a sala" y una tarjeta de invitación con el copy del cliente ("Sube tu información bancaria y olvídate de las filas").
 - **Beneficio UX del cambio:** entrega una recompensa a mitad del recorrido (ya puedes cobrar) en lugar de exigir los tres documentos antes de cualquier retiro; y convierte el último paso en un incentivo, más fácil de vender que una obligación.
 
 ### 8.1 Definición del disparador de "pre-verificada" (CERRADO)
