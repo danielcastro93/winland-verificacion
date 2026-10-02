@@ -795,6 +795,15 @@
     /* En teléfono el cerrar debe ser un objetivo de toque real, no un adorno */
     .clmc-dialog .clmc-closeIcon-popup{width:40px;height:40px;margin-bottom:-40px;}
     .clmc-dialog .clmc-closeIcon-popup > svg{width:18px;height:18px;}
+
+    /* Zonas de carga: en teléfono van una por fila y con más altura. Dos
+       columnas dejaban cajas muy bajas y un objetivo de toque pobre justo en
+       el paso que más importa del flujo. */
+    .clmc-upload-documents-grid{grid-template-columns:1fr;gap:12px;}
+    .clmc-upload-document-drop-area{
+      padding:26px 14px;font-size:var(--clmc-text-small, 14px);gap:10px;min-height:104px;justify-content:center;
+    }
+    .clmc-upload-document-drop-area svg{width:24px;height:24px;}
     .wl-t-back{top:19px;left:18px;}
 
     /* ── Footer liquid glass: acciones fijas abajo con blur, como app ── */
@@ -1010,6 +1019,7 @@ function faqOpen(item){
    que recomponerla), y se compensa el ancho de la barra de scroll para que el
    contenido no dé un brinco lateral al bloquear. */
 let capasAbiertas = 0;
+let capaDeEstado = false;   /* si la pantalla actual dibuja una capa encima */
 function bloquearFondo(activar){
   const h = document.documentElement;
   if(activar){
@@ -1675,22 +1685,24 @@ let currentState='inicial';
 let idMethod='truora'; /* 'truora' | 'manual' — cómo se validó la identidad */
 let returnState='inicial'; /* última pantalla NO modal: para regresar al cancelar */
 function render(stateKey){
-  const vieneDeModal = currentState.startsWith('modal-');
+  const veniaConCapa = capaDeEstado;
   if(!stateKey.startsWith('modal-') && !currentState.startsWith('modal-')) returnState=currentState;
   if(!stateKey.startsWith('modal-')) returnState=stateKey;
-  const eraModal = currentState.startsWith('modal-');
   currentState=stateKey;
   cerrarVisor();   /* el visor cuelga de <body>: no debe sobrevivir a la navegación */
-  const esModal = stateKey.startsWith('modal-');
-  if(esModal && !eraModal) bloquearFondo(true);
-  else if(!esModal && eraModal) bloquearFondo(false);
   const idx = TOUR_STEPS.findIndex(x=>x.s===stateKey);
   document.getElementById('content').innerHTML = states[stateKey]();
+  /* ¿Este estado dibuja una capa encima? Se mira el DOM, no el nombre del
+     estado: 'truora-modal' y 'exito-biometria' también la dibujan y no llevan
+     el prefijo 'modal-'. De esta misma señal dependen el bloqueo del fondo y
+     el salto al inicio, para que no se puedan contradecir. */
+  const conCapa = !!document.querySelector('#content .wl-modal-overlay');
+  if(conCapa !== capaDeEstado){ capaDeEstado = conCapa; bloquearFondo(conCapa); }
   /* Al cambiar de sección, subir al inicio: si el usuario venía leyendo abajo,
-     aterrizar a media pantalla hace creer que no pasó nada. No aplica al cerrar
-     un modal (ahí se regresa a lo que ya estaba leyendo) ni al abrirlo, porque
-     el modal es una capa fija y el scroll de la página no lo mueve. */
-  if(!stateKey.startsWith('modal-') && !vieneDeModal && window.scrollY > 0){
+     aterrizar a media pantalla hace creer que no pasó nada. No aplica al abrir
+     ni al cerrar una capa: al abrirla el fondo no se ve, y al cerrarla hay que
+     devolver al usuario justo donde estaba leyendo. */
+  if(!conCapa && !veniaConCapa && window.scrollY > 0){
     const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({top:0, behavior: suave ? 'smooth' : 'auto'});
   }

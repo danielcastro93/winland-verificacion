@@ -768,6 +768,15 @@ de este archivo. NO se implementan:
     /* En teléfono el cerrar debe ser un objetivo de toque real, no un adorno */
     .clmc-dialog .clmc-closeIcon-popup{width:40px;height:40px;margin-bottom:-40px;}
     .clmc-dialog .clmc-closeIcon-popup > svg{width:18px;height:18px;}
+
+    /* Zonas de carga: en teléfono van una por fila y con más altura. Dos
+       columnas dejaban cajas muy bajas y un objetivo de toque pobre justo en
+       el paso que más importa del flujo. */
+    .clmc-upload-documents-grid{grid-template-columns:1fr;gap:12px;}
+    .clmc-upload-document-drop-area{
+      padding:26px 14px;font-size:var(--clmc-text-small, 14px);gap:10px;min-height:104px;justify-content:center;
+    }
+    .clmc-upload-document-drop-area svg{width:24px;height:24px;}
     .wl-t-back{top:19px;left:18px;}
 
     /* ── Footer liquid glass: acciones fijas abajo con blur, como app ── */
