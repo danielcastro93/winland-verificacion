@@ -1685,7 +1685,6 @@ let currentState='inicial';
 let idMethod='truora'; /* 'truora' | 'manual' — cómo se validó la identidad */
 let returnState='inicial'; /* última pantalla NO modal: para regresar al cancelar */
 function render(stateKey){
-  const veniaConCapa = capaDeEstado;
   if(!stateKey.startsWith('modal-') && !currentState.startsWith('modal-')) returnState=currentState;
   if(!stateKey.startsWith('modal-')) returnState=stateKey;
   currentState=stateKey;
@@ -1698,13 +1697,15 @@ function render(stateKey){
      el salto al inicio, para que no se puedan contradecir. */
   const conCapa = !!document.querySelector('#content .wl-modal-overlay');
   if(conCapa !== capaDeEstado){ capaDeEstado = conCapa; bloquearFondo(conCapa); }
-  /* Al cambiar de sección, subir al inicio: si el usuario venía leyendo abajo,
-     aterrizar a media pantalla hace creer que no pasó nada. No aplica al abrir
-     ni al cerrar una capa: al abrirla el fondo no se ve, y al cerrarla hay que
-     devolver al usuario justo donde estaba leyendo. */
-  if(!conCapa && !veniaConCapa && window.scrollY > 0){
+  /* Cada cambio de pantalla empieza arriba. Si el usuario venía leyendo abajo y
+     aterriza a media página, parece que no pasó nada. Aplica también al abrir y
+     cerrar una capa: al abrirla el fondo no se ve, y al cerrarla conviene
+     devolverlo al principio de la pantalla y no a donde estaba antes.
+     Con una capa abierta el fondo está bloqueado al gesto, pero el scroll por
+     código sí corre, que es justo lo que se necesita aquí. */
+  if(window.scrollY > 0){
     const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({top:0, behavior: suave ? 'smooth' : 'auto'});
+    window.scrollTo({top:0, behavior: (suave && !conCapa) ? 'smooth' : 'auto'});
   }
   document.getElementById('faqTab').classList.toggle('active', stateKey==='faq');
   document.getElementById('miCuentaTab').classList.toggle('active', stateKey!=='faq');
