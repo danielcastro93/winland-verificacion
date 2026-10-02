@@ -435,11 +435,18 @@ de este archivo. NO se implementan:
   .wl-req-line svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;margin-top:1px;}
   .wl-req-line b{color:var(--ink);}
   .clmc-dialog .clmc-closeIcon-popup{
-    position:sticky;top:0;margin-left:auto;margin-bottom:-30px;width:30px;height:30px;border-radius:50%;background:var(--page-bg);
-    display:flex;align-items:center;justify-content:center;color:#555;cursor:pointer;
+    position:sticky;top:0;margin-left:auto;margin-bottom:-32px;width:32px;height:32px;border-radius:50%;background:var(--page-bg);
+    display:flex;align-items:center;justify-content:center;color:var(--ink);cursor:pointer;
     z-index:6;box-shadow:0 0 0 4px #fff; /* halo para leerse sobre contenido al hacer scroll */
+    transition:background .15s var(--ease);
   }
-  .clmc-dialog .clmc-closeIcon-popup svg{width:14px;height:14px;}
+  .clmc-dialog .clmc-closeIcon-popup:hover{background:#E6EAEC;}
+  /* Producción le pinta al <svg> su propio círculo de fondo (winland-prod.css
+     885). Encima del nuestro quedaban dos círculos concéntricos y la × se leía
+     diminuta. El contenedor ya hace de botón, así que el glifo va limpio. */
+  .clmc-dialog .clmc-closeIcon-popup > svg{
+    width:15px;height:15px;background:none;padding:0;border-radius:0;color:inherit;
+  }
   .clmc-dialog h3{font-size:18px;font-weight:700;margin:22px 0 14px;padding-right:44px;color:var(--ink);letter-spacing:-0.01em;}
   .clmc-dialog .lead{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);margin-bottom:20px;line-height:1.65;}
   .clmc-upload-documents-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
@@ -524,14 +531,28 @@ de este archivo. NO se implementan:
   
 
   /* Visor de infografías en FAQ (overlay ligero, no saca al usuario) */
-  .wl-faq-visor-overlay{position:fixed;inset:0;background:rgba(12,12,14,.65);z-index:1210;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);}
-  .wl-faq-visor{background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90%;overflow-y:auto;padding:18px;}
+  .wl-faq-visor-overlay{position:fixed;inset:0;overscroll-behavior:contain;background:rgba(12,12,14,.65);z-index:1210;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);}
+  .wl-faq-visor{overscroll-behavior:contain;background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90%;overflow-y:auto;padding:18px;}
   .wl-fv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:var(--clmc-text-small, 14px);}
   .wl-fv-close{width:30px;height:30px;border-radius:50%;background:var(--page-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .wl-fv-close svg{width:13px;height:13px;}
   .wl-faq-visor img{width:100%;display:block;border-radius:8px;}
   @media (max-width:768px){
-    .wl-faq-visor-overlay{padding:12px;}
+    /* En teléfono el visor ocupa toda la pantalla, igual que los modales de
+       documento: la infografía se ve más grande y el patrón es el mismo. */
+    .wl-faq-visor-overlay{padding:0;align-items:stretch;}
+    .wl-faq-visor{
+      max-width:100%;width:100%;max-height:100%;height:100%;
+      border-radius:0;padding:0 18px 24px;
+    }
+    .wl-fv-head{
+      position:sticky;top:0;z-index:2;margin:0 -18px 16px;padding:18px;
+      background:rgba(255,255,255,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--line-soft);font-size:var(--clmc-text-medium, 16px);font-weight:600;
+    }
+    .wl-fv-head b{padding-right:12px;line-height:1.35;}
+    .wl-fv-close{width:40px;height:40px;flex-shrink:0;}
+    .wl-fv-close svg{width:16px;height:16px;}
     .wl-faq-item{padding:22px 2px;}
     .wl-faq-q{gap:14px;line-height:1.45;}
     .wl-faq-a-tx{padding-top:12px;padding-right:14px;}
@@ -744,6 +765,9 @@ de este archivo. NO se implementan:
     .wl-doc-modal .wl-m-main{padding:0 18px 0;}
     .wl-doc-modal .clmc-closeIcon-popup::before,.wl-truora-wide .clmc-closeIcon-popup::before{top:-16px;right:-18px;height:62px;}
     .clmc-dialog.wl-doc-modal .clmc-closeIcon-popup,.clmc-dialog.wl-truora-wide .clmc-closeIcon-popup{top:16px;right:18px;}
+    /* En teléfono el cerrar debe ser un objetivo de toque real, no un adorno */
+    .clmc-dialog .clmc-closeIcon-popup{width:40px;height:40px;margin-bottom:-40px;}
+    .clmc-dialog .clmc-closeIcon-popup > svg{width:18px;height:18px;}
     .wl-t-back{top:19px;left:18px;}
 
     /* ── Footer liquid glass: acciones fijas abajo con blur, como app ── */
