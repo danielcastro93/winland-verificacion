@@ -1041,6 +1041,25 @@ function cerrarVisor(){
   if(habia) bloquearFondo(false);
 }
 function visorEscape(e){ if(e.key==='Escape') cerrarVisor(); }
+
+/* Vuelve al inicio de la pantalla. Se intenta con animación, pero NO se confía
+   en ella: hay navegadores y vistas incrustadas donde behavior:'smooth' se
+   ignora por completo y el scroll se quedaría a media página sin avisar. Por
+   eso se comprueba y, si no se movió, se fuerza el salto directo. */
+let tokenSubida = 0;
+function subirAlInicio(instantaneo){
+  const token = ++tokenSubida;
+  const animar = !instantaneo && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!animar){ window.scrollTo(0,0); return; }
+  try { window.scrollTo({top:0, behavior:'smooth'}); } catch(e) { window.scrollTo(0,0); return; }
+  const verificar = (intento) => setTimeout(() => {
+    if(token !== tokenSubida) return;      /* hubo otra navegación: ya no aplica */
+    if(window.scrollY <= 1) return;        /* la animación llegó */
+    if(intento < 3) return verificar(intento+1);
+    window.scrollTo(0,0);                  /* no se movió: salto directo */
+  }, 200);
+  verificar(0);
+}
 function faqInfo(img, titulo){
   cerrarVisor();   /* nunca apilar: si ya hay uno abierto, se reemplaza */
   bloquearFondo(true);
@@ -1703,10 +1722,7 @@ function render(stateKey){
      devolverlo al principio de la pantalla y no a donde estaba antes.
      Con una capa abierta el fondo está bloqueado al gesto, pero el scroll por
      código sí corre, que es justo lo que se necesita aquí. */
-  if(window.scrollY > 0){
-    const suave = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({top:0, behavior: (suave && !conCapa) ? 'smooth' : 'auto'});
-  }
+  if(window.scrollY > 0) subirAlInicio(conCapa);
   document.getElementById('faqTab').classList.toggle('active', stateKey==='faq');
   document.getElementById('miCuentaTab').classList.toggle('active', stateKey!=='faq');
   /* En mobile los tabs hacen scroll horizontal: centrar el tab activo al navegar.
