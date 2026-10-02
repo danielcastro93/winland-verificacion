@@ -1056,3 +1056,52 @@ de este archivo. NO se implementan:
     .wl-modal-truora-head .wl-truora-icon img{width:28px !important;height:28px !important;}
     .wl-modal-truora-head h3{font-size:24px;margin-bottom:6px !important;}
   }
+
+  /* ═══ MODALES DE DOCUMENTO · la tarea primero ═══
+     Orden: tipo de documento → archivos → formato; después la ayuda
+     (requisitos, guías, dudas). En móvil se apila en ese orden; en escritorio,
+     tarea a la izquierda y ayuda en un panel a la derecha. */
+  .wl-mm-task,.wl-mm-help{min-width:0;}
+  .wl-mm-task .wl-doc-select{margin-bottom:16px;}
+  .clmc-upload-documents-grid.wl-slots{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+  .clmc-upload-document-drop-area.wl-slot{
+    flex-direction:row;align-items:center;justify-content:flex-start;text-align:left;gap:14px;
+    min-height:0;padding:12px 14px 12px 12px;border:1px solid var(--line);border-radius:16px;background:#fff;
+    font-size:15px;font-weight:600;color:var(--ink);
+  }
+  .clmc-upload-document-drop-area.wl-slot:hover{border-color:var(--winland-orange);background:#fff;}
+  .wl-slot-thumb{
+    width:44px;height:44px;border-radius:12px;background:var(--page-bg);color:var(--winland-orange);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:background .2s var(--ease), color .2s var(--ease);
+  }
+  .clmc-upload-document-drop-area.wl-slot .wl-slot-thumb svg{width:22px;height:22px;color:inherit;}
+  .wl-slot-meta{flex:1;min-width:0;}
+  .wl-slot-t{font-size:15px;font-weight:600;color:var(--ink);line-height:1.3;}
+  .wl-slot-s{font-size:13px;font-weight:500;color:var(--success-green);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wl-slot-s:empty{display:none;}
+  .wl-slot-cta{font-size:14px;font-weight:600;color:var(--winland-orange);flex-shrink:0;padding:8px 4px;}
+  .clmc-upload-document-drop-area.wl-slot.loaded{border-color:var(--line);background:#fff;cursor:pointer;}
+  .clmc-upload-document-drop-area.wl-slot.loaded .wl-slot-thumb{background:#E6F2E8;color:var(--success-green);}
+  .clmc-upload-document-drop-area.wl-slot.loaded .wl-slot-cta{color:var(--text-gray);}
+  @keyframes slotFlash{0%{box-shadow:0 0 0 0 rgba(46,125,50,.35)}100%{box-shadow:0 0 0 10px rgba(46,125,50,0)}}
+  .wl-slot-flash{animation:slotFlash .6s ease-out;}
+  .wl-mm .clmc-upload-documents-format-box{margin-top:0;}
+  .wl-mm-help .wl-req-line{margin-bottom:20px;}
+  .wl-mm-help .wl-guia-cta{background:#fff;margin-bottom:12px;}
+  .wl-mm-help .wl-modal-faq-line{margin:16px 0 0;}
+
+  @media (min-width:769px){
+    .clmc-dialog.wl-doc-modal{max-width:860px;}
+    .wl-mm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.92fr);gap:28px;align-items:start;}
+    .wl-mm-help{background:#FAFBFB;border:1px solid var(--line-soft);border-radius:16px;padding:20px;}
+    .wl-mm-help .wl-req-line ul{grid-template-columns:1fr;}
+    /* Acciones a la derecha, a su ancho natural */
+    .wl-doc-modal .clmc-upload-documents-actions{justify-content:flex-end;}
+    .wl-doc-modal .clmc-upload-documents-actions > button{flex:0 0 auto;min-width:168px;}
+  }
+  @media (max-width:768px){
+    .wl-mm-help{margin-top:28px;}
+    /* Una sola acción: la X ya cierra, "Cancelar" sobraba */
+    .wl-doc-modal .clmc-upload-documents-actions .clmc-btn-primary-white{display:none;}
+  }

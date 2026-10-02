@@ -1083,6 +1083,55 @@
     .wl-modal-truora-head .wl-truora-icon img{width:28px !important;height:28px !important;}
     .wl-modal-truora-head h3{font-size:24px;margin-bottom:6px !important;}
   }
+
+  /* ═══ MODALES DE DOCUMENTO · la tarea primero ═══
+     Orden: tipo de documento → archivos → formato; después la ayuda
+     (requisitos, guías, dudas). En móvil se apila en ese orden; en escritorio,
+     tarea a la izquierda y ayuda en un panel a la derecha. */
+  .wl-mm-task,.wl-mm-help{min-width:0;}
+  .wl-mm-task .wl-doc-select{margin-bottom:16px;}
+  .clmc-upload-documents-grid.wl-slots{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+  .clmc-upload-document-drop-area.wl-slot{
+    flex-direction:row;align-items:center;justify-content:flex-start;text-align:left;gap:14px;
+    min-height:0;padding:12px 14px 12px 12px;border:1px solid var(--line);border-radius:16px;background:#fff;
+    font-size:15px;font-weight:600;color:var(--ink);
+  }
+  .clmc-upload-document-drop-area.wl-slot:hover{border-color:var(--winland-orange);background:#fff;}
+  .wl-slot-thumb{
+    width:44px;height:44px;border-radius:12px;background:var(--page-bg);color:var(--winland-orange);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:background .2s var(--ease), color .2s var(--ease);
+  }
+  .clmc-upload-document-drop-area.wl-slot .wl-slot-thumb svg{width:22px;height:22px;color:inherit;}
+  .wl-slot-meta{flex:1;min-width:0;}
+  .wl-slot-t{font-size:15px;font-weight:600;color:var(--ink);line-height:1.3;}
+  .wl-slot-s{font-size:13px;font-weight:500;color:var(--success-green);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wl-slot-s:empty{display:none;}
+  .wl-slot-cta{font-size:14px;font-weight:600;color:var(--winland-orange);flex-shrink:0;padding:8px 4px;}
+  .clmc-upload-document-drop-area.wl-slot.loaded{border-color:var(--line);background:#fff;cursor:pointer;}
+  .clmc-upload-document-drop-area.wl-slot.loaded .wl-slot-thumb{background:#E6F2E8;color:var(--success-green);}
+  .clmc-upload-document-drop-area.wl-slot.loaded .wl-slot-cta{color:var(--text-gray);}
+  @keyframes slotFlash{0%{box-shadow:0 0 0 0 rgba(46,125,50,.35)}100%{box-shadow:0 0 0 10px rgba(46,125,50,0)}}
+  .wl-slot-flash{animation:slotFlash .6s ease-out;}
+  .wl-mm .clmc-upload-documents-format-box{margin-top:0;}
+  .wl-mm-help .wl-req-line{margin-bottom:20px;}
+  .wl-mm-help .wl-guia-cta{background:#fff;margin-bottom:12px;}
+  .wl-mm-help .wl-modal-faq-line{margin:16px 0 0;}
+
+  @media (min-width:769px){
+    .clmc-dialog.wl-doc-modal{max-width:860px;}
+    .wl-mm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.92fr);gap:28px;align-items:start;}
+    .wl-mm-help{background:#FAFBFB;border:1px solid var(--line-soft);border-radius:16px;padding:20px;}
+    .wl-mm-help .wl-req-line ul{grid-template-columns:1fr;}
+    /* Acciones a la derecha, a su ancho natural */
+    .wl-doc-modal .clmc-upload-documents-actions{justify-content:flex-end;}
+    .wl-doc-modal .clmc-upload-documents-actions > button{flex:0 0 auto;min-width:168px;}
+  }
+  @media (max-width:768px){
+    .wl-mm-help{margin-top:28px;}
+    /* Una sola acción: la X ya cierra, "Cancelar" sobraba */
+    .wl-doc-modal .clmc-upload-documents-actions .clmc-btn-primary-white{display:none;}
+  }
 </style>
 </head>
 <body>
@@ -1272,6 +1321,15 @@ const faqItem = (q, a, guia) => `
       <a class="wl-faq-guia" onclick="event.stopPropagation();faqInfo('${guia[0]}','${guia[1]}')">${I.imagen}Ver guía visual</a>` : ''}</div></div></div>
   </div>
 `;
+/* Fila de carga: un archivo por fila, con su estado. El cuadro de la izquierda
+   es el lugar del archivo: vacío muestra el tipo y, ya cargado, la palomita.
+   Conserva la clase de producción .clmc-upload-document-drop-area. */
+const slot = (ic, label) => `
+  <div class="clmc-upload-document-drop-area wl-slot">
+    <div class="wl-slot-thumb">${ic}</div>
+    <div class="wl-slot-meta"><div class="wl-slot-t">${label}</div><div class="wl-slot-s"></div></div>
+    <span class="wl-slot-cta">Subir</span>
+  </div>`;
 /* Requisitos de un documento: lista escaneable con palomitas (antes, una sola
    línea separada por puntos dentro de una franja gris) */
 const reqList = items => `<div class="wl-req-line"><b>Requisitos</b><ul>${items.map(x=>`<li>${I.check}${x}</li>`).join('')}</ul></div>`;
@@ -1740,25 +1798,27 @@ interrumpida: () => `
       <h3>Verificación manual de identidad</h3>
       <p class="lead">Sube tu identificación oficial por ambos lados y una selfie sosteniéndola a la altura de la barbilla.</p>
 
-      <div class="wl-doc-select">
-        <label>Selecciona el tipo de documento</label>
-        <select><option>INE / IFE</option><option>Pasaporte</option><option>Forma migratoria</option></select>
+      <!-- La tarea primero (qué subir), la ayuda después o al lado (cómo debe verse) -->
+      <div class="wl-mm">
+        <div class="wl-mm-task">
+          <div class="wl-doc-select">
+            <label>Selecciona el tipo de documento</label>
+            <select><option>INE / IFE</option><option>Pasaporte</option><option>Forma migratoria</option></select>
+          </div>
+          <div class="clmc-upload-documents-grid wl-slots">
+            ${slot(I.upload,'Frontal')}
+            ${slot(I.upload,'Reverso')}
+            ${slot(I.selfie,'Selfie con documento')}
+          </div>
+          <div class="clmc-upload-documents-format-box" style="text-align:left;">Formatos: JPG, PNG, PDF · Máx. 5MB</div>
+        </div>
+        <div class="wl-mm-help">
+          ${reqList(['Vigente', 'Legible, sin reflejos', 'Sin alteraciones', 'Las 4 esquinas visibles'])}
+          ${guiaVisual('guia-identidad-tipos.jpg','Documentos de identificación aceptados')}
+          ${guiaVisual('guia-selfie.jpg','Cómo tomar tu selfie con la identificación')}
+          <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
+        </div>
       </div>
-
-      ${reqList(['Vigente', 'Legible, sin reflejos', 'Sin alteraciones', 'Las 4 esquinas visibles'])}
-
-      ${guiaVisual('guia-identidad-tipos.jpg','Documentos de identificación aceptados')}
-
-      <div class="clmc-upload-documents-grid">
-        <div class="clmc-upload-document-drop-area">${I.upload}Frontal</div>
-        <div class="clmc-upload-document-drop-area">${I.upload}Reverso</div>
-        <div class="clmc-upload-document-drop-area">${I.selfie}Selfie con documento</div>
-      </div>
-
-      ${guiaVisual('guia-selfie.jpg','Cómo tomar tu selfie con la identificación')}
-
-      <div class="clmc-upload-documents-format-box" style="text-align:left;">Formatos: JPG, PNG, PDF · Máx. 5MB</div>
-      <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
       <div class="clmc-upload-documents-actions">
         <button class="clmc-btn-primary-white">Cancelar</button>
         <button class="clmc-btn-disabled">Subir documentos</button>
@@ -1788,14 +1848,17 @@ interrumpida: () => `
       <h3>Estado de cuenta bancario</h3>
       <p class="lead">Documento oficial de una institución bancaria tradicional, a nombre del titular de la cuenta en Winland.</p>
 
-      ${reqList(['Banco tradicional (no fintech)', 'A tu nombre', 'Máx. 3 meses', 'Completo, sin recortes'])}
-
-      ${guiaVisual('guia-bancaria.jpg','Estados de cuenta aceptados')}
-
-      <div class="clmc-upload-documents-grid"><div class="clmc-upload-document-drop-area full">${I.upload}Estado de cuenta</div></div>
-
-      <div class="clmc-upload-documents-format-box" style="text-align:left;">Formato: PDF · Máx. 5MB · Puedes ocultar tus saldos si lo prefieres</div>
-      <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
+      <div class="wl-mm">
+        <div class="wl-mm-task">
+          <div class="clmc-upload-documents-grid wl-slots">${slot(I.upload,'Estado de cuenta')}</div>
+          <div class="clmc-upload-documents-format-box" style="text-align:left;">Formato: PDF · Máx. 5MB · Puedes ocultar tus saldos si lo prefieres</div>
+        </div>
+        <div class="wl-mm-help">
+          ${reqList(['Banco tradicional (no fintech)', 'A tu nombre', 'Máx. 3 meses', 'Completo, sin recortes'])}
+          ${guiaVisual('guia-bancaria.jpg','Estados de cuenta aceptados')}
+          <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
+        </div>
+      </div>
       <div class="clmc-upload-documents-actions">
         <button class="clmc-btn-primary-white">Cancelar</button>
         <button class="clmc-btn-disabled">Subir documento</button>
@@ -1825,14 +1888,17 @@ interrumpida: () => `
       <h3>Comprobante de domicilio</h3>
       <p class="lead">Recibo de luz (CFE), gas natural o teléfono/internet (Telmex, Izzi, Totalplay, Megacable), con antigüedad máxima de 3 meses.</p>
 
-      ${reqList(['Luz, gas o teléfono/internet', 'Máx. 3 meses', 'Dirección y titular legibles'])}
-
-      ${guiaVisual('guia-domicilio-tipos.jpg','Comprobantes de domicilio aceptados')}
-
-      <div class="clmc-upload-documents-grid"><div class="clmc-upload-document-drop-area full">${I.upload}Comprobante de domicilio</div></div>
-
-      <div class="clmc-upload-documents-format-box" style="text-align:left;">Formato: PDF · Máx. 5MB</div>
-      <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
+      <div class="wl-mm">
+        <div class="wl-mm-task">
+          <div class="clmc-upload-documents-grid wl-slots">${slot(I.upload,'Comprobante de domicilio')}</div>
+          <div class="clmc-upload-documents-format-box" style="text-align:left;">Formato: PDF · Máx. 5MB</div>
+        </div>
+        <div class="wl-mm-help">
+          ${reqList(['Luz, gas o teléfono/internet', 'Máx. 3 meses', 'Dirección y titular legibles'])}
+          ${guiaVisual('guia-domicilio-tipos.jpg','Comprobantes de domicilio aceptados')}
+          <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
+        </div>
+      </div>
       <div class="clmc-upload-documents-actions">
         <button class="clmc-btn-primary-white">Cancelar</button>
         <button class="clmc-btn-disabled">Subir comprobante</button>
@@ -2088,14 +2154,17 @@ function wireDemo(state){
     }
     boxes.forEach(b=>{
       b.addEventListener('click',()=>{
-        if(b.classList.contains('loaded')) return;
+        /* Ya cargado: "Cambiar" simula reemplazar el archivo (destello de confirmación) */
+        if(b.classList.contains('loaded')){
+          b.classList.remove('wl-slot-flash'); void b.offsetWidth; b.classList.add('wl-slot-flash');
+          return;
+        }
         const par=FILES.find(f=>b.textContent.includes(f[0]));
         const fname=par?par[1]:'documento.pdf';
         b.classList.add('loaded');
-        const tag=document.createElement('span');
-        tag.className='wl-file-name';
-        tag.innerHTML=I.check+fname+' · cargado';
-        b.appendChild(tag);
+        b.querySelector('.wl-slot-thumb').innerHTML=I.check;
+        b.querySelector('.wl-slot-s').textContent=fname;
+        b.querySelector('.wl-slot-cta').textContent='Cambiar';
         habilitar();
       });
     });

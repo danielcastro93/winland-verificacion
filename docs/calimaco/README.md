@@ -163,7 +163,17 @@ Lo que conviene saber al integrar:
   mismo markup en ambos casos.
 - **Requisitos de cada documento.** Antes eran una línea separada por puntos; ahora
   son una lista (`.wl-req-line ul > li`). Mismo texto.
-- **Zona de carga.** Borde sólido de 1px en lugar del punteado.
+- **Modales de carga de documento.** Se reorganizan con un criterio: la tarea
+  primero y la ayuda después. Dentro de `.wl-mm`, la columna `.wl-mm-task` lleva el
+  tipo de documento, los archivos y el formato; `.wl-mm-help` lleva requisitos,
+  guías y el enlace a preguntas frecuentes. En móvil se apilan en ese orden; en
+  escritorio van a dos columnas, con la ayuda en un panel. El contenido es el mismo.
+- **Cada archivo es una fila** (`.wl-slot`, que conserva la clase de producción
+  `.clmc-upload-document-drop-area`): a la izquierda el lugar del archivo, al
+  centro el nombre y a la derecha "Subir". Ya cargado muestra palomita, el nombre
+  del archivo y "Cambiar". Sustituye a las cajas grandes y vacías.
+- **Acciones.** En móvil queda solo el botón principal: la X ya cierra el modal, así
+  que "Cancelar" se oculta. En escritorio se conserva, alineado a la derecha.
 
 ## Puntos abiertos
 
