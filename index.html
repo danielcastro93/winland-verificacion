@@ -859,8 +859,10 @@
     .wl-step.done{background:var(--success-green);}
     .wl-step.current{background:var(--winland-orange);}
     .wl-step.alert{background:var(--error-red);}
-    /* Paso invitación: punteado naranja, promete sin exigir */
-    .wl-step.invite{background:repeating-linear-gradient(90deg,var(--winland-orange) 0 7px,transparent 7px 11px);}
+    /* Paso invitación: el naranja de marca atenuado. Relleno sólido, sin patrón:
+       se distingue del gris de "pendiente" y del naranja pleno de "actual" sin
+       meter texturas. La diferencia la termina de contar la etiqueta. */
+    .wl-step.invite{background:#F8CAB2;background:color-mix(in srgb, var(--winland-orange) 34%, #fff);}
     .wl-step .num{display:none;}
     .wl-step .meta{display:none;position:absolute;left:0;right:0;top:16px;}
     .wl-step.current .meta,.wl-step.alert .meta,.wl-step.invite .meta{
