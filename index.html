@@ -931,9 +931,12 @@ function docIcon(type,status){
 }
 function mkRow(type,title,status,sub,opts={}){
   const scMap={verified:'s-verified',pending:'s-pending',progress:'s-progress',rejected:'s-rejected',blocked:'s-blocked'};
-  const noChev = status==='verified' || status==='blocked' || opts.chev===false;
-  const chev = noChev ? '' : `<div class="wl-chev">${I.chevronRight}</div>`;
-  return `<div class="clmc-user-document-item ${status==='blocked'?'disabled':''}"><div class="clmc-user-document-icon st-${status}">${docIcon(type,status)}</div><div class="wl-doc-meta"><div class="t">${title}</div><div class="s ${scMap[status]}">${sub}</div></div>${chev}</div>`;
+  /* accionable y chevron se deciden juntos: si la fila promete que abre algo,
+     tiene que abrirlo. Validado y bloqueado no tienen nada que hacer; en
+     revisión tampoco, porque el documento ya se envió. */
+  const accionable = !['verified','blocked','progress'].includes(status) && opts.chev!==false;
+  const chev = accionable ? `<div class="wl-chev">${I.chevronRight}</div>` : '';
+  return `<div class="clmc-user-document-item ${status==='blocked'?'disabled':''}" data-doc="${type}" data-estado="${status}"${accionable?' data-accionable="1"':''}><div class="clmc-user-document-icon st-${status}">${docIcon(type,status)}</div><div class="wl-doc-meta"><div class="t">${title}</div><div class="s ${scMap[status]}">${sub}</div></div>${chev}</div>`;
 }
 
 /* Guía visual del modal: imagen inline en desktop, tarjeta que abre visor en mobile */
@@ -978,11 +981,18 @@ function faqOpen(item){
   if(!wasOpen) item.classList.add('open');
 }
 /* Visor de infografía dentro de FAQ: informa sin sacar al usuario de la sección */
+function cerrarVisor(){
+  document.querySelectorAll('.wl-faq-visor-overlay').forEach(o=>o.remove());
+  document.removeEventListener('keydown', visorEscape);
+}
+function visorEscape(e){ if(e.key==='Escape') cerrarVisor(); }
 function faqInfo(img, titulo){
+  cerrarVisor();   /* nunca apilar: si ya hay uno abierto, se reemplaza */
   const ov=document.createElement('div');
-  ov.className='faq-visor-overlay';
+  ov.className='wl-faq-visor-overlay';
   ov.innerHTML=`<div class="wl-faq-visor"><div class="wl-fv-head"><b>${titulo}</b><div class="wl-fv-close">${I.x}</div></div><img src="assets/infografias/${img}" alt="${titulo}"></div>`;
-  ov.addEventListener('click', e=>{ if(e.target===ov||e.target.closest('.wl-fv-close')) ov.remove(); });
+  ov.addEventListener('click', e=>{ if(e.target===ov||e.target.closest('.wl-fv-close')) cerrarVisor(); });
+  document.addEventListener('keydown', visorEscape);
   document.body.appendChild(ov);
 }
 /* Entra a la pestaña de FAQ abriendo una categoría concreta. Útil cuando el
@@ -1623,6 +1633,7 @@ function render(stateKey){
   if(!stateKey.startsWith('modal-') && !currentState.startsWith('modal-')) returnState=currentState;
   if(!stateKey.startsWith('modal-')) returnState=stateKey;
   currentState=stateKey;
+  cerrarVisor();   /* el visor cuelga de <body>: no debe sobrevivir a la navegación */
   const idx = TOUR_STEPS.findIndex(x=>x.s===stateKey);
   document.getElementById('content').innerHTML = states[stateKey]();
   /* Al cambiar de sección, subir al inicio: si el usuario venía leyendo abajo,
@@ -1661,7 +1672,7 @@ function tourGo(delta){
   if(next) render(next.s);
 }
 document.addEventListener('keydown', e=>{
-  if(e.target.matches('input,textarea,select')) return;
+  if(e.target instanceof Element && e.target.matches('input,textarea,select')) return;
   if(e.key==='ArrowRight') tourGo(1);
   if(e.key==='ArrowLeft') tourGo(-1);
 });
@@ -1683,16 +1694,15 @@ function wireDemo(state){
   if(state==='pre-verificada') byText('Subir mi cuenta bancaria','button').forEach(b=>go(b,'modal-bancaria'));
   if(state==='exito-biometria') c.querySelectorAll('.clmc-dialog .clmc-closeIcon-popup').forEach(x=>go(x,'validada'));
 
-  /* Filas de documentos → su modal (pendientes y rechazadas) */
-  c.querySelectorAll('.clmc-user-document-item:not(.disabled)').forEach(r=>{
-    const t=r.textContent;
-    const rejected=/Rechazado/i.test(t);
-    if(rejected) r.classList.add('wl-row-alert');
-    let dest=null;
-    if(/Identidad/i.test(t) && !/correo/i.test(t) && !/Validado/i.test(t)) dest='modal-identidad';
-    else if(/bancaria/i.test(t) && (/Pendiente/i.test(t)||rejected)) dest='modal-bancaria';
-    else if(/Domicilio/i.test(t) && (/Pendiente/i.test(t)||rejected)) dest='modal-domicilio';
-    if(dest){ if(!rejected) r.classList.add('wl-row-action'); go(r,dest); }
+  /* Filas de documentos → su modal. Se usa el estado declarado por mkRow,
+     no el texto visible: así no se desincroniza al cambiar un copy. */
+  const MODAL_DE={identity:'modal-identidad', bank:'modal-bancaria', home:'modal-domicilio'};
+  c.querySelectorAll('.clmc-user-document-item[data-accionable]').forEach(r=>{
+    const dest=MODAL_DE[r.dataset.doc];
+    if(!dest) return;                                   /* el correo no abre modal */
+    const rechazada = r.dataset.estado==='rejected';
+    r.classList.add(rechazada ? 'wl-row-alert' : 'wl-row-action');
+    go(r,dest);
   });
 
   /* Pasos del tracker como accesos directos cuando tienen acción pendiente */
@@ -1734,7 +1744,7 @@ function wireDemo(state){
         const fname=par?par[1]:'documento.pdf';
         b.classList.add('loaded');
         const tag=document.createElement('span');
-        tag.className='file-name';
+        tag.className='wl-file-name';
         tag.innerHTML=I.check+fname+' · cargado';
         b.appendChild(tag);
         habilitar();
