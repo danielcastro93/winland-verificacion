@@ -152,8 +152,12 @@ unidad accionable y lo demás se resuelve con listas y divisores.
 Lo que conviene saber al integrar:
 
 - **Filas de documento.** Dejan de ser tarjetas y pasan a lista con divisores. Las
-  validadas llevan una palomita al final (`.wl-row-ok`), con el mismo path de
-  Material que ya usa la fila real de producción.
+  validadas llevan una palomita al final (`.wl-row-ok`). Producción ya pinta una ahí
+  con el `CheckIcon` relleno de MUI; para que case con la familia nueva conviene
+  sustituirlo por el SVG de línea del prototipo (`I.check`).
+- **Iconografía.** Una sola familia de línea: 24×24, trazo 1.8, puntas y uniones
+  redondeadas, `stroke="currentColor"`. Las únicas excepciones son el logo de
+  WhatsApp, el de Truora y el disco de éxito del pop-up biométrico.
 - **Tracker.** En móvil es una barra de tres segmentos con la etiqueta del paso que
   pide atención; en escritorio, la misma barra con las tres etiquetas debajo. Es el
   mismo markup en ambos casos.
@@ -169,19 +173,22 @@ Lo que conviene saber al integrar:
    hay cuentas verificadas sin RFC cargado. Queda como posible incorporación
    posterior. Si se retoma, hay que definir primero si es obligatorio para completar
    la identidad, porque de eso depende la habilitación del botón de envío.
-2. **Íconos de estado: hay que subir ocho archivos.** En
+2. **Íconos de documento: hay que subir los doce archivos.** En
    `/static/images/icons/verificacion/` el servidor hoy solo responde a los cuatro
    `*_verified.svg`. Los `*_pending.svg` devuelven **404**, lo que probablemente deja
    un ícono roto a cualquier usuario con un documento en revisión. Conviene revisarlo
    aparte de este entregable, porque ya está en producción.
 
-   Los cuatro `*_denied.svg` no existían en ningún lado, aunque la clase
-   `clmc-user-document-icon-denied` ya estaba escrita en el CSS. Se generaron a
-   partir de los propios archivos de Calímaco: **misma forma exacta**, solo cambia el
-   relleno a `#D32F2F` (≡ `--clmc-bg-color-error`), que es el mismo criterio con el
-   que ellos distinguen `_pending` (`#E85B10`) de `_verified` (`#2E7D32`).
+   Como esa carpeta hay que tocarla de todos modos, los doce se **redibujaron** en la
+   familia de línea del módulo, con los **mismos nombres de archivo**: `email_`,
+   `identify_`, `bank_` y `other_`, cada uno en `_verified` (`#2E7D32`), `_pending`
+   (`#E85B10`) y `_denied` (`#D32F2F`, ≡ `--clmc-bg-color-error`, que cubre la clase
+   `clmc-user-document-icon-denied` que ya existía en el CSS sin archivo). Basta
+   reemplazarlos; ningún componente cambia. Producción ya los dibuja a 22×22 y los
+   nuevos son vectoriales a 24×24, así que escalan sin ajuste.
 
-   Los doce están en `assets/produccion/` de este repositorio, listos para subir.
+   Los doce están en `assets/produccion/`. Los originales de producción quedaron
+   respaldados fuera del repositorio.
 3. **Infografías.** Las que trae el prototipo son las vigentes. Winland tiene
    pendiente enviar una versión corregida.
 4. **Firma digital.** El botón del acordeón de alta de cliente está maquetado, pero

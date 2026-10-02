@@ -1151,29 +1151,26 @@
 <script>
 /* ===== Icon system: inline SVG, stroke-based (no emoji) ===== */
 const I = {
-  star:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8-5.1-4.7 6.9-.8L12 2z"/></svg>`,
-  check:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12.5l5 5L19 7"/></svg>`,
-  mail:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>`,
-  clock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>`,
-  alertTriangle:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><rect x="11" y="6.5" width="2" height="7.5" rx="1" fill="#fff"/><circle cx="12" cy="17" r="1.35" fill="#fff"/></svg>`,
-  lock:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>`,
-  upload:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V5M8 9l4-4 4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>`,
-  selfie:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3"/><path d="M8 6l1-2h6l1 2"/></svg>`,
-  x:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
-  chevronRight:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>`,
-  chevronDown:`<svg class="icon wl-chev-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>`,
-  plus:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>`,
-  imagen:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-6 6-3-3-4 4"/></svg>`,
+  check:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>`,
+  mail:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7.5 8 5.5 8-5.5"/></svg>`,
+  clock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>`,
+  alertTriangle:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.6 2.9 17.5a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4M12 17h.01"/></svg>`,
+  lock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>`,
+  upload:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4.5M7.5 9 12 4.5 16.5 9"/><path d="M4.5 15v2.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg>`,
+  selfie:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5a2 2 0 0 1 2-2h1.6l1.4-2h6l1.4 2H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.2"/></svg>`,
+  x:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>`,
+  chevronRight:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>`,
+  chevronDown:`<svg class="icon wl-chev-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+  plus:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  imagen:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m20.5 15.5-4.5-4.5L6 19.5"/></svg>`,
   whatsapp:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.74-.86-2-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.15-.17.2-.34.22-.63.08-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.05-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.66-1.6-.9-2.18-.24-.57-.48-.5-.66-.5l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.63.71.22 1.36.2 1.87.12.57-.08 1.74-.71 1.98-1.4.25-.68.25-1.27.17-1.4-.07-.12-.27-.2-.57-.34zM12.05 21.5h-.02a9.4 9.4 0 0 1-4.8-1.32l-.34-.2-3.57.93.96-3.48-.22-.36a9.4 9.4 0 0 1-1.44-5.02c0-5.19 4.23-9.42 9.44-9.42 2.52 0 4.89.98 6.67 2.77a9.35 9.35 0 0 1 2.76 6.66c0 5.2-4.23 9.43-9.44 9.43zm8.03-17.46A11.32 11.32 0 0 0 12.05.7C5.8.7.72 5.78.72 12.02c0 2 .52 3.95 1.52 5.68L.62 23.3l5.73-1.5a11.28 11.28 0 0 0 5.7 1.45h.01c6.24 0 11.32-5.08 11.32-11.32 0-3.03-1.18-5.87-3.32-8.01z"/></svg>`,
-  message:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H8.5L4 21.5A1 1 0 0 1 2.3 20.8L2.3 5A2 2 0 0 1 4 3z"/><circle cx="8" cy="10.5" r="1.3" fill="#fff"/><circle cx="12" cy="10.5" r="1.3" fill="#fff"/><circle cx="16" cy="10.5" r="1.3" fill="#fff"/></svg>`,
-  qr:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3"/></svg>`,
-  monitor:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
-  partyPopper:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l5-13 4 4-13 5z"/><path d="M14 4l1 3M19 9l-3 1M19 4l-3 3M11 1l1 3"/></svg>`,
+  message:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5h14A1.5 1.5 0 0 1 20.5 7v9a1.5 1.5 0 0 1-1.5 1.5H9l-4.5 3.5V7A1.5 1.5 0 0 1 5 5.5z"/></svg>`,
+  qr:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5M14 14v2.5M17.5 17.5H20V20M14 20h2.5M20 14v.01"/></svg>`,
+  monitor:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></svg>`,
   /* Disco sólido con palomita y halo: una sola forma, sin círculo contenedor
      que la encierre otra vez. Es el gesto de "listo" que usan hoy iOS y
      Material, y lee al instante a cualquier tamaño. */
-  /* Palomita de Material, el mismo path que usa la fila real de producción */
-  checkMat:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
+  badgeCheck:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76z"/><path d="m9 12 2 2 4-4"/></svg>`,
   checkBadge:`<svg class="icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".14"/><circle cx="12" cy="12" r="8" fill="currentColor"/><path d="M8.6 12.2l2.3 2.3 4.5-4.9" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   /* Escudo con palomita: "cuenta validada", del mismo trazo geométrico que el
      resto del set. Sustituye al matasuegras, que leía como clip art. */
@@ -1226,7 +1223,9 @@ const DOCESTADO={verified:'verified',rejected:'denied'};
 function docIcon(type,status){
   if(status==='blocked') return I.lock;
   const archivo = `${DOCICON[type]}_${DOCESTADO[status]||'pending'}`;
-  return `<img src="assets/produccion/${archivo}.svg" alt="" style="width:17px;height:17px;display:block;">`;
+  /* ?v=2: los archivos conservan el nombre de producción, así que sin versión el
+     navegador seguiría mostrando los íconos anteriores desde su caché */
+  return `<img src="assets/produccion/${archivo}.svg?v=2" alt="" style="width:17px;height:17px;display:block;">`;
 }
 function mkRow(type,title,status,sub,opts={}){
   const scMap={verified:'s-verified',pending:'s-pending',progress:'s-progress',rejected:'s-rejected',blocked:'s-blocked'};
@@ -1235,8 +1234,8 @@ function mkRow(type,title,status,sub,opts={}){
      revisión tampoco, porque el documento ya se envió. */
   const accionable = !['verified','blocked','progress'].includes(status) && opts.chev!==false;
   const chev = accionable ? `<div class="wl-chev">${I.chevronRight}</div>` : '';
-  /* Validado: palomita al final de la fila, igual que la fila real de producción */
-  const ok = status==='verified' ? `<div class="wl-row-ok">${I.checkMat}</div>` : '';
+  /* Validado: palomita al final de la fila (producción también la pone ahí) */
+  const ok = status==='verified' ? `<div class="wl-row-ok">${I.check}</div>` : '';
   return `<div class="clmc-user-document-item ${status==='blocked'?'disabled':''}" data-doc="${type}" data-estado="${status}"${accionable?' data-accionable="1"':''}><div class="clmc-user-document-icon st-${status}">${docIcon(type,status)}</div><div class="wl-doc-meta"><div class="t">${title}</div><div class="s ${scMap[status]}">${sub}</div></div>${chev}${ok}</div>`;
 }
 
@@ -1275,7 +1274,7 @@ const faqItem = (q, a, guia) => `
 `;
 /* Requisitos de un documento: lista escaneable con palomitas (antes, una sola
    línea separada por puntos dentro de una franja gris) */
-const reqList = items => `<div class="wl-req-line"><b>Requisitos</b><ul>${items.map(x=>`<li>${I.checkMat}${x}</li>`).join('')}</ul></div>`;
+const reqList = items => `<div class="wl-req-line"><b>Requisitos</b><ul>${items.map(x=>`<li>${I.check}${x}</li>`).join('')}</ul></div>`;
 /* Lista dentro de una respuesta: respeta los guiones con que vino el texto original */
 const faqLista = items => `<ul class="wl-faq-lista">${items.map(x=>`<li>${x}</li>`).join('')}</ul>`;
 /* Acordeón exclusivo: solo una respuesta abierta a la vez */
@@ -1676,7 +1675,7 @@ verificada: () => `
   ${headerHTML('Tu cuenta está verificada','Ya recibes tus retiros por depósito directo, sin pasar a sala.')}
   ${tracker({cls:'done',s:'Validada'},{cls:'done',s:'Validada'},{cls:'done',s:'Validada'})}
   <div class="wl-status-banner success">
-    <div class="ic">${I.partyPopper}</div>
+    <div class="ic">${I.badgeCheck}</div>
     <div><div class="t">Cuenta verificada</div><div class="s">Identidad, comprobante de domicilio y cuenta bancaria fueron validados correctamente.</div></div>
   </div>
   ${docGrid('done','done')}
