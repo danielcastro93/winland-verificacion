@@ -449,12 +449,16 @@ de este archivo. NO se implementan:
   }
   .clmc-dialog h3{font-size:18px;font-weight:700;margin:22px 0 14px;padding-right:44px;color:var(--ink);letter-spacing:-0.01em;}
   .clmc-dialog .lead{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);margin-bottom:20px;line-height:1.65;}
-  .clmc-upload-documents-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  /* Tres columnas: los tres archivos de identidad caben en una línea y se leen
+     como lo que son, tres piezas del mismo trámite. Con una sola caja, .full
+     la hace ocupar el ancho completo. */
+  .clmc-upload-documents-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}
   .clmc-upload-document-drop-area{
-    border:1.5px dashed var(--mid-gray);border-radius:var(--radius-sm);padding:18px 10px;text-align:center;font-size:var(--clmc-text-xsmall, 12px);
-    color:var(--text-gray);font-weight:600;display:flex;flex-direction:column;align-items:center;gap:7px;
+    border:1.5px dashed var(--mid-gray);border-radius:var(--radius-sm);padding:20px 12px;text-align:center;font-size:var(--clmc-text-small, 14px);
+    color:var(--text-gray);font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    min-height:148px;
   }
-  .clmc-upload-document-drop-area svg{width:18px;height:18px;color:var(--text-faint);}
+  .clmc-upload-document-drop-area svg{width:26px;height:26px;color:var(--text-faint);}
   .clmc-upload-document-drop-area.full{grid-column:1/-1;}
   /* Modal Truora: lista de canales limpia */
   .wl-modal-truora-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-right:34px;}
@@ -642,8 +646,13 @@ de este archivo. NO se implementan:
   @keyframes popIn{0%{transform:scale(.35);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
   @keyframes ringSuccess{0%{box-shadow:0 0 0 0 rgba(46,125,50,.4)}100%{box-shadow:0 0 0 16px rgba(46,125,50,0)}}
   @keyframes drawStroke{to{stroke-dashoffset:0}}
-  .wl-pop-check{animation:popIn .45s var(--ease) both, ringSuccess .8s .4s ease-out both;}
-  .wl-pop-check svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:drawStroke .35s .32s ease-out forwards;}
+  .wl-pop-check{
+    width:64px;height:64px;border-radius:50%;margin:4px auto 18px;color:var(--success-green);
+    animation:popIn .45s var(--ease) both, ringSuccess .8s .4s ease-out both;
+  }
+  .wl-pop-check svg{width:100%;height:100%;}
+  /* El trazo de la palomita se dibuja; los discos del badge entran con el pop */
+  .wl-pop-check svg path{stroke-dasharray:14;stroke-dashoffset:14;animation:drawStroke .34s .3s ease-out forwards;}
   /* Banner de identidad validada: pulso verde suave (homólogo al rojo/naranja de alerta) */
   @keyframes pulseSuccess{0%{box-shadow:0 0 0 0 rgba(46,125,50,.35)}70%{box-shadow:0 0 0 10px rgba(46,125,50,0)}100%{box-shadow:0 0 0 0 rgba(46,125,50,0)}}
   .wl-status-banner.success .ic{animation:pulseSuccess 2.4s ease-out infinite;}
