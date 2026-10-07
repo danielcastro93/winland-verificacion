@@ -6,15 +6,9 @@
 **Resuelto el 6 de octubre de 2026.** Marketing envió el set nuevo (fondo blanco,
 tres temas: identificación, documentación y selfie, cada uno en escritorio y móvil)
 y ya está integrado. Los puntos 1.1 a 1.4 quedan como historial. Sobre el set
-nuevo, tres detalles de texto para corregir en una siguiente exportación, sin
-bloquear nada:
-
-- En las versiones móviles de documentación y selfie, el título dice
-  "Requisitos de identificación" en lugar de "documentación".
-- En las versiones de escritorio de documentación y selfie, el encabezado dice
-  "Guía rápida de requisitos de identificación" junto a "Requisitos de
-  documentación".
-- En las dos versiones de selfie, "phototoshop" por "photoshop".
+nuevo, un solo detalle de texto, reportado al cliente el 6 de octubre: en las dos
+versiones de selfie dice "phototoshop" en lugar de "photoshop". Se actualiza el
+archivo en cuanto llegue corregido.
 
 ### 1.1 Infografía "Comprobantes de domicilio" — error crítico
 - **"Credencial del Seguro Social" aparece DUPLICADA** en la columna de "No aceptables" (dos veces el mismo elemento).
