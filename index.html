@@ -137,9 +137,11 @@
                            redibujados en línea con los MISMOS nombres de
                            archivo que usa producción (email/identify/bank/
                            other × verified/pending/denied).
-  · assets/infografias/  → guías visuales de Marketing. Winland enviará las
-                           corregidas (escritorio y móvil); basta sobrescribir
-                           los archivos con el mismo nombre.
+  · assets/infografias/  → guías visuales de Marketing (set del 6 de octubre
+                           de 2026): tres temas, cada uno en versión apaisada
+                           para escritorio y vertical para móvil (sufijo
+                           -movil). Para actualizar, sobrescribir con el mismo
+                           nombre.
   · docs/calimaco/       → entrega técnica para la integración.
   · docs/OBSERVACIONES.md → hallazgos reportados al cliente.
 ═══════════════════════════════════════════════════════════════════════════ -->
@@ -632,6 +634,7 @@
 
   /* Vista de guía interna del modal */
   .wl-m-main.hide,.wl-m-guia.hide{display:none;}
+  .wl-m-guia picture{display:contents;}   /* la imagen sigue siendo hija directa del acomodo */
   .wl-m-guia .wl-g-img{display:block;max-width:100%;width:auto;margin:0 auto;border:1px solid var(--line-soft);}
 
   /* Línea de ayuda de selfie (fuera del dropzone) */
@@ -1319,12 +1322,21 @@ const guiaVisual = (img, titulo) => `
     ${I.chevronRight}
   </div>
 `;
+/* Cada infografía viene en dos versiones de Marketing: apaisada para escritorio
+   y vertical para móvil (mismo nombre con sufijo -movil). El <picture> elige
+   por viewport, con el mismo corte de 768px que el resto del módulo. */
+const guiaMovil = img => img.replace(/\.jpg$/,'-movil.jpg');
+const guiaPicture = (img, alt) => `<picture>
+          <source media="(max-width:768px)" srcset="${img?'assets/infografias/'+guiaMovil(img):''}">
+          <img src="${img?'assets/infografias/'+img:''}" alt="${alt}" class="wl-g-img">
+        </picture>`;
 /* Vista de guía DENTRO del mismo modal (sin apilar modales) */
 function openGuia(el,img,titulo){
   const m=el.closest('.clmc-dialog');
   m.querySelector('.wl-m-main').classList.add('hide');
   const g=m.querySelector('.wl-m-guia');
   g.querySelector('.g-title').textContent=titulo;
+  g.querySelector('source').srcset='assets/infografias/'+guiaMovil(img);
   g.querySelector('img').src='assets/infografias/'+img;
   g.querySelector('img').alt=titulo;
   g.classList.remove('hide');
@@ -1446,7 +1458,7 @@ function faqInfo(img, titulo){
       <div class="clmc-closeIcon-popup">${I.x}</div>
       <div class="wl-m-guia">
         <h3 class="g-title">${titulo}</h3>
-        <img src="assets/infografias/${img}" alt="${titulo}" class="wl-g-img">
+        ${guiaPicture(img, titulo)}
       </div>
     </div>`;
   accesible(ov);
@@ -1870,7 +1882,7 @@ interrumpida: () => `
         </div>
         <div class="wl-mm-help">
           ${reqList(['Vigente', 'Legible, sin reflejos', 'Sin alteraciones', 'Las 4 esquinas visibles'])}
-          ${guiaVisual('guia-identidad-tipos.jpg','Documentos de identificación aceptados')}
+          ${guiaVisual('guia-identificacion.jpg','Documentos de identificación aceptados')}
           ${guiaVisual('guia-selfie.jpg','Cómo tomar tu selfie con la identificación')}
           <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
         </div>
@@ -1884,7 +1896,7 @@ interrumpida: () => `
       <div class="wl-m-guia hide">
         <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
         <h3 class="g-title"></h3>
-        <img src="" alt="" class="wl-g-img">
+        ${guiaPicture('', '')}
         <button class="clmc-btn-primary wl-g-cta" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
       </div>
     </div>
@@ -1911,7 +1923,7 @@ interrumpida: () => `
         </div>
         <div class="wl-mm-help">
           ${reqList(['Banco tradicional (no fintech)', 'A tu nombre', 'Máx. 3 meses', 'Completo, sin recortes'])}
-          ${guiaVisual('guia-bancaria.jpg','Estados de cuenta aceptados')}
+          ${guiaVisual('guia-documentacion.jpg','Estados de cuenta aceptados')}
           <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
         </div>
       </div>
@@ -1924,7 +1936,7 @@ interrumpida: () => `
       <div class="wl-m-guia hide">
         <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
         <h3 class="g-title"></h3>
-        <img src="" alt="" class="wl-g-img">
+        ${guiaPicture('', '')}
         <button class="clmc-btn-primary wl-g-cta" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
       </div>
     </div>
@@ -1951,7 +1963,7 @@ interrumpida: () => `
         </div>
         <div class="wl-mm-help">
           ${reqList(['Luz, gas o teléfono/internet', 'Máx. 3 meses', 'Dirección y titular legibles'])}
-          ${guiaVisual('guia-domicilio-tipos.jpg','Comprobantes de domicilio aceptados')}
+          ${guiaVisual('guia-documentacion.jpg','Comprobantes de domicilio aceptados')}
           <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
         </div>
       </div>
@@ -1964,7 +1976,7 @@ interrumpida: () => `
       <div class="wl-m-guia hide">
         <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
         <h3 class="g-title"></h3>
-        <img src="" alt="" class="wl-g-img">
+        ${guiaPicture('', '')}
         <button class="clmc-btn-primary wl-g-cta" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
       </div>
     </div>
@@ -2007,16 +2019,16 @@ faq: () => `
     ]))}
     ${faqItem('¿Cuáles son las identificaciones oficiales aceptadas?', faqLista([
       'INE vigente', 'Pasaporte mexicano vigente', 'Formato migratorio vigente'
-    ]), ['guia-identidad-tipos.jpg','Identificaciones oficiales aceptadas'])}
+    ]), ['guia-identificacion.jpg','Identificaciones oficiales aceptadas'])}
     ${faqItem('¿Cuáles son los comprobantes de domicilio aceptados?', faqLista([
       'Recibo de agua, luz o teléfono.',
       'El documento no debe tener una antigüedad mayor a 3 meses.'
-    ]), ['guia-domicilio-tipos.jpg','Comprobantes de domicilio aceptados'])}
+    ]), ['guia-documentacion.jpg','Comprobantes de domicilio aceptados'])}
     ${faqItem('¿Cuáles son los comprobantes bancarios aceptados?',
       'Aceptamos los estados de cuenta de bancos tradicionales.' + faqLista([
       'No se aceptan estados de cuenta de tarjeta de crédito.',
       'No se aceptan estados de cuentas Fintech.'
-    ]), ['guia-bancaria.jpg','Comprobantes bancarios aceptados'])}
+    ]), ['guia-documentacion.jpg','Comprobantes bancarios aceptados'])}
     ${faqItem('¿Cómo debo tomar mi selfie de verificación?',
       'Para validar su identidad de forma segura, le solicitamos una fotografía sosteniendo su identificación oficial (INE, Pasaporte o FM) a la altura de la barbilla, considerando lo siguiente:' + faqLista([
       '<b>Legibilidad:</b> tanto su rostro como los datos del documento deben apreciarse claramente.',
@@ -2025,7 +2037,7 @@ faq: () => `
     ${faqItem('¿Cuáles son los requisitos para la aceptación de mi INE?', faqLista([
       'Capturar el documento por ambos lados donde se visualicen los 4 bordes.',
       'Asegurarse de que toda la información sea completamente legible.'
-    ]), ['guia-identidad-calidad.jpg','Requisitos de calidad de tu identificación'])}
+    ]), ['guia-identificacion.jpg','Requisitos de calidad de tu identificación'])}
   </div>
 
   <div class="wl-faq-group hide" data-cat="retiros-depositos">

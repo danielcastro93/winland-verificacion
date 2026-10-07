@@ -220,7 +220,13 @@ Lo que conviene saber al integrar:
 
    Los doce están en `assets/produccion/`. Los originales de producción quedaron
    respaldados fuera del repositorio.
-3. **Infografías.** Las que trae el prototipo son las vigentes. Winland tiene
-   pendiente enviar una versión corregida.
+3. **Infografías.** El set vigente es el del 6 de octubre de 2026, en
+   `assets/infografias/`: tres temas (`guia-identificacion`, `guia-documentacion`,
+   `guia-selfie`), cada uno en versión apaisada para escritorio y vertical para
+   móvil con sufijo `-movil`. El prototipo las sirve con un `<picture>` cuyo
+   `<source media="(max-width:768px)">` apunta a la versión móvil, el mismo corte
+   que usa el resto del módulo. La de documentación cubre tanto comprobante de
+   domicilio como estado de cuenta, así que dos accesos distintos abren la misma
+   imagen. Para actualizar una, basta sobrescribir el archivo con el mismo nombre.
 4. **Firma digital.** El botón del acordeón de alta de cliente está maquetado, pero
    el proveedor y el flujo de firma siguen sin definirse.

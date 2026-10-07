@@ -1,7 +1,20 @@
 # Observaciones para el cliente — Módulo de Verificación Winland
-*(Para incluir como sección final de la presentación. Última actualización: 30-jul-2026)*
+*(Para incluir como sección final de la presentación. Última actualización: 6-oct-2026)*
 
 ## 1. Errores de contenido en las infografías (requieren corrección de Marketing)
+
+**Resuelto el 6 de octubre de 2026.** Marketing envió el set nuevo (fondo blanco,
+tres temas: identificación, documentación y selfie, cada uno en escritorio y móvil)
+y ya está integrado. Los puntos 1.1 a 1.4 quedan como historial. Sobre el set
+nuevo, tres detalles de texto para corregir en una siguiente exportación, sin
+bloquear nada:
+
+- En las versiones móviles de documentación y selfie, el título dice
+  "Requisitos de identificación" en lugar de "documentación".
+- En las versiones de escritorio de documentación y selfie, el encabezado dice
+  "Guía rápida de requisitos de identificación" junto a "Requisitos de
+  documentación".
+- En las dos versiones de selfie, "phototoshop" por "photoshop".
 
 ### 1.1 Infografía "Comprobantes de domicilio" — error crítico
 - **"Credencial del Seguro Social" aparece DUPLICADA** en la columna de "No aceptables" (dos veces el mismo elemento).
@@ -28,6 +41,9 @@
 - El rediseño contempla: frontal + reverso + selfie. **Confirmar si RFC sigue siendo requisito**; si sí, se agrega su zona de carga al modal.
 
 ## 3. Solicitud a Marketing: versiones móviles de las infografías
+
+**Resuelto el 6 de octubre de 2026.** Llegaron en 1080×1350, una columna, con los
+mismos estilos del set de escritorio. El prototipo elige la versión por viewport.
 - Las 6 infografías actuales son formato panorámico/póster (~1081×906 px), pensadas para escritorio.
 - En móvil (viewport ≤430px) el texto interno queda ilegible (~5-6px). El prototipo lo resuelve mostrando una tarjeta "Ver guía" que abre visor con zoom, pero la solución ideal es una **versión vertical apilada**:
   - **Layout**: "Aceptables" arriba → "No aceptables" abajo (una sola columna).
@@ -147,13 +163,13 @@ autorizado:
    *"¿Cuáles son las opciones de retiro?"* sí incluye *"directamente en punto
    físico"*, que es lo que habilita pre-verificada.
 
-2. **Los comprobantes de domicilio no coinciden con la infografía vigente.** El texto
-   autorizado dice *agua, luz o teléfono*; la infografía dice *luz (CFE), gas natural
-   y teléfono/internet*. El agua aparece en uno y no en el otro; el gas, al revés.
+2. **Los comprobantes de domicilio no coinciden con la infografía.** Con el set del
+   6 de octubre la infografía ya no lista servicios (muestra un recibo genérico), así
+   que la contradicción con *agua, luz o teléfono* desapareció de la imagen. La
+   lista definitiva sigue viviendo solo en el texto autorizado.
 
-3. **Sigue el error de la infografía de domicilio**: "Credencial del Seguro Social"
-   aparece repetida en la columna de no aceptables (ver 1.1). Las infografías
-   corregidas no llegaron con el listado.
+3. ~~Sigue el error de la infografía de domicilio~~ Resuelto con el set del 6 de
+   octubre (ver 1).
 
 **Administración del contenido:** el cliente pidió que las preguntas sean editables
 desde el backoffice, porque cambian con frecuencia. Lo ve directamente Andrés Arango

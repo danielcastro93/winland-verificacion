@@ -492,6 +492,7 @@
 
   /* Vista de guía interna del modal */
   .wl-m-main.hide,.wl-m-guia.hide{display:none;}
+  .wl-m-guia picture{display:contents;}   /* la imagen sigue siendo hija directa del acomodo */
   .wl-m-guia .wl-g-img{display:block;max-width:100%;width:auto;margin:0 auto;border:1px solid var(--line-soft);}
 
   /* Línea de ayuda de selfie (fuera del dropzone) */
