@@ -7,8 +7,8 @@
 tres temas: identificación, documentación y selfie, cada uno en escritorio y móvil)
 y ya está integrado. Los puntos 1.1 a 1.4 quedan como historial. Sobre el set
 nuevo, un solo detalle de texto, reportado al cliente el 6 de octubre: en las dos
-versiones de selfie dice "phototoshop" en lugar de "photoshop". Se actualiza el
-archivo en cuanto llegue corregido.
+versiones de selfie decía "phototoshop". Llegaron corregidas el 7 de octubre y
+están integradas. El set queda cerrado.
 
 ### 1.1 Infografía "Comprobantes de domicilio" — error crítico
 - **"Credencial del Seguro Social" aparece DUPLICADA** en la columna de "No aceptables" (dos veces el mismo elemento).
