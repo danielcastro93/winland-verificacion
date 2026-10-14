@@ -1,0 +1,1006 @@
+/* ============================================================================
+   Winland · Módulo de verificación de cuenta · CSS del módulo
+   Generado desde index.html. 14 de octubre de 2026.
+
+   QUÉ ES
+   La hoja completa del módulo, aislada del prototipo: lo mismo que está en el
+   <style> de index.html, listo para cargarse como hoja propia.
+
+   DÓNDE VA
+   Después de las hojas base del sitio. El orden importa: varias reglas son
+   ajustes sobre clases que ya existen.
+
+   ANTES DE PEGAR
+   Dar de alta las variables del bloque B de :root junto con las demás
+   variables del sitio. Sin ellas el módulo cae a los respaldos y pierde la
+   paleta de apoyo.
+
+   CÓMO LEER LOS NOMBRES
+   .wl-*    componentes nuevos del módulo.
+   .clmc-*  clases con la nomenclatura del sitio; aquí solo su ajuste visual.
+
+   COMPONENTES NUEVOS
+   · .wl-tracker / .wl-step      barra de 3 pasos arriba del módulo
+   · .wl-upgrade-card            tarjeta de mejora del estado pre-verificada
+   · .wl-alta-toggle             acordeón de alta de cliente con firma digital
+   · .wl-faq-*                   pestaña de preguntas frecuentes
+   · .wl-status-banner           franja de estado de la cuenta
+   · .wl-truora-*                bloque y modal de verificación biométrica
+   · .wl-mm / .wl-mm-task / .wl-mm-help   modal de carga: tarea y ayuda
+   · .wl-slot                    fila de carga de cada archivo
+   · .wl-doc-select / .wl-req    selector de documento y requisitos
+   · .wl-guia-cta / .wl-m-guia   acceso y vista de la guía visual (infografía)
+   · .wl-t-back                  regresar dentro de un modal
+   ============================================================================ */
+
+/* Fuente del sitio (Denim INK, variable) */
+  @font-face{
+    font-family:'winland';
+    src:url('assets/sitio/winland-font.ttf') format('truetype');
+    font-weight:300 900; /* fuente variable: habilita los pesos intermedios */
+  }
+  /* ===================================================================
+     TOKENS
+
+     Dos bloques:
+
+     A) HEREDADOS. Variables --clmc-* del sitio, con un respaldo para que el
+        prototipo abra suelto. Al montarse heredan solas.
+
+     B) NUEVOS. Variables propias del módulo (paleta de apoyo y radios).
+        Hay que darlas de alta junto con las demás variables del sitio.
+     =================================================================== */
+  :root{
+    /* ── A) Heredados: variables --clmc-* del sitio ──────────────────── */
+    --winland-orange:var(--clmc-color-primary, #E85B10);
+    --white:          var(--clmc-bg-primary, #FFFFFF);
+    --surface:        var(--clmc-bg-primary, #FFFFFF);
+    --mid-gray:       var(--clmc-color-quinary, #ADADAD);
+    --success-green:  var(--clmc-bg-color-success, #2E7D32);
+    --error-red:      var(--clmc-bg-color-error, #D32F2F);
+    --info-blue:      var(--clmc-bg-color-info, #0288D1);
+    --radius:         var(--clmc-border-radius-large, 12px);
+    --radius-sm:      var(--clmc-border-radius-small, 8px);
+
+    /* ── B) Nuevos: variables propias del módulo ─────────────────────── */
+    --orange-dark:#C2480C;      /* hover del primario */
+    --orange-tint:#FCE9DD;      /* fondo suave de la marca */
+    --ink:#1F1F1F;              /* texto principal. Deliberadamente NO es
+                                   --clmc-color-tertiary (#000): el negro puro
+                                   endurece bloques largos de texto */
+    --page-bg:#F4F6F7;          /* ≡ fondo de .clmc-profile-menu */
+    --line:#E4E7EA;
+    --line-soft:#ECEEF0;
+    --text-gray:#5B6470;        /* texto secundario */
+    --text-faint:#8A8A8A;       /* texto terciario */
+    --success-bg:#E7F5EA;
+    --warning-bg:#FFF1E5;
+    --error-bg:#FBEAE8;
+    --info-bg:#E9F1FB;
+    --radius-lg:16px;           /* tarjeta del módulo */
+    --shadow-card:0 1px 2px rgba(20,20,22,.04), 0 8px 24px rgba(20,20,22,.05);
+    --shadow-pop:0 24px 60px rgba(15,15,18,.28);
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{-webkit-font-smoothing:antialiased;}
+  body{
+    font-family:'winland',-apple-system,sans-serif;
+    background:#dde1e4;
+    color:var(--ink);
+    font-size:var(--clmc-text-small, 14px);
+  }
+  h1,h2,h3{font-family:'winland',sans-serif;letter-spacing:-0.01em;}
+  svg{display:block;}
+  .icon{width:1em;height:1em;flex-shrink:0;}
+
+  /* ===== Contenedor del módulo ===== */
+  .wl-w-body{background:#fff;padding:40px;}
+  /* Tarjeta del módulo: radio 16, sombra sutil */
+  .clmc-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px 0 rgba(0,0,0,.12);}
+  /* Tabs (Mi cuenta / Historial / Bonos / Juego responsable) */
+  .wl-w-tabs{display:flex;background:#f4f6f7;align-items:stretch;}
+  .wl-w-tab{
+    padding:12px 20px;font-weight:600;font-size:var(--clmc-text-medium, 16px);color:#000;font-family:'winland',sans-serif;
+    cursor:default;display:flex;align-items:center;transition:background .15s var(--ease);
+  }
+  #miCuentaTab,#faqTab,#verifSub{cursor:pointer;}
+  .wl-w-tab:not(.active):hover{background:rgba(0,0,0,.06);}
+  .wl-w-tab.active{background:#e05f22;color:#fff;}
+
+  /* Subtabs (Cuenta / Verificación / Contraseña) */
+  .wl-w-subtabs{display:flex;gap:0;padding:0 12px;border-bottom:1px solid #8a8a8a;background:transparent;
+    font-size:var(--clmc-text-xsmall, 12px);font-weight:600;color:#8a8a8a;letter-spacing:.02em;text-transform:uppercase;font-family:'winland',sans-serif;}
+  .wl-w-subtabs .sub{padding:0 16px;min-height:48px;display:flex;align-items:center;cursor:default;position:relative;transition:background .15s var(--ease);}
+  .wl-w-subtabs .sub:hover{background:rgba(0,0,0,.04);}
+  .wl-w-subtabs .sub.active{color:#000;background:rgba(255,255,255,.8);}
+  .wl-w-subtabs .sub.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--winland-orange);}
+
+  .wl-w-content{padding:32px;}
+
+  /* ===== Verification module ===== */
+  .wl-vh-title{font-weight:700;color:var(--ink);margin:0;}
+  .wl-vh-sub{color:var(--text-gray);max-width:none;}
+
+  /* progress tracker */
+
+  .wl-step{
+    flex:1;
+    align-items:center;gap:12px;
+  }
+
+  /* Paso opcional (mejora, no requisito): no compite con el paso actual */
+
+  .wl-step.invite .meta .s{color:var(--winland-orange);}
+
+  .wl-step.alert .meta .s{color:var(--error-red);}
+  .wl-step .meta{flex:1;min-width:0;}
+  .wl-step .meta .t{font-weight:600;}
+  .wl-step .meta .s{color:var(--text-gray);line-height:1.35;}
+
+  /* truora hero card */
+  .wl-truora-card{
+    background:#fff;
+
+    color:var(--ink);position:relative;
+
+  }
+  .wl-truora-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+  .wl-truora-id{display:flex;align-items:center;gap:12px;}
+  /* Caja blanca cuadrada con el ícono de Truora en negro */
+  .wl-truora-icon{
+    width:38px;height:38px;border-radius:8px;background:#fff;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    border:1px solid rgba(0,0,0,.08);
+  }
+
+  .wl-truora-name{font-size:var(--clmc-text-medium, 16px);font-weight:700;letter-spacing:-0.005em;color:var(--ink);}
+  .wl-truora-tagline{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);margin-top:3px;}
+  .wl-truora-card .badge{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:var(--clmc-text-xsmall, 12px);flex-shrink:0;
+    position:relative;overflow:hidden;
+  }
+
+  .wl-truora-card h2{font-weight:700;color:var(--ink);}
+  .wl-truora-card p{color:var(--text-gray);line-height:1.6;max-width:none;margin-bottom:16px;white-space:nowrap;}
+  .wl-truora-benefits{display:flex;flex-direction:column;gap:10px;margin:0 0 22px;}
+  .wl-truora-benefits span{font-weight:500;color:var(--ink);display:flex;align-items:center;gap:9px;}
+  .wl-truora-benefits svg{width:16px;height:16px;color:var(--success-green);flex-shrink:0;}
+  /* .clmc-btn-primary: solo el acomodo interno. Fondo, color, alto, radio,
+     peso, tamaño y hover vienen de la clase base. */
+  .clmc-btn-primary{
+    padding:0 40px;cursor:pointer;width:auto;
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    font-family:inherit;letter-spacing:-0.005em;
+  }
+  .clmc-btn-primary:disabled{background:#d1d1d1 !important;color:#adadad;cursor:default;filter:none;opacity:1;}
+
+  .wl-alt-toggle{
+    display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:10px;
+    font-weight:600;
+    transition:background .15s var(--ease);
+  }
+
+  /* Módulo aún no habilitado por Back Office: se puede abrir para entender qué es,
+     pero su acción está deshabilitada */
+
+  .wl-alta-toggle span{display:flex;align-items:center;gap:8px;}
+  .wl-alta-toggle.is-locked{color:var(--text-faint);}
+  .wl-alta-toggle.is-locked svg:not(.wl-chev-down){width:15px;height:15px;flex-shrink:0;}
+  .wl-email-box button[disabled]{opacity:.5;cursor:not-allowed;pointer-events:none;}
+  .wl-alt-toggle svg.wl-chev-down{width:16px;height:16px;color:var(--text-faint);flex-shrink:0;transition:transform .2s var(--ease);}
+  .wl-alt-toggle.open svg.wl-chev-down{transform:rotate(180deg);}
+  .wl-alt-panel{
+
+    display:flex;flex-direction:column;
+  }
+  .wl-alt-note{color:var(--text-gray);margin-bottom:4px;}
+
+  .clmc-user-documents-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .clmc-user-document-item{
+    display:flex;align-items:center;
+
+  }
+
+  .clmc-user-document-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+  /* Color del ícono por estado */
+  .clmc-user-document-icon.st-verified{color:var(--success-green);}
+  .clmc-user-document-icon.st-pending,.clmc-user-document-icon.st-progress{color:var(--winland-orange);}
+  .clmc-user-document-icon.st-rejected{color:var(--error-red);}
+
+  .wl-doc-meta{flex:1;min-width:0;}
+  .wl-doc-meta .t{font-weight:600;color:var(--ink);line-height:1.3;}
+  .wl-doc-meta .s{line-height:1.4;}
+  .s-pending{color:var(--text-gray);}
+  .s-verified{color:var(--success-green);}
+  .s-progress{color:var(--winland-orange);}
+  .s-rejected{color:var(--error-red);}
+  .s-blocked{color:var(--text-faint);}
+
+  .wl-chev{flex-shrink:0;}
+
+  /* Tarjeta de mejora: convierte el paso 3 en beneficio ("olvídate de las filas") */
+  .wl-upgrade-card{
+    display:flex;align-items:center;justify-content:space-between;gap:18px;
+
+  }
+  .wl-upgrade-card .t{font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .wl-upgrade-card .s{color:var(--text-gray);line-height:1.5;}
+  .wl-email-box{
+
+    display:flex;justify-content:space-between;align-items:center;gap:16px;
+  }
+  .wl-email-box .t{font-weight:600;margin-bottom:6px;display:flex;align-items:flex-start;gap:7px;line-height:1.4;}
+  .wl-email-box .t svg{width:14px;height:14px;color:var(--text-faint);flex-shrink:0;margin-top:2px;}
+
+  .wl-email-box .s{color:var(--text-gray);line-height:1.6;}
+  /* .clmc-btn-primary-white: solo el acomodo interno. Contorno, color, fondo,
+     radio y hover vienen de la clase base. */
+  .clmc-btn-primary-white{
+    padding:10px 18px;cursor:pointer;white-space:nowrap;
+    font-family:inherit;display:flex;align-items:center;gap:7px;justify-content:center;
+  }
+  .clmc-btn-primary-white svg{width:15px;height:15px;}
+
+  .wl-status-banner{
+    display:flex;
+  }
+  .wl-status-banner .ic{border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+  .wl-status-banner .t{font-weight:600;color:var(--ink);}
+  .wl-status-banner .s{color:var(--text-gray);}
+   .wl-status-banner.success .ic{color:var(--success-green);}
+   .wl-status-banner.error .ic{color:var(--error-red);}
+   .wl-status-banner.info .ic{color:var(--info-blue);}
+  .wl-status-banner .cta{margin-top:10px;}
+  .wl-status-banner .cta a{color:var(--winland-orange);font-weight:600;font-size:13px;cursor:pointer;}
+  /* Enlace embebido en la frase del banner: evita una línea extra de CTA */
+
+  /* FAQ */
+  .wl-faq-cats{display:flex;gap:9px;margin-bottom:34px;flex-wrap:wrap;}
+  .wl-faq-cat{padding:9px 16px;border-radius:20px;font-size:13px;font-weight:600;background:var(--page-bg);color:#3a4047;border:1px solid transparent;}
+  .wl-faq-cat.active{background:var(--winland-orange);color:#fff;}
+  .wl-faq-item{border-bottom:1px solid var(--line-soft);padding:19px 4px;}
+  .wl-faq-item:first-child{padding-top:0;}
+  .wl-faq-q{font-size:var(--clmc-text-medium, 16px);font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--ink);padding-right:8px;line-height:1.4;}
+  .wl-faq-q svg{width:16px;height:16px;color:var(--text-faint);}
+  .wl-faq-a-tx{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);padding-top:11px;line-height:1.7;padding-right:48px;}
+
+  /* Modal */
+  /* Modales a pantalla completa (sobre todo el sitio, no solo el módulo) */
+  .wl-modal-overlay{
+    position:fixed;inset:0;
+    display:flex;align-items:center;justify-content:center;padding:24px;
+    /* Por encima del header fijo (z-index 1100) */
+    z-index:1200;
+  }
+  .clmc-dialog{
+    background:#fff;max-width:480px;width:100%;padding:28px;position:relative;
+    max-height:88%;overflow-y:auto;
+  }
+  /* Modales de documento: layout horizontal en escritorio */
+  .clmc-dialog.wl-doc-modal{max-width:820px;}
+  .wl-doc-modal{max-height:92%;}
+  /* Modal de Truora: canales a 2 columnas en escritorio */
+  .clmc-dialog.wl-truora-wide{max-width:640px;}
+  /* ═══ BARRA SUPERIOR DE LOS MODALES ═══
+     Todos los modales con barra reservan una zona superior FIJA vía padding-top
+     (barra 64px + gap 20px). El primer contenido siempre arranca en el mismo
+     punto: cero márgenes por caso. Desktop: 84px · Mobile: 82px. */
+  /* El modal NO scrollea: el scroll vive en el cuerpo (.wl-m-main/.wl-m-guia/.wl-t-step).
+     Así el header (✕, Regresar, barra) es absoluto y queda fijo sin trucos. */
+  .clmc-dialog.wl-doc-modal,.clmc-dialog.wl-truora-wide{
+    overflow:hidden;display:flex;flex-direction:column;
+    padding:84px 0 0; /* 64 barra + 20 gap; laterales los da el cuerpo */
+  }
+  .wl-doc-modal .wl-m-main,.wl-doc-modal .wl-m-guia,.wl-truora-wide .wl-t-step{
+    overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;padding:0 28px 28px;
+    scrollbar-width:none; /* scrollbar overlay estilo app: la clásica roba ancho y
+                             provoca scroll horizontal cuando el contenido calza exacto */
+  }
+  .wl-doc-modal .wl-m-main::-webkit-scrollbar,.wl-doc-modal .wl-m-guia::-webkit-scrollbar,
+  .wl-truora-wide .wl-t-step::-webkit-scrollbar{display:none;}
+  .wl-doc-modal .wl-m-main{padding-bottom:0;} /* su respiro inferior lo da la franja de acciones */
+  .wl-doc-modal .clmc-closeIcon-popup::before,.wl-truora-wide .clmc-closeIcon-popup::before{
+    content:'';position:absolute;top:-17px;right:-28px;width:100vw;height:64px;
+    background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(0,0,0,.05);z-index:-1;pointer-events:none;
+  }
+  .clmc-dialog.wl-doc-modal .clmc-closeIcon-popup,.clmc-dialog.wl-truora-wide .clmc-closeIcon-popup{
+    position:absolute;top:17px;right:28px;margin:0;box-shadow:none;
+  }
+  /* El gap lo da el padding del modal: el primer contenido no aporta margen propio */
+  .wl-doc-modal .wl-m-main > :first-child,.wl-doc-modal .wl-m-guia > :first-child,
+  .wl-truora-wide .wl-t-step > :first-child,.wl-t-back + *{margin-top:0 !important;}
+  .wl-modal-truora-head h3{margin-top:0;}
+  @media (min-width:769px){
+    .wl-truora-wide .wl-channel-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  }
+  /* Línea de requisitos: discreta, escaneable, una sola línea */
+  .wl-req-line{
+    align-items:flex-start;gap:8px;
+    line-height:1.5;
+  }
+  .wl-req-line svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;margin-top:1px;}
+  .wl-req-line b{color:var(--ink);}
+  .clmc-dialog .clmc-closeIcon-popup{
+    position:sticky;top:0;margin-left:auto;margin-bottom:-32px;width:32px;height:32px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;color:var(--ink);cursor:pointer;
+    z-index:6; /* halo para leerse sobre contenido al hacer scroll */
+    transition:background .15s var(--ease);
+  }
+
+  /* El círculo de fondo del botón de cerrar lo pinta el propio <svg>
+     (.clmc-closeIcon-popup). El contenedor solo hace de área de toque. */
+
+  .clmc-dialog h3{font-weight:700;margin:22px 0 14px;padding-right:44px;color:var(--ink);}
+  .clmc-dialog .lead{color:var(--text-gray);}
+  /* Tres columnas: los tres archivos de identidad caben en una línea y se leen
+     como lo que son, tres piezas del mismo trámite. Con una sola caja, .full
+     la hace ocupar el ancho completo. */
+  .clmc-upload-documents-grid{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:14px;}
+  .clmc-upload-document-drop-area{
+    padding:20px 12px;text-align:center;font-size:var(--clmc-text-small, 14px);
+    font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    min-height:148px;
+  }
+  .clmc-upload-document-drop-area svg{width:26px;height:26px;}
+
+  /* Modal Truora: lista de canales limpia */
+  .wl-modal-truora-head{display:flex;align-items:center;padding-right:34px;}
+  .wl-modal-truora-head .wl-truora-icon{border:1px solid var(--line);}
+  .wl-channel-list{border-top:1px solid var(--line-soft);}
+  .wl-channel-list .ch{
+    display:flex;align-items:center;border-bottom:1px solid var(--line-soft);
+    cursor:pointer;transition:background .12s var(--ease);
+  }
+  .wl-channel-list .ch:hover{background:var(--page-bg);}
+  .wl-channel-list .ch-ic{
+    border-radius:8px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+
+  .wl-channel-list .ch-meta{flex:1;min-width:0;}
+  .wl-channel-list .ch-meta .t{font-weight:600;color:var(--ink);}
+  .wl-channel-list .ch-meta .s{color:var(--text-gray);margin-top:3px;line-height:1.4;}
+  .wl-channel-list .ch > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
+  .clmc-upload-documents-format-box{margin-top:16px;text-align:center;line-height:1.55;}
+
+    /* Acciones fijas al fondo: siempre a la mano aunque el contenido tenga scroll */
+  .clmc-upload-documents-actions{
+    display:flex;gap:10px;position:sticky;bottom:0;z-index:4;
+    margin:18px -28px 0;padding:14px 28px 18px;
+    background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-top:1px solid rgba(0,0,0,.06);
+  }
+  .clmc-upload-documents-actions .clmc-btn-primary-white{flex:1;}
+  /* .clmc-btn-disabled: fondo, color y métricas vienen de la clase base. */
+  .clmc-btn-disabled{flex:1;cursor:default;font-family:inherit;}
+
+  /* FAQ funcional: acordeón, categorías clickeables, interlinks */
+  .wl-faq-cat{cursor:pointer;transition:background .15s var(--ease);}
+  .wl-faq-cat:not(.active):hover{background:#e8ebed;}
+  .wl-faq-q{cursor:pointer;}
+  .wl-faq-item .wl-faq-a{
+    display:grid;grid-template-rows:0fr;opacity:0;
+    transition:grid-template-rows .34s var(--ease), opacity .2s var(--ease);
+  }
+  .wl-faq-item.open .wl-faq-a{grid-template-rows:1fr;opacity:1;transition-delay:0s,.06s;}
+  .wl-faq-a-in{overflow:hidden;min-height:0;}
+  .wl-faq-item.open .wl-faq-q svg{transform:rotate(45deg);}
+  .wl-faq-q svg{transition:transform .34s var(--ease);flex-shrink:0;}
+  @media (prefers-reduced-motion:reduce){
+    .wl-faq-item .wl-faq-a{transition:none;}
+    .wl-faq-q svg{transition:none;}
+  }
+  .wl-faq-group.hide{display:none;}
+  .wl-faq-link{color:var(--winland-orange);font-weight:600;cursor:pointer;}
+  .wl-faq-link:hover{text-decoration:underline;}
+  /* Subdivisión dentro de una categoría (la tabla autorizada separa Retiros y Depósito) */
+  .wl-faq-sub{
+    font-size:var(--clmc-text-xsmall, 12px);font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--text-faint);margin:6px 0 2px;padding-bottom:10px;
+  }
+  .wl-faq-item + .wl-faq-sub{margin-top:26px;}
+  /* Listas y párrafos dentro de una respuesta */
+  .wl-faq-lista{margin:8px 0 0;padding-left:18px;list-style:disc;}
+  .wl-faq-lista li{margin-bottom:5px;line-height:1.6;}
+  .wl-faq-lista li:last-child{margin-bottom:0;}
+  .wl-faq-lista b{color:var(--ink);font-weight:600;}
+  .wl-faq-a .wl-faq-p{margin-top:10px;}
+  /* Acceso a la infografía: va debajo del texto autorizado, sin alterarlo */
+  .wl-faq-guia{
+    display:inline-flex;align-items:center;gap:7px;margin-top:13px;
+    border:1px solid var(--line);border-radius:8px;padding:8px 13px;
+    font-size:13px;font-weight:600;color:var(--winland-orange);
+    cursor:pointer;transition:background .15s var(--ease),border-color .15s var(--ease);
+  }
+  .wl-faq-guia:hover{background:var(--orange-tint);border-color:var(--winland-orange);}
+  .wl-faq-guia svg{width:15px;height:15px;flex-shrink:0;}
+
+  @media (max-width:768px){
+    .wl-faq-item{padding:22px 2px;}
+    .wl-faq-q{gap:14px;line-height:1.45;}
+    .wl-faq-a-tx{padding-top:12px;}
+  }
+
+  /* Flujo Truora multi-paso */
+  .wl-t-step.hide{display:none;}
+  .wl-t-back{
+    position:absolute;top:20px;left:28px;z-index:7;margin:0;padding:0;
+    display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--text-gray);
+    cursor:pointer;width:fit-content;
+  }
+  .wl-t-back svg{width:13px;height:13px;transform:rotate(180deg);}
+  .wl-t-back:hover{color:var(--ink);}
+  .wl-channel-list .ch.selected{background:var(--orange-tint);border-radius:8px;}
+  .wl-t-phone{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:16px;}
+  .wl-t-phone.hide{display:none;}
+  .wl-tp-label{font-size:13px;color:var(--text-gray);margin-bottom:10px;}
+  .wl-tp-row{display:flex;align-items:center;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px;}
+  .wl-tp-row:focus-within{border-color:var(--winland-orange);}
+  .wl-tp-flag{padding:12px 12px;background:var(--page-bg);font-size:var(--clmc-text-small, 14px);font-weight:600;border-right:1px solid var(--line-soft);white-space:nowrap;}
+  .wl-tp-row input{flex:1;border:none;outline:none;padding:12px 14px;font-size:var(--clmc-text-small, 14px);font-family:inherit;color:var(--ink);letter-spacing:.03em;}
+  .wl-tp-hint{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);line-height:1.45;margin-bottom:16px;}
+  .wl-t-checklist{display:flex;flex-direction:column;}
+  .wl-t-checklist span{display:flex;gap:9px;}
+  .wl-t-checklist svg{color:var(--success-green);flex-shrink:0;}
+  .wl-qr-title,.wl-qr-lead{text-align:center;}
+  @media (max-width:768px){ .wl-qr-title,.wl-qr-lead{text-align:left;} }
+  .wl-qr-box{width:190px;height:190px;margin:6px auto 10px;padding:12px;border:1px solid var(--line-soft);border-radius:12px;background:#fff;}
+  .wl-qr-box svg{width:100%;height:100%;display:block;}
+
+  /* Checkbox de consentimiento (modal Truora) */
+  .wl-consent-check{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--text-gray);line-height:1.55;margin:8px 0 20px;cursor:pointer;}
+  .wl-consent-check input{width:17px;height:17px;margin:1px 0 0;accent-color:var(--winland-orange);flex-shrink:0;cursor:pointer;}
+  .wl-consent-check b{color:var(--ink);}
+
+  /* Modal de documentos v2: selector, guía visual, línea FAQ */
+
+  .wl-doc-select label{display:block;font-weight:600;color:var(--ink);margin-bottom:8px;}
+  .wl-doc-select select{
+    width:100%;
+    font-family:inherit;color:var(--ink);background:#fff;appearance:none;cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%235B6470' stroke-width='2' fill='none'/></svg>");
+    background-repeat:no-repeat;background-position:right 14px center;
+  }
+  .wl-doc-select select:focus{outline:none;border-color:var(--winland-orange);}
+  /* Tarjeta de guía visual: abre lightbox — misma UI en desktop y mobile */
+  .wl-guia-cta{
+    display:flex;align-items:center;border:1px solid var(--line);
+    cursor:pointer;background:#fff;
+    transition:border-color .15s var(--ease), background .15s var(--ease);
+  }
+  .wl-guia-cta:hover{border-color:var(--winland-orange);background:#FFFBF8;}
+  .wl-guia-thumb{object-fit:cover;border:1px solid var(--line-soft);flex-shrink:0;}
+  .wl-guia-cta span{flex:1;display:flex;flex-direction:column;line-height:1.3;}
+  .wl-guia-cta span b{color:var(--ink);}
+
+  .wl-guia-cta > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
+  .wl-modal-faq-line{font-size:13px;color:var(--text-gray);margin:14px 0 16px;}
+
+  /* Vista de guía interna del modal */
+  .wl-m-main.hide,.wl-m-guia.hide{display:none;}
+  .wl-m-guia picture{display:contents;}   /* la imagen sigue siendo hija directa del acomodo */
+  .wl-m-guia .wl-g-img{display:block;max-width:100%;width:auto;margin:0 auto;border:1px solid var(--line-soft);}
+
+  /* Línea de ayuda de selfie (fuera del dropzone) */
+  /* Botón "Subir" habilitado: conserva la clase base para no deformarse en mobile */
+  /* Formulario completo. En la implementación basta cambiar la clase de
+     clmc-btn-disabled a clmc-btn-primary; el !important existe solo porque
+     el prototipo no intercambia clases desde el estado del componente. */
+  .clmc-btn-disabled.wl-ready{background:var(--winland-orange) !important;color:#fff !important;cursor:pointer;}
+  .clmc-btn-disabled.wl-ready:hover{filter:brightness(1.1);opacity:.8;}
+
+  /* ── Interacciones v2 ── */
+  /* Zonas de carga clickeables (simulan la selección de archivo) */
+  .clmc-upload-document-drop-area{cursor:pointer;transition:border-color .15s var(--ease), background .15s var(--ease);}
+
+  .clmc-upload-document-drop-area.loaded{cursor:default;}
+
+  /* Éxito: la palomita entra con pop, dibuja su trazo y emite una onda */
+  @keyframes popIn{0%{transform:scale(.35);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+  @keyframes ringSuccess{0%{box-shadow:0 0 0 0 rgba(46,125,50,.4)}100%{box-shadow:0 0 0 16px rgba(46,125,50,0)}}
+  @keyframes drawStroke{to{stroke-dashoffset:0}}
+  .wl-pop-check{
+    width:64px;height:64px;border-radius:50%;margin:4px auto 18px;color:var(--success-green);
+    animation:popIn .45s var(--ease) both, ringSuccess .8s .4s ease-out both;
+  }
+  .wl-pop-check svg{width:100%;height:100%;}
+  /* El trazo de la palomita se dibuja; los discos del badge entran con el pop */
+  .wl-pop-check svg path{stroke-dasharray:14;stroke-dashoffset:14;animation:drawStroke .34s .3s ease-out forwards;}
+
+  /* Pasos del tracker y filas de documento que llevan a una acción */
+  .wl-step.clickable{cursor:pointer;}
+  .clmc-user-document-item.wl-row-action,.clmc-user-document-item.wl-row-alert{cursor:pointer;}
+
+  /* FAQ hint footer */
+  .wl-faq-hint{
+
+    display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;
+  }
+
+  .wl-faq-hint span{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);}
+  .wl-faq-hint a{
+    color:var(--winland-orange);font-weight:700;cursor:pointer;text-decoration:none;
+  }
+  .wl-faq-hint a:hover{text-decoration:underline;}
+
+  .hide{display:none !important;}
+
+  /* ═══════════ RESPONSIVE (media queries) ═══════════ */
+  @media (max-width:768px){
+    .wl-w-body{padding:0;}
+    .clmc-card{border-radius:0;box-shadow:none;}
+    .wl-w-tabs{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .wl-w-tabs::-webkit-scrollbar{display:none;}
+    .wl-w-tab{font-size:13px;padding:12px 14px;white-space:nowrap;flex-shrink:0;}
+    .wl-w-subtabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 8px;}
+    .wl-w-subtabs::-webkit-scrollbar{display:none;}
+    .wl-w-subtabs .sub{white-space:nowrap;flex-shrink:0;padding:0 12px;}
+
+    .wl-tracker{flex-direction:column;}
+    .wl-step{gap:9px;}
+
+    .wl-step.current .meta .s,.wl-step.alert .meta .s,.wl-step.invite .meta .s{display:block;font-size:11px;}
+    .wl-truora-card p{white-space:normal;}
+    /* Chip "Recomendado" como listón colgado del borde superior: no consume una línea */
+    .wl-truora-head{flex-wrap:nowrap;margin-bottom:14px;}
+
+    .clmc-btn-primary{width:100%;}
+    .clmc-user-documents-grid{grid-template-columns:1fr;}
+    /* Tarjeta de mejora: convierte el paso 3 en beneficio ("olvídate de las filas") */
+  .wl-upgrade-card{
+    display:flex;justify-content:space-between;
+
+  }
+  .wl-upgrade-card .t{font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .wl-upgrade-card .s{color:var(--text-gray);line-height:1.5;}
+
+    .wl-email-box .clmc-btn-primary-white{width:100%;}
+    .clmc-dialog{padding:20px;}
+    /* Categorías de FAQ: scroll horizontal, una sola línea */
+    .wl-faq-cats{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:26px;padding-bottom:0;}
+    .wl-faq-cats::-webkit-scrollbar{display:none;}
+    .wl-faq-cat{white-space:nowrap;flex-shrink:0;}
+    .wl-faq-a-tx{padding-right:24px;}
+    /* Acciones de modal apiladas: primario arriba, ancho completo */
+    .clmc-upload-documents-actions{
+      flex-direction:column-reverse;gap:9px;
+      bottom:0;margin:16px -18px 0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));
+    }
+    .clmc-upload-documents-actions .clmc-btn-primary-white,.clmc-upload-documents-actions .clmc-btn-disabled{width:100%;flex:none;padding-top:12px;padding-bottom:12px;}
+    /* Texto de dudas/preguntas alineado a la izquierda en mobile */
+
+    .wl-upgrade-card button{width:100%;}
+    .wl-faq-hint{justify-content:flex-start;text-align:left;}
+    body{padding-bottom:70px;}
+    /* Modales cortos (confirmación, selector de canal): centrados con margen */
+    .wl-modal-overlay{padding:16px;align-items:center;}
+    .clmc-dialog{max-width:100%;width:100%;max-height:90%;}
+    .clmc-dialog h3{margin-top:28px;}
+    /* Modales de carga de documentos (largos): a pantalla completa, tipo hoja */
+    .wl-modal-overlay:has(.wl-doc-modal),.wl-modal-overlay:has(.wl-truora-wide),.wl-modal-overlay:has(.wl-modal-center){padding:0;align-items:stretch;}
+    .wl-doc-modal,.clmc-dialog.wl-truora-wide,.clmc-dialog.wl-modal-center{max-width:100%;width:100%;height:100%;max-height:100%;border-radius:0;padding:20px 18px 32px;}
+    /* ── Layout tipo app: contenido arriba, acciones ancladas abajo ── */
+    .clmc-dialog.wl-truora-wide{display:flex;flex-direction:column;}
+    .wl-truora-wide .wl-t-step{flex:1;display:flex;flex-direction:column;min-height:0;}
+    .wl-truora-wide .wl-t-step.hide{display:none;}
+    .wl-truora-wide .wl-t-step > .clmc-btn-primary{margin-top:auto;}
+    /* Consentimiento: el checkbox baja junto al CTA (a la mano del pulgar) */
+    .wl-truora-wide [data-step="1"] .wl-consent-check{margin-top:auto;margin-bottom:14px;}
+    .wl-truora-wide [data-step="1"] .wl-consent-check + .clmc-btn-primary{margin-top:0;}
+    /* Canales: el bloque de teléfono + "Enviar enlace" baja a la misma posición que el CTA */
+    .wl-truora-wide #tPhoneBox{margin-top:auto;}
+    /* Footnotes alineados a la izquierda, como app */
+    .wl-truora-wide .clmc-upload-documents-format-box{text-align:left;}
+    /* Éxito biométrico: pantalla completa, contenido centrado, ✕ arriba */
+    .clmc-dialog.wl-modal-center{display:flex;flex-direction:column;justify-content:center;padding:24px 22px;}
+    .wl-modal-center .clmc-closeIcon-popup{position:absolute;top:14px;right:14px;margin:0;}
+    .wl-modal-center h3{margin-top:0;}
+
+    /* ── Barra superior en móvil: barra 62px + gap 20px = 82px ── */
+    .clmc-dialog.wl-doc-modal,.clmc-dialog.wl-truora-wide{padding:82px 0 0;}
+    .wl-doc-modal .wl-m-guia,.wl-truora-wide .wl-t-step{padding:0 18px 32px;}
+    .wl-doc-modal .wl-m-main{padding:0 18px 0;}
+    .wl-doc-modal .clmc-closeIcon-popup::before,.wl-truora-wide .clmc-closeIcon-popup::before{top:-16px;right:-18px;height:62px;}
+    .clmc-dialog.wl-doc-modal .clmc-closeIcon-popup,.clmc-dialog.wl-truora-wide .clmc-closeIcon-popup{top:16px;right:18px;}
+    /* En teléfono el cerrar debe ser un objetivo de toque cómodo */
+    .clmc-dialog .clmc-closeIcon-popup{width:40px;height:40px;margin-bottom:-40px;}
+
+    /* Zonas de carga: en teléfono van una por fila y con más altura. Dos
+       columnas dejaban cajas muy bajas y un objetivo de toque pobre justo en
+       el paso que más importa del flujo. */
+    .clmc-upload-documents-grid{grid-template-columns:1fr;}
+    .clmc-upload-document-drop-area{
+      padding:26px 14px;font-size:var(--clmc-text-small, 14px);gap:10px;min-height:104px;justify-content:center;
+    }
+    .clmc-upload-document-drop-area svg{width:24px;height:24px;}
+
+    /* ── Footer liquid glass: acciones fijas abajo con blur, como app ── */
+    .clmc-upload-documents-actions{
+      background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+      border-top:1px solid rgba(0,0,0,.06);
+    }
+    /* En banco/domicilio (contenido corto) las acciones también anclan abajo */
+    .wl-doc-modal{display:flex;flex-direction:column;}
+    .wl-doc-modal .wl-m-main:not(.hide),.wl-doc-modal .wl-m-guia:not(.hide){flex:1;display:flex;flex-direction:column;min-height:0;}
+    .wl-doc-modal .wl-m-main .clmc-upload-documents-actions{margin-top:auto;}
+  }
+
+  /* Navegador de estados flotante (demo, no entregable) */
+  #stateNav{position:fixed;right:16px;bottom:16px;z-index:1300;display:flex;align-items:center;gap:4px;
+    background:rgba(16,18,22,.92);border-radius:999px;padding:5px 6px;box-shadow:0 8px 24px rgba(0,0,0,.3);}
+  #stateNav button{width:34px;height:34px;border:none;border-radius:50%;background:transparent;color:#fff;
+    font-size:20px;line-height:1;cursor:pointer;font-family:inherit;}
+  #stateNav button:hover:not(:disabled){background:rgba(255,255,255,.15);}
+  #stateNav button:disabled{opacity:.3;cursor:default;}
+  #stateNav .wl-sn-label{color:#c7ccd2;font-size:var(--clmc-text-xsmall, 12px);font-weight:700;min-width:44px;text-align:center;font-family:'winland',sans-serif;}
+  @media (max-width:768px){ #stateNav{bottom:82px;} }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     V2 · MODERNIZACIÓN VISUAL
+     Menos cajas, más aire, color solo donde importa. La caja se reserva para
+     lo que es una unidad accionable (Truora, la mejora a depósito directo, el
+     envío por correo); todo lo demás se resuelve con listas y divisores.
+     Solo estilo: el contenido y las clases no cambian.
+     Escala de espacio: 8 dentro de un grupo · 16 entre relacionados ·
+     28–32 entre secciones.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* ── Encabezado de pantalla ── */
+  .wl-vh-title{font-size:var(--clmc-text-large, 24px);line-height:1.2;letter-spacing:-0.02em;margin-bottom:8px;}
+  .wl-vh-sub{font-size:15px;line-height:1.55;margin-bottom:32px;white-space:normal;}
+
+  /* ── Banner de estado: acento lateral en vez de fondo pastel; ícono sin círculo ── */
+  .wl-status-banner{
+    background:transparent;border-radius:0;padding:2px 0 2px 16px;margin-bottom:32px;
+    border-left:3px solid var(--line);gap:12px;align-items:flex-start;
+  }
+  .wl-status-banner.success,.wl-status-banner.error,.wl-status-banner.info{background:transparent;}
+  .wl-status-banner.success{border-left-color:var(--success-green);}
+  .wl-status-banner.error{border-left-color:var(--error-red);}
+  .wl-status-banner.info{border-left-color:var(--info-blue);}
+  .wl-status-banner .ic,
+  .wl-status-banner.success .ic,.wl-status-banner.error .ic,.wl-status-banner.info .ic{
+    width:auto;height:auto;background:transparent;animation:none;margin-top:1px;
+  }
+  .wl-status-banner .ic svg{width:20px;height:20px;}
+  .wl-status-banner .t{font-size:15px;margin-bottom:3px;}
+  .wl-status-banner .s{font-size:14px;line-height:1.55;}
+
+  /* ── Documentos: lista con divisores; ícono suelto; palomita al final ── */
+  .clmc-user-documents-grid{margin-bottom:28px;}
+  .clmc-user-document-item,
+  .clmc-user-document-item.disabled{
+    gap:14px;padding:16px 0;background:transparent;opacity:1;
+    border:0;border-bottom:1px solid var(--line-soft);border-radius:0;box-shadow:none;
+  }
+  .clmc-user-document-item.disabled .wl-doc-meta .t{color:var(--text-faint);}
+  .clmc-user-document-icon,
+  .clmc-user-document-icon.st-verified,
+  .clmc-user-document-icon.st-pending,
+  .clmc-user-document-icon.st-progress,
+  .clmc-user-document-icon.st-rejected{
+    width:24px;height:24px;border-radius:0;background:transparent;animation:none;
+  }
+  .clmc-user-document-icon.st-blocked{width:24px;height:24px;background:transparent;color:var(--text-faint);}
+  .clmc-user-document-icon img,.clmc-user-document-icon svg{width:22px !important;height:22px !important;}
+  .wl-doc-meta .t{font-size:15px;}
+  .wl-doc-meta .s{font-size:13px;margin-top:3px;}
+  .wl-row-ok{display:flex;width:20px;height:20px;color:var(--success-green);flex-shrink:0;}
+  .wl-row-ok svg{width:20px;height:20px;}
+  .wl-chev{width:18px;height:18px;color:var(--mid-gray);transition:transform .15s var(--ease), color .15s var(--ease);}
+  /* Sin caja, el hover lo cuentan el chevron y el título */
+  .clmc-user-document-item[data-accionable]:hover .wl-chev{transform:translateX(3px);color:var(--winland-orange);}
+  .clmc-user-document-item[data-accionable]:hover .wl-doc-meta .t{color:var(--winland-orange);}
+
+  /* ── Acordeones: filas con divisor arriba y abajo, sin fondo ── */
+  .wl-alt-toggle{
+    background:transparent;border:0;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);
+    border-radius:0;padding:17px 0;color:var(--ink);font-size:15px;
+  }
+  .wl-alt-toggle:hover{background:transparent;color:var(--winland-orange);}
+  .wl-alt-panel + .wl-alt-toggle{border-top:0;}
+  .wl-alt-toggle.open{border-bottom-color:transparent;}
+  .wl-alta-toggle{margin-top:0;}
+  .wl-alt-toggle.is-locked{color:var(--text-gray);}
+  .wl-alt-toggle.is-locked:hover{color:var(--text-gray);}
+  .wl-alt-toggle svg:not(.wl-chev-down){width:16px;height:16px;}
+  .wl-alt-panel{
+    margin:0;padding:4px 0 22px;border:0;border-bottom:1px solid var(--line-soft);border-radius:0;
+    background:transparent;gap:16px;
+  }
+  .wl-alt-note{font-size:14px;line-height:1.6;}
+  .wl-alt-panel .clmc-user-documents-grid{margin-bottom:0;}
+
+  /* ── Tarjetas accionables: borde neutro y radio amplio ── */
+  .wl-truora-card{
+    border:1px solid var(--line);border-radius:20px;padding:24px;margin-bottom:28px;
+    box-shadow:0 1px 2px rgba(20,20,22,.04), 0 10px 28px rgba(20,20,22,.05);
+  }
+  .wl-truora-card h2{font-size:20px;letter-spacing:-0.015em;margin-bottom:8px;}
+  .wl-truora-card p{font-size:15px;}
+  .wl-truora-benefits span{font-size:15px;}
+  /* "Recomendado": pastilla tintada, sin estrella ni destello */
+  .wl-truora-card .badge{
+    background:var(--orange-tint);color:var(--orange-dark);font-weight:600;letter-spacing:0;
+    padding:5px 11px;border-radius:999px;
+  }
+  .wl-upgrade-card{
+    background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px 22px;margin-top:28px;
+    box-shadow:0 1px 2px rgba(20,20,22,.04), 0 10px 28px rgba(20,20,22,.05);
+  }
+  .wl-upgrade-card .t{font-size:15px;}
+  .wl-upgrade-card .s{font-size:14px;}
+  .wl-email-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:0;}
+  .wl-email-box.restricted{background:#fff;border-color:#F0D9C4;}
+  .wl-email-box .t{font-size:15px;}
+  .wl-email-box .s{font-size:14px;}
+
+  /* ── Nota de ayuda al pie ── */
+  .wl-faq-hint{margin-top:32px;padding-top:0;border-top:0;}
+
+  /* ═══ MODALES ═══ */
+  .wl-modal-overlay{background:rgba(12,12,14,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+  .clmc-dialog{border-radius:20px;box-shadow:0 24px 64px rgba(15,15,18,.28);}
+  .clmc-dialog h3{font-size:20px;letter-spacing:-0.015em;margin-bottom:10px;}
+  .clmc-dialog .lead{font-size:15px;line-height:1.6;margin-bottom:24px;}
+
+  /* Requisitos: lista con palomitas, sin franja gris */
+  .wl-req-line{
+    display:block;background:transparent;border-radius:0;padding:0;margin:0 0 24px;
+    font-size:14px;color:var(--text-gray);
+  }
+  .wl-req-line > b{display:block;font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px;}
+  .wl-req-line ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:9px 20px;}
+  .wl-req-line li{display:flex;align-items:flex-start;gap:8px;line-height:1.45;}
+  .wl-req-line li svg{width:18px;height:18px;color:var(--success-green);flex-shrink:0;}
+
+  /* Selector de tipo de documento */
+  .wl-doc-select{margin-bottom:24px;}
+  .wl-doc-select label{font-size:14px;}
+  .wl-doc-select select{border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:15px;}
+
+  /* Guía visual: miniatura protagonista, no "archivo adjunto" */
+  .wl-guia-cta{border-radius:16px;padding:10px 16px 10px 10px;gap:14px;margin-bottom:16px;}
+  .wl-guia-thumb{width:60px;height:60px;border-radius:12px;object-position:center top;}
+  .wl-guia-cta span{gap:3px;}
+  .wl-guia-cta span b{font-size:14px;}
+  .wl-guia-cta span small{font-size:13px;color:var(--text-gray);}
+
+  /* Zona de carga: sólida y clara, el ícono en color de marca */
+  .clmc-upload-documents-grid{gap:12px;}
+  .clmc-upload-document-drop-area{
+    border:1px solid var(--line);background:#FAFBFB;border-radius:16px;color:var(--ink);
+  }
+  .clmc-upload-document-drop-area svg{color:var(--winland-orange);}
+  .clmc-upload-document-drop-area:hover{border-color:var(--winland-orange);background:#FFF8F4;}
+  .clmc-upload-document-drop-area.loaded{border:1px solid var(--success-green);background:#F4FAF5;}
+  .clmc-upload-documents-format-box{font-size:13px;color:var(--text-gray);}
+
+  /* Truora: encabezado con presencia */
+  .wl-modal-truora-head{gap:16px;margin-bottom:20px;}
+  .wl-modal-truora-head .wl-truora-icon{width:48px;height:48px;border-radius:14px;}
+  .wl-modal-truora-head .wl-truora-icon img{width:24px !important;height:24px !important;}
+  .wl-modal-truora-head h3{font-size:20px;}
+
+  /* Canales de envío: ícono suelto, WhatsApp con su verde oficial */
+  .wl-channel-list .ch{padding:16px 6px;gap:16px;border-radius:12px;}
+  .wl-channel-list .ch-ic{width:26px;height:26px;background:transparent;color:var(--ink);}
+  .wl-channel-list .ch-ic svg{width:22px;height:22px;}
+  .wl-channel-list .ch[onclick*="WhatsApp"] .ch-ic{color:#25D366;}
+  .wl-channel-list .ch-meta .t{font-size:15px;}
+  .wl-channel-list .ch-meta .s{font-size:13px;}
+
+  /* Listas de comprobación dentro de modales */
+  .wl-t-checklist{gap:12px;margin:4px 0 24px;}
+  .wl-t-checklist span{font-size:15px;color:var(--ink);align-items:flex-start;line-height:1.45;}
+  .wl-t-checklist svg{width:18px;height:18px;}
+
+  /* ═══ ESCRITORIO ═══ */
+  @media (min-width:769px){
+    /* Tracker: barra de tres segmentos con su etiqueta debajo de cada uno */
+    .wl-tracker{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+    .wl-step,.wl-step.done,.wl-step.current,.wl-step.invite,.wl-step.alert{
+      display:block;position:relative;padding:18px 0 0;border:0;border-radius:0;background:transparent;box-shadow:none;
+    }
+    .wl-step::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;border-radius:3px;background:var(--line);}
+    .wl-step.done::before{background:var(--success-green);}
+    .wl-step.current::before{background:var(--winland-orange);}
+    .wl-step.alert::before{background:var(--error-red);}
+    .wl-step.invite::before{background:#F8CAB2;background:color-mix(in srgb, var(--winland-orange) 34%, #fff);}
+    .wl-step .meta .t{font-size:14px;color:var(--text-gray);}
+    .wl-step.done .meta .t,.wl-step.current .meta .t,.wl-step.alert .meta .t{color:var(--ink);}
+    .wl-step .meta .s{font-size:13px;margin-top:4px;}
+    .wl-step.done .meta .s{color:var(--success-green);}
+    .wl-step.clickable:hover .meta .t{color:var(--winland-orange);}
+
+    /* Documentos a dos columnas: el divisor superior va en la primera fila de cada una */
+    .clmc-user-documents-grid{column-gap:40px;row-gap:0;}
+    .clmc-user-documents-grid > .clmc-user-document-item:nth-child(-n+2){border-top:1px solid var(--line-soft);}
+  }
+
+  /* ═══ MÓVIL ═══ */
+  @media (max-width:768px){
+    .wl-w-content{padding:22px 18px 30px;}
+    .wl-vh-title{font-size:21px;line-height:1.25;}
+    .wl-vh-sub{margin-bottom:26px;}
+
+    /* Tracker: barra de progreso + etiqueta del paso que pide atención */
+    .wl-tracker{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+      position:relative;margin:0 0 28px;padding-bottom:28px;
+    }
+    .wl-step,.wl-step.done,.wl-step.current,.wl-step.invite,.wl-step.alert{
+      display:block;height:6px;padding:0;border:0;border-radius:3px;
+      background:var(--line);position:static;box-shadow:none;transform:none;
+    }
+    .wl-step.done{background:var(--success-green);}
+    .wl-step.current{background:var(--winland-orange);}
+    .wl-step.alert{background:var(--error-red);}
+    /* Paso invitación: el naranja de marca atenuado. Relleno sólido, sin patrón:
+       se distingue del gris de "pendiente" y del naranja pleno de "actual" sin
+       meter texturas. La diferencia la termina de contar la etiqueta. */
+    .wl-step.invite{background:#F8CAB2;background:color-mix(in srgb, var(--winland-orange) 34%, #fff);}
+    .wl-step .meta{display:none;position:absolute;left:0;right:0;top:16px;}
+    .wl-step.current .meta,.wl-step.alert .meta,.wl-step.invite .meta{
+      display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+    }
+    /* Solo una etiqueta a la vez: la del primer paso que requiere atención */
+    .wl-step.current ~ .wl-step .meta,.wl-step.alert ~ .wl-step .meta{display:none;}
+    .wl-step .meta .t{font-size:14px;font-weight:600;color:var(--ink);}
+    .wl-step .meta .s{display:block;font-size:14px;margin:0;color:var(--text-gray);}
+    .wl-step .meta .s::before{content:'· ';color:var(--mid-gray);}
+    .wl-step.invite .meta .s{color:var(--winland-orange);}
+    .wl-step.alert .meta .s{color:var(--error-red);}
+
+    .wl-status-banner{padding-left:14px;margin-bottom:28px;}
+
+    .clmc-user-documents-grid{display:block;border-top:1px solid var(--line-soft);}
+    .clmc-user-document-item{padding:15px 0;}
+
+    .wl-truora-card{padding:20px;border-radius:18px;}
+    .wl-truora-card h2{font-size:19px;}
+    .wl-truora-card .badge{
+      position:absolute;top:0;right:16px;border-radius:0 0 10px 10px;padding:4px 10px 5px;font-size:11px;
+    }
+    .wl-upgrade-card{flex-direction:column;align-items:stretch;gap:16px;padding:20px;}
+    .wl-upgrade-card .clmc-btn-primary{width:100%;}
+    .wl-email-box{flex-direction:column;align-items:stretch;gap:14px;}
+
+    /* Modales a pantalla completa: título con más presencia */
+    .clmc-dialog h3{font-size:22px;line-height:1.25;}
+    .wl-req-line ul{grid-template-columns:1fr;}
+    .wl-guia-thumb{width:56px;height:56px;}
+
+    /* Truora paso 1: ícono grande arriba, título debajo. Con el botón anclado
+       abajo, el espacio intermedio se lee como intención y no como hueco. */
+    .wl-modal-truora-head{flex-direction:column;align-items:flex-start;gap:16px;margin-bottom:16px;padding-right:0;}
+    .wl-modal-truora-head .wl-truora-icon{width:56px;height:56px;border-radius:16px;}
+    .wl-modal-truora-head .wl-truora-icon img{width:28px !important;height:28px !important;}
+    .wl-modal-truora-head h3{font-size:24px;margin-bottom:6px !important;}
+  }
+
+  /* ═══ MODALES DE DOCUMENTO · la tarea primero ═══
+     Orden: tipo de documento → archivos → formato; después la ayuda
+     (requisitos, guías, dudas). En móvil se apila en ese orden; en escritorio,
+     tarea a la izquierda y ayuda en un panel a la derecha. */
+  .wl-mm-task,.wl-mm-help{min-width:0;}
+  .wl-mm-task .wl-doc-select{margin-bottom:16px;}
+  .clmc-upload-documents-grid.wl-slots{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+  .clmc-upload-document-drop-area.wl-slot{
+    flex-direction:row;align-items:center;justify-content:flex-start;text-align:left;gap:14px;
+    min-height:0;padding:12px 14px 12px 12px;border:1px solid var(--line);border-radius:16px;background:#fff;
+    font-size:15px;font-weight:600;color:var(--ink);
+  }
+  .clmc-upload-document-drop-area.wl-slot:hover{border-color:var(--winland-orange);background:#fff;}
+  .wl-slot-thumb{
+    width:44px;height:44px;border-radius:12px;background:var(--page-bg);color:var(--winland-orange);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:background .2s var(--ease), color .2s var(--ease);
+  }
+  .clmc-upload-document-drop-area.wl-slot .wl-slot-thumb svg{width:22px;height:22px;color:inherit;}
+  .wl-slot-meta{flex:1;min-width:0;}
+  .wl-slot-t{font-size:15px;font-weight:600;color:var(--ink);line-height:1.3;}
+  .wl-slot-s{font-size:13px;font-weight:500;color:var(--success-green);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wl-slot-s:empty{display:none;}
+  .wl-slot-cta{font-size:14px;font-weight:600;color:var(--winland-orange);flex-shrink:0;padding:8px 4px;}
+  .clmc-upload-document-drop-area.wl-slot.loaded{border-color:var(--line);background:#fff;cursor:pointer;}
+  .clmc-upload-document-drop-area.wl-slot.loaded .wl-slot-thumb{background:#E6F2E8;color:var(--success-green);}
+  .clmc-upload-document-drop-area.wl-slot.loaded .wl-slot-cta{color:var(--text-gray);}
+  @keyframes slotFlash{0%{box-shadow:0 0 0 0 rgba(46,125,50,.35)}100%{box-shadow:0 0 0 10px rgba(46,125,50,0)}}
+  .wl-slot-flash{animation:slotFlash .6s ease-out;}
+  .wl-mm .clmc-upload-documents-format-box{margin-top:0;}
+  .wl-mm-help .wl-req-line{margin-bottom:20px;}
+  .wl-mm-help .wl-guia-cta{background:#fff;margin-bottom:12px;}
+  .wl-mm-help .wl-modal-faq-line{margin:16px 0 0;}
+
+  @media (min-width:769px){
+    .clmc-dialog.wl-doc-modal{max-width:860px;}
+    .wl-mm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.92fr);gap:28px;align-items:start;}
+    .wl-mm-help{background:#FAFBFB;border:1px solid var(--line-soft);border-radius:16px;padding:20px;}
+    .wl-mm-help .wl-req-line ul{grid-template-columns:1fr;}
+    /* Acciones a la derecha, a su ancho natural */
+    .wl-doc-modal .clmc-upload-documents-actions{justify-content:flex-end;}
+    .wl-doc-modal .clmc-upload-documents-actions > button{flex:0 0 auto;min-width:168px;}
+  }
+  /* Escritorio amplio: modal de 1040px y panel de ayuda fijo de 456px. El ancho
+     sale de medir el título más largo de las guías ("Cómo tomar tu selfie con la
+     identificación", 259px a 14px): miniatura 60 + márgenes y flecha suman 390px
+     de tarjeta, y así título y descripción caben cada uno en una sola línea. La
+     fuente es la web font del sitio, así que la medida es la misma en cualquier
+     equipo. Debajo de 960px se conserva el reparto proporcional. */
+  @media (min-width:960px){
+    .clmc-dialog.wl-doc-modal{max-width:1040px;}
+    .wl-mm{grid-template-columns:minmax(0,1fr) 456px;gap:32px;}
+  }
+  @media (max-width:768px){
+    /* Los modales que en teléfono van a pantalla completa no llevan esquinas ni
+       sombra: el radio de 20px de la capa v2 aplica solo a los que flotan. */
+    .clmc-dialog.wl-doc-modal,.clmc-dialog.wl-truora-wide,.clmc-dialog.wl-modal-center{border-radius:0;box-shadow:none;}
+    .wl-mm-help{margin-top:28px;}
+    /* Requisitos a dos columnas: son frases cortas y en una sola columna dejaban
+       media pantalla vacía. Si alguna no cabe, parte en dos líneas dentro de su celda. */
+    .wl-mm-help .wl-req-line ul{grid-template-columns:1fr 1fr;gap:10px 14px;}
+    /* Respiro antes de la barra del botón. Con contenido largo, el margin-top:auto
+       de la barra vale cero y el último texto quedaba pegado a ella. */
+    .wl-doc-modal .wl-mm{margin-bottom:32px;}
+    /* Una sola acción: la X ya cierra, "Cancelar" sobraba */
+    .wl-doc-modal .clmc-upload-documents-actions .clmc-btn-primary-white{display:none;}
+  }
+
+  /* ═══ Vista de infografía dentro del modal ═══
+     Escritorio: imagen algo más contenida y con aire arriba y abajo; botón a su
+     ancho natural, centrado bajo la imagen. Móvil: título arriba, la imagen
+     centrada en el espacio disponible y el botón anclado abajo a lo ancho. */
+  .wl-m-guia .g-title{margin:0 0 24px;}
+  .wl-m-guia .wl-g-img{max-height:min(50vh, 460px);border-radius:14px;}
+  .wl-m-guia .wl-g-cta{display:flex;width:auto;min-width:280px;margin:28px auto 0;}
+  @media (max-width:768px){
+    .wl-doc-modal .wl-m-guia:not(.hide){padding-bottom:calc(20px + env(safe-area-inset-bottom));}
+    .wl-m-guia .g-title{margin-bottom:24px;}  /* igual al margen del botón: centrado exacto */
+    .wl-m-guia .wl-g-img{max-height:none;width:100%;margin:auto 0;}
+    .wl-m-guia .wl-g-cta{width:100%;min-width:0;margin:24px 0 0;flex-shrink:0;}
+  }
+
+  /* ═══ Botón de cerrar ═══
+     El círculo (#f5f7f7, 5px de relleno) va en el propio <svg>, con la X
+     negra que pasa a naranja al pasar el cursor. El contenedor es
+     transparente (solo área de toque), así la barra translúcida de los
+     modales no lo tapa. Aplica también al visor de infografías. */
+  .clmc-dialog .clmc-closeIcon-popup,
+  .clmc-dialog .clmc-closeIcon-popup:hover{background:transparent;box-shadow:none;}
+  .clmc-dialog .clmc-closeIcon-popup > svg{
+    width:24px !important;height:24px !important;box-sizing:content-box;padding:5px;
+    background:#f5f7f7;border-radius:100%;color:#000;cursor:pointer;transition:all 250ms ease-in-out;
+  }
+  .clmc-dialog .clmc-closeIcon-popup > svg:hover{color:var(--clmc-color-primary);}
+
+  /* ═══ Móvil: hojas de pantalla completa que nunca dejan hueco ═══
+     El alto sigue a la pantalla visible (100dvh) aunque el navegador esconda o
+     muestre su barra. Y el fondo del overlay es blanco: si en algún navegador
+     quedara una franja durante la transición, se ve blanca, nunca la página. */
+  @media (max-width:768px){
+    .wl-modal-overlay:has(.wl-doc-modal),.wl-modal-overlay:has(.wl-truora-wide),.wl-modal-overlay:has(.wl-modal-center){
+      top:0;left:0;right:0;bottom:auto;height:100vh;height:100dvh;background:#fff;
+      backdrop-filter:none;-webkit-backdrop-filter:none;
+    }
+    /* Regresar: solo el chevron, del mismo tamaño y a la misma altura que el
+       tache de cerrar (área de 40px, glifo de 24), sin círculo ni texto. El
+       texto se conserva para lectores de pantalla con font-size:0. */
+    .wl-t-back{
+      top:16px;left:12px;width:40px;height:40px;justify-content:center;gap:0;
+      font-size:0;color:#000;
+    }
+    .wl-t-back svg{width:24px;height:24px;stroke-width:2;}
+    .wl-t-back:hover{color:var(--clmc-color-primary);}
+  }
+
+  /* "Ver guía visual" en preguntas frecuentes: en móvil es un botón y va a lo
+     ancho, como el resto de las acciones en teléfono. */
+  @media (max-width:768px){
+    .wl-faq-guia{display:flex;width:100%;justify-content:center;padding:12px 14px;}
+  }

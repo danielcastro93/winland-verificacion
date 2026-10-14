@@ -1,0 +1,2229 @@
+<!DOCTYPE html>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+  WINLAND · MÓDULO DE VERIFICACIÓN DE CUENTA
+  ═══════════════════════════════════════════════════════════════════════════
+
+  QUÉ ES ESTE ARCHIVO
+  Prototipo funcional del rediseño del panel Mi cuenta → Verificación. Un
+  solo archivo HTML con los 15 estados del flujo, navegables e interactivos.
+  HTML, CSS y JavaScript sin framework, sin dependencias y sin build.
+
+  CÓMO NAVEGARLO
+  · Los botones ‹ › (abajo a la derecha) o las flechas ←/→ del teclado
+    recorren los 15 estados en orden de presentación.
+  · Toda la interfaz del módulo responde al clic: inicio de verificación,
+    canales, modales de carga, acordeones y preguntas frecuentes.
+
+  QUÉ ES SOLO DEMO (no va a producción)
+  · El navegador de estados ‹ › y las flechas del teclado (#stateNav,
+    tourGo, TOUR_STEPS).
+  · Las ligas "Actualizar estado", que aquí avanzan el flujo a mano.
+  · La carga de archivos: un clic en la fila simula el archivo cargado.
+  · La validación manual de identidad se muestra resuelta al momento solo
+    para poder recorrer el flujo; en la práctica la revisa una persona.
+  · El header, el footer y el menú inferior son el marco visual de la demo
+    (assets/emotion.css, assets/sitio.css, assets/marco.css). No forman
+    parte del módulo. El módulo es el bloque marcado como "MÓDULO
+    ENTREGABLE", dentro de <main class="wl-contenido">.
+
+  CONVENCIÓN DE NOMBRES
+  · .wl-*    componentes nuevos del módulo. Su CSS completo está en el
+             <style> de este archivo y, aislado, en
+             docs/winland-verificacion.delta.css.
+  · .clmc-*  clases con la nomenclatura del sitio. Lo que hay aquí sobre
+             ellas es solo el ajuste visual del módulo.
+
+  TOKENS (:root, al inicio del <style>)
+  · Bloque A: variables --clmc-* ya existentes, con un respaldo para que el
+    prototipo abra suelto.
+  · Bloque B: variables nuevas del módulo (paleta de apoyo y radios).
+
+  ESTADOS
+  Cada entrada del objeto `states` (JS, abajo) es una vista. El objeto TOUR
+  documenta la intención de cada una. Cada cambio de estado se dibuja desde
+  cero y empieza arriba de la página.
+
+  PUNTOS DE CONEXIÓN A BACKEND (buscar "API:" en el código)
+  · Estado de verificación del usuario  → decide qué estado renderizar
+  · "Iniciar verificación"              → crear sesión de verificación
+                                          biométrica (Truora)
+  · Envío de enlace WhatsApp/SMS        → teléfono registrado del usuario
+                                          (precargado y editable)
+  · Código QR                           → QR real de la sesión
+                                          (el actual es ilustrativo)
+  · "Actualizar estado"                 → re-consultar la validación
+  · Filas de carga de documentos        → upload y validación de archivos
+
+  REGLAS DE NEGOCIO
+  · Tres niveles de verificación:
+      Sin verificar                        → no puede retirar
+      Pre-verificada (identidad+domicilio) → retira en salas físicas
+      Verificada (+ cuenta bancaria)       → retira por depósito directo
+    El backend debe exponer el nivel alcanzado (none | pre-verified |
+    verified) para decidir qué estado renderizar.
+  · Orden de pasos: 1 Identidad · 2 Domicilio · 3 Cuenta bancaria. El paso 3
+    no bloquea el retiro: es una mejora del método de cobro y se comunica
+    con `.wl-step.invite` y `.wl-upgrade-card`, nunca como error.
+  · La identidad es el ancla: domicilio y cuenta bancaria quedan bloqueados
+    hasta que el paso 1 esté validado (lo controla `docGrid()`).
+  · La identidad admite dos vías, rastreadas por `idMethod`:
+      'truora'  → biométrica: truora-modal → confirmando → exito-biometria
+                  → validada.
+      'manual'  → carga de identificación + selfie: modal-identidad →
+                  validada.
+    Mientras la biometría está en proceso, la carga manual de identidad
+    queda deshabilitada; por correo solo se reciben domicilio y estado de
+    cuenta.
+  · Cerrar un modal de documentos regresa a la pantalla previa. Solo cerrar
+    el modal biométrico lleva a "Verificación interrumpida".
+
+  ASSETS
+  · assets/sitio/        → logo, fuente, íconos del header, footer y menú
+                           inferior, y los 12 íconos de documento
+                           (email/identify/bank/other × verified/pending/
+                           denied).
+  · assets/infografias/  → guías visuales: tres temas, cada uno en versión
+                           apaisada para escritorio y vertical para móvil
+                           (sufijo -movil). Para actualizar, sobrescribir
+                           con el mismo nombre.
+  · assets/meta/         → favicon e imagen de vista previa de la liga.
+═══════════════════════════════════════════════════════════════════════════ -->
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Verificación de cuenta | Winland</title>
+<meta name="description" content="Verifica tu identidad, tu domicilio y tu cuenta bancaria en Winland para activar tus retiros y recibirlos por depósito directo." />
+<!-- Área privada de Mi cuenta: no se indexa ni se siguen sus enlaces -->
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#E85B10" />
+<meta name="format-detection" content="telephone=no" />
+<link rel="icon" type="image/png" sizes="64x64" href="assets/meta/favicon.png">
+<link rel="apple-touch-icon" href="assets/meta/apple-touch-icon.png">
+<!-- Vista previa al compartir el enlace (WhatsApp, Slack, correo) -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Winland" />
+<meta property="og:locale" content="es_MX" />
+<meta property="og:title" content="Verificación de cuenta | Winland" />
+<meta property="og:description" content="Verifica tu identidad, tu domicilio y tu cuenta bancaria para activar tus retiros." />
+<meta property="og:url" content="https://danielcastro93.github.io/winland-verificacion/" />
+<meta property="og:image" content="https://danielcastro93.github.io/winland-verificacion/assets/meta/og-verificacion.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Winland, centro de verificación" />
+<meta name="twitter:card" content="summary_large_image" />
+<!-- Marco de la demo (header, footer y menú inferior). Van antes de la hoja
+     del módulo para que esta ajuste sobre ellas. -->
+<link rel="stylesheet" href="assets/emotion.css">
+<link rel="stylesheet" href="assets/sitio.css">
+<link rel="stylesheet" href="assets/marco.css">
+<style>
+  /* Fuente del sitio (Denim INK, variable) */
+  @font-face{
+    font-family:'winland';
+    src:url('assets/sitio/winland-font.ttf') format('truetype');
+    font-weight:300 900; /* fuente variable: habilita los pesos intermedios */
+  }
+  /* ===================================================================
+     TOKENS
+
+     Dos bloques:
+
+     A) HEREDADOS. Variables --clmc-* del sitio, con un respaldo para que el
+        prototipo abra suelto. Al montarse heredan solas.
+
+     B) NUEVOS. Variables propias del módulo (paleta de apoyo y radios).
+        Hay que darlas de alta junto con las demás variables del sitio.
+     =================================================================== */
+  :root{
+    /* ── A) Heredados: variables --clmc-* del sitio ──────────────────── */
+    --winland-orange:var(--clmc-color-primary, #E85B10);
+    --white:          var(--clmc-bg-primary, #FFFFFF);
+    --surface:        var(--clmc-bg-primary, #FFFFFF);
+    --mid-gray:       var(--clmc-color-quinary, #ADADAD);
+    --success-green:  var(--clmc-bg-color-success, #2E7D32);
+    --error-red:      var(--clmc-bg-color-error, #D32F2F);
+    --info-blue:      var(--clmc-bg-color-info, #0288D1);
+    --radius:         var(--clmc-border-radius-large, 12px);
+    --radius-sm:      var(--clmc-border-radius-small, 8px);
+
+    /* ── B) Nuevos: variables propias del módulo ─────────────────────── */
+    --orange-dark:#C2480C;      /* hover del primario */
+    --orange-tint:#FCE9DD;      /* fondo suave de la marca */
+    --ink:#1F1F1F;              /* texto principal. Deliberadamente NO es
+                                   --clmc-color-tertiary (#000): el negro puro
+                                   endurece bloques largos de texto */
+    --page-bg:#F4F6F7;          /* ≡ fondo de .clmc-profile-menu */
+    --line:#E4E7EA;
+    --line-soft:#ECEEF0;
+    --text-gray:#5B6470;        /* texto secundario */
+    --text-faint:#8A8A8A;       /* texto terciario */
+    --success-bg:#E7F5EA;
+    --warning-bg:#FFF1E5;
+    --error-bg:#FBEAE8;
+    --info-bg:#E9F1FB;
+    --radius-lg:16px;           /* tarjeta del módulo */
+    --shadow-card:0 1px 2px rgba(20,20,22,.04), 0 8px 24px rgba(20,20,22,.05);
+    --shadow-pop:0 24px 60px rgba(15,15,18,.28);
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{-webkit-font-smoothing:antialiased;}
+  body{
+    font-family:'winland',-apple-system,sans-serif;
+    background:#dde1e4;
+    color:var(--ink);
+    font-size:var(--clmc-text-small, 14px);
+  }
+  h1,h2,h3{font-family:'winland',sans-serif;letter-spacing:-0.01em;}
+  svg{display:block;}
+  .icon{width:1em;height:1em;flex-shrink:0;}
+
+  /* ===== Contenedor del módulo ===== */
+  .wl-w-body{background:#fff;padding:40px;}
+  /* Tarjeta del módulo: radio 16, sombra sutil */
+  .clmc-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px 0 rgba(0,0,0,.12);}
+  /* Tabs (Mi cuenta / Historial / Bonos / Juego responsable) */
+  .wl-w-tabs{display:flex;background:#f4f6f7;align-items:stretch;}
+  .wl-w-tab{
+    padding:12px 20px;font-weight:600;font-size:var(--clmc-text-medium, 16px);color:#000;font-family:'winland',sans-serif;
+    cursor:default;display:flex;align-items:center;transition:background .15s var(--ease);
+  }
+  #miCuentaTab,#faqTab,#verifSub{cursor:pointer;}
+  .wl-w-tab:not(.active):hover{background:rgba(0,0,0,.06);}
+  .wl-w-tab.active{background:#e05f22;color:#fff;}
+
+  /* Subtabs (Cuenta / Verificación / Contraseña) */
+  .wl-w-subtabs{display:flex;gap:0;padding:0 12px;border-bottom:1px solid #8a8a8a;background:transparent;
+    font-size:var(--clmc-text-xsmall, 12px);font-weight:600;color:#8a8a8a;letter-spacing:.02em;text-transform:uppercase;font-family:'winland',sans-serif;}
+  .wl-w-subtabs .sub{padding:0 16px;min-height:48px;display:flex;align-items:center;cursor:default;position:relative;transition:background .15s var(--ease);}
+  .wl-w-subtabs .sub:hover{background:rgba(0,0,0,.04);}
+  .wl-w-subtabs .sub.active{color:#000;background:rgba(255,255,255,.8);}
+  .wl-w-subtabs .sub.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--winland-orange);}
+
+  .wl-w-content{padding:32px;}
+
+  /* ===== Verification module ===== */
+  .wl-vh-title{font-weight:700;color:var(--ink);margin:0;}
+  .wl-vh-sub{color:var(--text-gray);max-width:none;}
+
+  /* progress tracker */
+
+  .wl-step{
+    flex:1;
+    align-items:center;gap:12px;
+  }
+
+  /* Paso opcional (mejora, no requisito): no compite con el paso actual */
+
+  .wl-step.invite .meta .s{color:var(--winland-orange);}
+
+  .wl-step.alert .meta .s{color:var(--error-red);}
+  .wl-step .meta{flex:1;min-width:0;}
+  .wl-step .meta .t{font-weight:600;}
+  .wl-step .meta .s{color:var(--text-gray);line-height:1.35;}
+
+  /* truora hero card */
+  .wl-truora-card{
+    background:#fff;
+
+    color:var(--ink);position:relative;
+
+  }
+  .wl-truora-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+  .wl-truora-id{display:flex;align-items:center;gap:12px;}
+  /* Caja blanca cuadrada con el ícono de Truora en negro */
+  .wl-truora-icon{
+    width:38px;height:38px;border-radius:8px;background:#fff;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    border:1px solid rgba(0,0,0,.08);
+  }
+
+  .wl-truora-name{font-size:var(--clmc-text-medium, 16px);font-weight:700;letter-spacing:-0.005em;color:var(--ink);}
+  .wl-truora-tagline{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);margin-top:3px;}
+  .wl-truora-card .badge{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:var(--clmc-text-xsmall, 12px);flex-shrink:0;
+    position:relative;overflow:hidden;
+  }
+
+  .wl-truora-card h2{font-weight:700;color:var(--ink);}
+  .wl-truora-card p{color:var(--text-gray);line-height:1.6;max-width:none;margin-bottom:16px;white-space:nowrap;}
+  .wl-truora-benefits{display:flex;flex-direction:column;gap:10px;margin:0 0 22px;}
+  .wl-truora-benefits span{font-weight:500;color:var(--ink);display:flex;align-items:center;gap:9px;}
+  .wl-truora-benefits svg{width:16px;height:16px;color:var(--success-green);flex-shrink:0;}
+  /* .clmc-btn-primary: solo el acomodo interno. Fondo, color, alto, radio,
+     peso, tamaño y hover vienen de la clase base. */
+  .clmc-btn-primary{
+    padding:0 40px;cursor:pointer;width:auto;
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    font-family:inherit;letter-spacing:-0.005em;
+  }
+  .clmc-btn-primary:disabled{background:#d1d1d1 !important;color:#adadad;cursor:default;filter:none;opacity:1;}
+
+  .wl-alt-toggle{
+    display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:10px;
+    font-weight:600;
+    transition:background .15s var(--ease);
+  }
+
+  /* Módulo aún no habilitado por Back Office: se puede abrir para entender qué es,
+     pero su acción está deshabilitada */
+
+  .wl-alta-toggle span{display:flex;align-items:center;gap:8px;}
+  .wl-alta-toggle.is-locked{color:var(--text-faint);}
+  .wl-alta-toggle.is-locked svg:not(.wl-chev-down){width:15px;height:15px;flex-shrink:0;}
+  .wl-email-box button[disabled]{opacity:.5;cursor:not-allowed;pointer-events:none;}
+  .wl-alt-toggle svg.wl-chev-down{width:16px;height:16px;color:var(--text-faint);flex-shrink:0;transition:transform .2s var(--ease);}
+  .wl-alt-toggle.open svg.wl-chev-down{transform:rotate(180deg);}
+  .wl-alt-panel{
+
+    display:flex;flex-direction:column;
+  }
+  .wl-alt-note{color:var(--text-gray);margin-bottom:4px;}
+
+  .clmc-user-documents-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .clmc-user-document-item{
+    display:flex;align-items:center;
+
+  }
+
+  .clmc-user-document-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+  /* Color del ícono por estado */
+  .clmc-user-document-icon.st-verified{color:var(--success-green);}
+  .clmc-user-document-icon.st-pending,.clmc-user-document-icon.st-progress{color:var(--winland-orange);}
+  .clmc-user-document-icon.st-rejected{color:var(--error-red);}
+
+  .wl-doc-meta{flex:1;min-width:0;}
+  .wl-doc-meta .t{font-weight:600;color:var(--ink);line-height:1.3;}
+  .wl-doc-meta .s{line-height:1.4;}
+  .s-pending{color:var(--text-gray);}
+  .s-verified{color:var(--success-green);}
+  .s-progress{color:var(--winland-orange);}
+  .s-rejected{color:var(--error-red);}
+  .s-blocked{color:var(--text-faint);}
+
+  .wl-chev{flex-shrink:0;}
+
+  /* Tarjeta de mejora: convierte el paso 3 en beneficio ("olvídate de las filas") */
+  .wl-upgrade-card{
+    display:flex;align-items:center;justify-content:space-between;gap:18px;
+
+  }
+  .wl-upgrade-card .t{font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .wl-upgrade-card .s{color:var(--text-gray);line-height:1.5;}
+  .wl-email-box{
+
+    display:flex;justify-content:space-between;align-items:center;gap:16px;
+  }
+  .wl-email-box .t{font-weight:600;margin-bottom:6px;display:flex;align-items:flex-start;gap:7px;line-height:1.4;}
+  .wl-email-box .t svg{width:14px;height:14px;color:var(--text-faint);flex-shrink:0;margin-top:2px;}
+
+  .wl-email-box .s{color:var(--text-gray);line-height:1.6;}
+  /* .clmc-btn-primary-white: solo el acomodo interno. Contorno, color, fondo,
+     radio y hover vienen de la clase base. */
+  .clmc-btn-primary-white{
+    padding:10px 18px;cursor:pointer;white-space:nowrap;
+    font-family:inherit;display:flex;align-items:center;gap:7px;justify-content:center;
+  }
+  .clmc-btn-primary-white svg{width:15px;height:15px;}
+
+  .wl-status-banner{
+    display:flex;
+  }
+  .wl-status-banner .ic{border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+  .wl-status-banner .t{font-weight:600;color:var(--ink);}
+  .wl-status-banner .s{color:var(--text-gray);}
+   .wl-status-banner.success .ic{color:var(--success-green);}
+   .wl-status-banner.error .ic{color:var(--error-red);}
+   .wl-status-banner.info .ic{color:var(--info-blue);}
+  .wl-status-banner .cta{margin-top:10px;}
+  .wl-status-banner .cta a{color:var(--winland-orange);font-weight:600;font-size:13px;cursor:pointer;}
+  /* Enlace embebido en la frase del banner: evita una línea extra de CTA */
+
+  /* FAQ */
+  .wl-faq-cats{display:flex;gap:9px;margin-bottom:34px;flex-wrap:wrap;}
+  .wl-faq-cat{padding:9px 16px;border-radius:20px;font-size:13px;font-weight:600;background:var(--page-bg);color:#3a4047;border:1px solid transparent;}
+  .wl-faq-cat.active{background:var(--winland-orange);color:#fff;}
+  .wl-faq-item{border-bottom:1px solid var(--line-soft);padding:19px 4px;}
+  .wl-faq-item:first-child{padding-top:0;}
+  .wl-faq-q{font-size:var(--clmc-text-medium, 16px);font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--ink);padding-right:8px;line-height:1.4;}
+  .wl-faq-q svg{width:16px;height:16px;color:var(--text-faint);}
+  .wl-faq-a-tx{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);padding-top:11px;line-height:1.7;padding-right:48px;}
+
+  /* Modal */
+  /* Modales a pantalla completa (sobre todo el sitio, no solo el módulo) */
+  .wl-modal-overlay{
+    position:fixed;inset:0;
+    display:flex;align-items:center;justify-content:center;padding:24px;
+    /* Por encima del header fijo (z-index 1100) */
+    z-index:1200;
+  }
+  .clmc-dialog{
+    background:#fff;max-width:480px;width:100%;padding:28px;position:relative;
+    max-height:88%;overflow-y:auto;
+  }
+  /* Modales de documento: layout horizontal en escritorio */
+  .clmc-dialog.wl-doc-modal{max-width:820px;}
+  .wl-doc-modal{max-height:92%;}
+  /* Modal de Truora: canales a 2 columnas en escritorio */
+  .clmc-dialog.wl-truora-wide{max-width:640px;}
+  /* ═══ BARRA SUPERIOR DE LOS MODALES ═══
+     Todos los modales con barra reservan una zona superior FIJA vía padding-top
+     (barra 64px + gap 20px). El primer contenido siempre arranca en el mismo
+     punto: cero márgenes por caso. Desktop: 84px · Mobile: 82px. */
+  /* El modal NO scrollea: el scroll vive en el cuerpo (.wl-m-main/.wl-m-guia/.wl-t-step).
+     Así el header (✕, Regresar, barra) es absoluto y queda fijo sin trucos. */
+  .clmc-dialog.wl-doc-modal,.clmc-dialog.wl-truora-wide{
+    overflow:hidden;display:flex;flex-direction:column;
+    padding:84px 0 0; /* 64 barra + 20 gap; laterales los da el cuerpo */
+  }
+  .wl-doc-modal .wl-m-main,.wl-doc-modal .wl-m-guia,.wl-truora-wide .wl-t-step{
+    overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;padding:0 28px 28px;
+    scrollbar-width:none; /* scrollbar overlay estilo app: la clásica roba ancho y
+                             provoca scroll horizontal cuando el contenido calza exacto */
+  }
+  .wl-doc-modal .wl-m-main::-webkit-scrollbar,.wl-doc-modal .wl-m-guia::-webkit-scrollbar,
+  .wl-truora-wide .wl-t-step::-webkit-scrollbar{display:none;}
+  .wl-doc-modal .wl-m-main{padding-bottom:0;} /* su respiro inferior lo da la franja de acciones */
+  .wl-doc-modal .clmc-closeIcon-popup::before,.wl-truora-wide .clmc-closeIcon-popup::before{
+    content:'';position:absolute;top:-17px;right:-28px;width:100vw;height:64px;
+    background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(0,0,0,.05);z-index:-1;pointer-events:none;
+  }
+  .clmc-dialog.wl-doc-modal .clmc-closeIcon-popup,.clmc-dialog.wl-truora-wide .clmc-closeIcon-popup{
+    position:absolute;top:17px;right:28px;margin:0;box-shadow:none;
+  }
+  /* El gap lo da el padding del modal: el primer contenido no aporta margen propio */
+  .wl-doc-modal .wl-m-main > :first-child,.wl-doc-modal .wl-m-guia > :first-child,
+  .wl-truora-wide .wl-t-step > :first-child,.wl-t-back + *{margin-top:0 !important;}
+  .wl-modal-truora-head h3{margin-top:0;}
+  @media (min-width:769px){
+    .wl-truora-wide .wl-channel-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  }
+  /* Línea de requisitos: discreta, escaneable, una sola línea */
+  .wl-req-line{
+    align-items:flex-start;gap:8px;
+    line-height:1.5;
+  }
+  .wl-req-line svg{width:15px;height:15px;color:var(--success-green);flex-shrink:0;margin-top:1px;}
+  .wl-req-line b{color:var(--ink);}
+  .clmc-dialog .clmc-closeIcon-popup{
+    position:sticky;top:0;margin-left:auto;margin-bottom:-32px;width:32px;height:32px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;color:var(--ink);cursor:pointer;
+    z-index:6; /* halo para leerse sobre contenido al hacer scroll */
+    transition:background .15s var(--ease);
+  }
+
+  /* El círculo de fondo del botón de cerrar lo pinta el propio <svg>
+     (.clmc-closeIcon-popup). El contenedor solo hace de área de toque. */
+
+  .clmc-dialog h3{font-weight:700;margin:22px 0 14px;padding-right:44px;color:var(--ink);}
+  .clmc-dialog .lead{color:var(--text-gray);}
+  /* Tres columnas: los tres archivos de identidad caben en una línea y se leen
+     como lo que son, tres piezas del mismo trámite. Con una sola caja, .full
+     la hace ocupar el ancho completo. */
+  .clmc-upload-documents-grid{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:14px;}
+  .clmc-upload-document-drop-area{
+    padding:20px 12px;text-align:center;font-size:var(--clmc-text-small, 14px);
+    font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    min-height:148px;
+  }
+  .clmc-upload-document-drop-area svg{width:26px;height:26px;}
+
+  /* Modal Truora: lista de canales limpia */
+  .wl-modal-truora-head{display:flex;align-items:center;padding-right:34px;}
+  .wl-modal-truora-head .wl-truora-icon{border:1px solid var(--line);}
+  .wl-channel-list{border-top:1px solid var(--line-soft);}
+  .wl-channel-list .ch{
+    display:flex;align-items:center;border-bottom:1px solid var(--line-soft);
+    cursor:pointer;transition:background .12s var(--ease);
+  }
+  .wl-channel-list .ch:hover{background:var(--page-bg);}
+  .wl-channel-list .ch-ic{
+    border-radius:8px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+
+  .wl-channel-list .ch-meta{flex:1;min-width:0;}
+  .wl-channel-list .ch-meta .t{font-weight:600;color:var(--ink);}
+  .wl-channel-list .ch-meta .s{color:var(--text-gray);margin-top:3px;line-height:1.4;}
+  .wl-channel-list .ch > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
+  .clmc-upload-documents-format-box{margin-top:16px;text-align:center;line-height:1.55;}
+
+    /* Acciones fijas al fondo: siempre a la mano aunque el contenido tenga scroll */
+  .clmc-upload-documents-actions{
+    display:flex;gap:10px;position:sticky;bottom:0;z-index:4;
+    margin:18px -28px 0;padding:14px 28px 18px;
+    background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-top:1px solid rgba(0,0,0,.06);
+  }
+  .clmc-upload-documents-actions .clmc-btn-primary-white{flex:1;}
+  /* .clmc-btn-disabled: fondo, color y métricas vienen de la clase base. */
+  .clmc-btn-disabled{flex:1;cursor:default;font-family:inherit;}
+
+  /* FAQ funcional: acordeón, categorías clickeables, interlinks */
+  .wl-faq-cat{cursor:pointer;transition:background .15s var(--ease);}
+  .wl-faq-cat:not(.active):hover{background:#e8ebed;}
+  .wl-faq-q{cursor:pointer;}
+  .wl-faq-item .wl-faq-a{
+    display:grid;grid-template-rows:0fr;opacity:0;
+    transition:grid-template-rows .34s var(--ease), opacity .2s var(--ease);
+  }
+  .wl-faq-item.open .wl-faq-a{grid-template-rows:1fr;opacity:1;transition-delay:0s,.06s;}
+  .wl-faq-a-in{overflow:hidden;min-height:0;}
+  .wl-faq-item.open .wl-faq-q svg{transform:rotate(45deg);}
+  .wl-faq-q svg{transition:transform .34s var(--ease);flex-shrink:0;}
+  @media (prefers-reduced-motion:reduce){
+    .wl-faq-item .wl-faq-a{transition:none;}
+    .wl-faq-q svg{transition:none;}
+  }
+  .wl-faq-group.hide{display:none;}
+  .wl-faq-link{color:var(--winland-orange);font-weight:600;cursor:pointer;}
+  .wl-faq-link:hover{text-decoration:underline;}
+  /* Subdivisión dentro de una categoría (la tabla autorizada separa Retiros y Depósito) */
+  .wl-faq-sub{
+    font-size:var(--clmc-text-xsmall, 12px);font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--text-faint);margin:6px 0 2px;padding-bottom:10px;
+  }
+  .wl-faq-item + .wl-faq-sub{margin-top:26px;}
+  /* Listas y párrafos dentro de una respuesta */
+  .wl-faq-lista{margin:8px 0 0;padding-left:18px;list-style:disc;}
+  .wl-faq-lista li{margin-bottom:5px;line-height:1.6;}
+  .wl-faq-lista li:last-child{margin-bottom:0;}
+  .wl-faq-lista b{color:var(--ink);font-weight:600;}
+  .wl-faq-a .wl-faq-p{margin-top:10px;}
+  /* Acceso a la infografía: va debajo del texto autorizado, sin alterarlo */
+  .wl-faq-guia{
+    display:inline-flex;align-items:center;gap:7px;margin-top:13px;
+    border:1px solid var(--line);border-radius:8px;padding:8px 13px;
+    font-size:13px;font-weight:600;color:var(--winland-orange);
+    cursor:pointer;transition:background .15s var(--ease),border-color .15s var(--ease);
+  }
+  .wl-faq-guia:hover{background:var(--orange-tint);border-color:var(--winland-orange);}
+  .wl-faq-guia svg{width:15px;height:15px;flex-shrink:0;}
+
+  @media (max-width:768px){
+    .wl-faq-item{padding:22px 2px;}
+    .wl-faq-q{gap:14px;line-height:1.45;}
+    .wl-faq-a-tx{padding-top:12px;}
+  }
+
+  /* Flujo Truora multi-paso */
+  .wl-t-step.hide{display:none;}
+  .wl-t-back{
+    position:absolute;top:20px;left:28px;z-index:7;margin:0;padding:0;
+    display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--text-gray);
+    cursor:pointer;width:fit-content;
+  }
+  .wl-t-back svg{width:13px;height:13px;transform:rotate(180deg);}
+  .wl-t-back:hover{color:var(--ink);}
+  .wl-channel-list .ch.selected{background:var(--orange-tint);border-radius:8px;}
+  .wl-t-phone{margin-top:16px;border-top:1px solid var(--line-soft);padding-top:16px;}
+  .wl-t-phone.hide{display:none;}
+  .wl-tp-label{font-size:13px;color:var(--text-gray);margin-bottom:10px;}
+  .wl-tp-row{display:flex;align-items:center;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px;}
+  .wl-tp-row:focus-within{border-color:var(--winland-orange);}
+  .wl-tp-flag{padding:12px 12px;background:var(--page-bg);font-size:var(--clmc-text-small, 14px);font-weight:600;border-right:1px solid var(--line-soft);white-space:nowrap;}
+  .wl-tp-row input{flex:1;border:none;outline:none;padding:12px 14px;font-size:var(--clmc-text-small, 14px);font-family:inherit;color:var(--ink);letter-spacing:.03em;}
+  .wl-tp-hint{font-size:var(--clmc-text-xsmall, 12px);color:var(--text-faint);line-height:1.45;margin-bottom:16px;}
+  .wl-t-checklist{display:flex;flex-direction:column;}
+  .wl-t-checklist span{display:flex;gap:9px;}
+  .wl-t-checklist svg{color:var(--success-green);flex-shrink:0;}
+  .wl-qr-title,.wl-qr-lead{text-align:center;}
+  @media (max-width:768px){ .wl-qr-title,.wl-qr-lead{text-align:left;} }
+  .wl-qr-box{width:190px;height:190px;margin:6px auto 10px;padding:12px;border:1px solid var(--line-soft);border-radius:12px;background:#fff;}
+  .wl-qr-box svg{width:100%;height:100%;display:block;}
+
+  /* Checkbox de consentimiento (modal Truora) */
+  .wl-consent-check{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--text-gray);line-height:1.55;margin:8px 0 20px;cursor:pointer;}
+  .wl-consent-check input{width:17px;height:17px;margin:1px 0 0;accent-color:var(--winland-orange);flex-shrink:0;cursor:pointer;}
+  .wl-consent-check b{color:var(--ink);}
+
+  /* Modal de documentos v2: selector, guía visual, línea FAQ */
+
+  .wl-doc-select label{display:block;font-weight:600;color:var(--ink);margin-bottom:8px;}
+  .wl-doc-select select{
+    width:100%;
+    font-family:inherit;color:var(--ink);background:#fff;appearance:none;cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%235B6470' stroke-width='2' fill='none'/></svg>");
+    background-repeat:no-repeat;background-position:right 14px center;
+  }
+  .wl-doc-select select:focus{outline:none;border-color:var(--winland-orange);}
+  /* Tarjeta de guía visual: abre lightbox — misma UI en desktop y mobile */
+  .wl-guia-cta{
+    display:flex;align-items:center;border:1px solid var(--line);
+    cursor:pointer;background:#fff;
+    transition:border-color .15s var(--ease), background .15s var(--ease);
+  }
+  .wl-guia-cta:hover{border-color:var(--winland-orange);background:#FFFBF8;}
+  .wl-guia-thumb{object-fit:cover;border:1px solid var(--line-soft);flex-shrink:0;}
+  .wl-guia-cta span{flex:1;display:flex;flex-direction:column;line-height:1.3;}
+  .wl-guia-cta span b{color:var(--ink);}
+
+  .wl-guia-cta > svg{width:15px;height:15px;color:var(--mid-gray);flex-shrink:0;}
+  .wl-modal-faq-line{font-size:13px;color:var(--text-gray);margin:14px 0 16px;}
+
+  /* Vista de guía interna del modal */
+  .wl-m-main.hide,.wl-m-guia.hide{display:none;}
+  .wl-m-guia picture{display:contents;}   /* la imagen sigue siendo hija directa del acomodo */
+  .wl-m-guia .wl-g-img{display:block;max-width:100%;width:auto;margin:0 auto;border:1px solid var(--line-soft);}
+
+  /* Línea de ayuda de selfie (fuera del dropzone) */
+  /* Botón "Subir" habilitado: conserva la clase base para no deformarse en mobile */
+  /* Formulario completo. En la implementación basta cambiar la clase de
+     clmc-btn-disabled a clmc-btn-primary; el !important existe solo porque
+     el prototipo no intercambia clases desde el estado del componente. */
+  .clmc-btn-disabled.wl-ready{background:var(--winland-orange) !important;color:#fff !important;cursor:pointer;}
+  .clmc-btn-disabled.wl-ready:hover{filter:brightness(1.1);opacity:.8;}
+
+  /* ── Interacciones v2 ── */
+  /* Zonas de carga clickeables (simulan la selección de archivo) */
+  .clmc-upload-document-drop-area{cursor:pointer;transition:border-color .15s var(--ease), background .15s var(--ease);}
+
+  .clmc-upload-document-drop-area.loaded{cursor:default;}
+
+  /* Éxito: la palomita entra con pop, dibuja su trazo y emite una onda */
+  @keyframes popIn{0%{transform:scale(.35);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+  @keyframes ringSuccess{0%{box-shadow:0 0 0 0 rgba(46,125,50,.4)}100%{box-shadow:0 0 0 16px rgba(46,125,50,0)}}
+  @keyframes drawStroke{to{stroke-dashoffset:0}}
+  .wl-pop-check{
+    width:64px;height:64px;border-radius:50%;margin:4px auto 18px;color:var(--success-green);
+    animation:popIn .45s var(--ease) both, ringSuccess .8s .4s ease-out both;
+  }
+  .wl-pop-check svg{width:100%;height:100%;}
+  /* El trazo de la palomita se dibuja; los discos del badge entran con el pop */
+  .wl-pop-check svg path{stroke-dasharray:14;stroke-dashoffset:14;animation:drawStroke .34s .3s ease-out forwards;}
+
+  /* Pasos del tracker y filas de documento que llevan a una acción */
+  .wl-step.clickable{cursor:pointer;}
+  .clmc-user-document-item.wl-row-action,.clmc-user-document-item.wl-row-alert{cursor:pointer;}
+
+  /* FAQ hint footer */
+  .wl-faq-hint{
+
+    display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;
+  }
+
+  .wl-faq-hint span{font-size:var(--clmc-text-small, 14px);color:var(--text-gray);}
+  .wl-faq-hint a{
+    color:var(--winland-orange);font-weight:700;cursor:pointer;text-decoration:none;
+  }
+  .wl-faq-hint a:hover{text-decoration:underline;}
+
+  .hide{display:none !important;}
+
+  /* ═══════════ RESPONSIVE (media queries) ═══════════ */
+  @media (max-width:768px){
+    .wl-w-body{padding:0;}
+    .clmc-card{border-radius:0;box-shadow:none;}
+    .wl-w-tabs{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .wl-w-tabs::-webkit-scrollbar{display:none;}
+    .wl-w-tab{font-size:13px;padding:12px 14px;white-space:nowrap;flex-shrink:0;}
+    .wl-w-subtabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 8px;}
+    .wl-w-subtabs::-webkit-scrollbar{display:none;}
+    .wl-w-subtabs .sub{white-space:nowrap;flex-shrink:0;padding:0 12px;}
+
+    .wl-tracker{flex-direction:column;}
+    .wl-step{gap:9px;}
+
+    .wl-step.current .meta .s,.wl-step.alert .meta .s,.wl-step.invite .meta .s{display:block;font-size:11px;}
+    .wl-truora-card p{white-space:normal;}
+    /* Chip "Recomendado" como listón colgado del borde superior: no consume una línea */
+    .wl-truora-head{flex-wrap:nowrap;margin-bottom:14px;}
+
+    .clmc-btn-primary{width:100%;}
+    .clmc-user-documents-grid{grid-template-columns:1fr;}
+    /* Tarjeta de mejora: convierte el paso 3 en beneficio ("olvídate de las filas") */
+  .wl-upgrade-card{
+    display:flex;justify-content:space-between;
+
+  }
+  .wl-upgrade-card .t{font-weight:600;color:var(--ink);margin-bottom:4px;}
+  .wl-upgrade-card .s{color:var(--text-gray);line-height:1.5;}
+
+    .wl-email-box .clmc-btn-primary-white{width:100%;}
+    .clmc-dialog{padding:20px;}
+    /* Categorías de FAQ: scroll horizontal, una sola línea */
+    .wl-faq-cats{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:26px;padding-bottom:0;}
+    .wl-faq-cats::-webkit-scrollbar{display:none;}
+    .wl-faq-cat{white-space:nowrap;flex-shrink:0;}
+    .wl-faq-a-tx{padding-right:24px;}
+    /* Acciones de modal apiladas: primario arriba, ancho completo */
+    .clmc-upload-documents-actions{
+      flex-direction:column-reverse;gap:9px;
+      bottom:0;margin:16px -18px 0;padding:12px 18px calc(14px + env(safe-area-inset-bottom));
+    }
+    .clmc-upload-documents-actions .clmc-btn-primary-white,.clmc-upload-documents-actions .clmc-btn-disabled{width:100%;flex:none;padding-top:12px;padding-bottom:12px;}
+    /* Texto de dudas/preguntas alineado a la izquierda en mobile */
+
+    .wl-upgrade-card button{width:100%;}
+    .wl-faq-hint{justify-content:flex-start;text-align:left;}
+    body{padding-bottom:70px;}
+    /* Modales cortos (confirmación, selector de canal): centrados con margen */
+    .wl-modal-overlay{padding:16px;align-items:center;}
+    .clmc-dialog{max-width:100%;width:100%;max-height:90%;}
+    .clmc-dialog h3{margin-top:28px;}
+    /* Modales de carga de documentos (largos): a pantalla completa, tipo hoja */
+    .wl-modal-overlay:has(.wl-doc-modal),.wl-modal-overlay:has(.wl-truora-wide),.wl-modal-overlay:has(.wl-modal-center){padding:0;align-items:stretch;}
+    .wl-doc-modal,.clmc-dialog.wl-truora-wide,.clmc-dialog.wl-modal-center{max-width:100%;width:100%;height:100%;max-height:100%;border-radius:0;padding:20px 18px 32px;}
+    /* ── Layout tipo app: contenido arriba, acciones ancladas abajo ── */
+    .clmc-dialog.wl-truora-wide{display:flex;flex-direction:column;}
+    .wl-truora-wide .wl-t-step{flex:1;display:flex;flex-direction:column;min-height:0;}
+    .wl-truora-wide .wl-t-step.hide{display:none;}
+    .wl-truora-wide .wl-t-step > .clmc-btn-primary{margin-top:auto;}
+    /* Consentimiento: el checkbox baja junto al CTA (a la mano del pulgar) */
+    .wl-truora-wide [data-step="1"] .wl-consent-check{margin-top:auto;margin-bottom:14px;}
+    .wl-truora-wide [data-step="1"] .wl-consent-check + .clmc-btn-primary{margin-top:0;}
+    /* Canales: el bloque de teléfono + "Enviar enlace" baja a la misma posición que el CTA */
+    .wl-truora-wide #tPhoneBox{margin-top:auto;}
+    /* Footnotes alineados a la izquierda, como app */
+    .wl-truora-wide .clmc-upload-documents-format-box{text-align:left;}
+    /* Éxito biométrico: pantalla completa, contenido centrado, ✕ arriba */
+    .clmc-dialog.wl-modal-center{display:flex;flex-direction:column;justify-content:center;padding:24px 22px;}
+    .wl-modal-center .clmc-closeIcon-popup{position:absolute;top:14px;right:14px;margin:0;}
+    .wl-modal-center h3{margin-top:0;}
+
+    /* ── Barra superior en móvil: barra 62px + gap 20px = 82px ── */
+    .clmc-dialog.wl-doc-modal,.clmc-dialog.wl-truora-wide{padding:82px 0 0;}
+    .wl-doc-modal .wl-m-guia,.wl-truora-wide .wl-t-step{padding:0 18px 32px;}
+    .wl-doc-modal .wl-m-main{padding:0 18px 0;}
+    .wl-doc-modal .clmc-closeIcon-popup::before,.wl-truora-wide .clmc-closeIcon-popup::before{top:-16px;right:-18px;height:62px;}
+    .clmc-dialog.wl-doc-modal .clmc-closeIcon-popup,.clmc-dialog.wl-truora-wide .clmc-closeIcon-popup{top:16px;right:18px;}
+    /* En teléfono el cerrar debe ser un objetivo de toque cómodo */
+    .clmc-dialog .clmc-closeIcon-popup{width:40px;height:40px;margin-bottom:-40px;}
+
+    /* Zonas de carga: en teléfono van una por fila y con más altura. Dos
+       columnas dejaban cajas muy bajas y un objetivo de toque pobre justo en
+       el paso que más importa del flujo. */
+    .clmc-upload-documents-grid{grid-template-columns:1fr;}
+    .clmc-upload-document-drop-area{
+      padding:26px 14px;font-size:var(--clmc-text-small, 14px);gap:10px;min-height:104px;justify-content:center;
+    }
+    .clmc-upload-document-drop-area svg{width:24px;height:24px;}
+
+    /* ── Footer liquid glass: acciones fijas abajo con blur, como app ── */
+    .clmc-upload-documents-actions{
+      background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+      border-top:1px solid rgba(0,0,0,.06);
+    }
+    /* En banco/domicilio (contenido corto) las acciones también anclan abajo */
+    .wl-doc-modal{display:flex;flex-direction:column;}
+    .wl-doc-modal .wl-m-main:not(.hide),.wl-doc-modal .wl-m-guia:not(.hide){flex:1;display:flex;flex-direction:column;min-height:0;}
+    .wl-doc-modal .wl-m-main .clmc-upload-documents-actions{margin-top:auto;}
+  }
+
+  /* Navegador de estados flotante (demo, no entregable) */
+  #stateNav{position:fixed;right:16px;bottom:16px;z-index:1300;display:flex;align-items:center;gap:4px;
+    background:rgba(16,18,22,.92);border-radius:999px;padding:5px 6px;box-shadow:0 8px 24px rgba(0,0,0,.3);}
+  #stateNav button{width:34px;height:34px;border:none;border-radius:50%;background:transparent;color:#fff;
+    font-size:20px;line-height:1;cursor:pointer;font-family:inherit;}
+  #stateNav button:hover:not(:disabled){background:rgba(255,255,255,.15);}
+  #stateNav button:disabled{opacity:.3;cursor:default;}
+  #stateNav .wl-sn-label{color:#c7ccd2;font-size:var(--clmc-text-xsmall, 12px);font-weight:700;min-width:44px;text-align:center;font-family:'winland',sans-serif;}
+  @media (max-width:768px){ #stateNav{bottom:82px;} }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     V2 · MODERNIZACIÓN VISUAL
+     Menos cajas, más aire, color solo donde importa. La caja se reserva para
+     lo que es una unidad accionable (Truora, la mejora a depósito directo, el
+     envío por correo); todo lo demás se resuelve con listas y divisores.
+     Solo estilo: el contenido y las clases no cambian.
+     Escala de espacio: 8 dentro de un grupo · 16 entre relacionados ·
+     28–32 entre secciones.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* ── Encabezado de pantalla ── */
+  .wl-vh-title{font-size:var(--clmc-text-large, 24px);line-height:1.2;letter-spacing:-0.02em;margin-bottom:8px;}
+  .wl-vh-sub{font-size:15px;line-height:1.55;margin-bottom:32px;white-space:normal;}
+
+  /* ── Banner de estado: acento lateral en vez de fondo pastel; ícono sin círculo ── */
+  .wl-status-banner{
+    background:transparent;border-radius:0;padding:2px 0 2px 16px;margin-bottom:32px;
+    border-left:3px solid var(--line);gap:12px;align-items:flex-start;
+  }
+  .wl-status-banner.success,.wl-status-banner.error,.wl-status-banner.info{background:transparent;}
+  .wl-status-banner.success{border-left-color:var(--success-green);}
+  .wl-status-banner.error{border-left-color:var(--error-red);}
+  .wl-status-banner.info{border-left-color:var(--info-blue);}
+  .wl-status-banner .ic,
+  .wl-status-banner.success .ic,.wl-status-banner.error .ic,.wl-status-banner.info .ic{
+    width:auto;height:auto;background:transparent;animation:none;margin-top:1px;
+  }
+  .wl-status-banner .ic svg{width:20px;height:20px;}
+  .wl-status-banner .t{font-size:15px;margin-bottom:3px;}
+  .wl-status-banner .s{font-size:14px;line-height:1.55;}
+
+  /* ── Documentos: lista con divisores; ícono suelto; palomita al final ── */
+  .clmc-user-documents-grid{margin-bottom:28px;}
+  .clmc-user-document-item,
+  .clmc-user-document-item.disabled{
+    gap:14px;padding:16px 0;background:transparent;opacity:1;
+    border:0;border-bottom:1px solid var(--line-soft);border-radius:0;box-shadow:none;
+  }
+  .clmc-user-document-item.disabled .wl-doc-meta .t{color:var(--text-faint);}
+  .clmc-user-document-icon,
+  .clmc-user-document-icon.st-verified,
+  .clmc-user-document-icon.st-pending,
+  .clmc-user-document-icon.st-progress,
+  .clmc-user-document-icon.st-rejected{
+    width:24px;height:24px;border-radius:0;background:transparent;animation:none;
+  }
+  .clmc-user-document-icon.st-blocked{width:24px;height:24px;background:transparent;color:var(--text-faint);}
+  .clmc-user-document-icon img,.clmc-user-document-icon svg{width:22px !important;height:22px !important;}
+  .wl-doc-meta .t{font-size:15px;}
+  .wl-doc-meta .s{font-size:13px;margin-top:3px;}
+  .wl-row-ok{display:flex;width:20px;height:20px;color:var(--success-green);flex-shrink:0;}
+  .wl-row-ok svg{width:20px;height:20px;}
+  .wl-chev{width:18px;height:18px;color:var(--mid-gray);transition:transform .15s var(--ease), color .15s var(--ease);}
+  /* Sin caja, el hover lo cuentan el chevron y el título */
+  .clmc-user-document-item[data-accionable]:hover .wl-chev{transform:translateX(3px);color:var(--winland-orange);}
+  .clmc-user-document-item[data-accionable]:hover .wl-doc-meta .t{color:var(--winland-orange);}
+
+  /* ── Acordeones: filas con divisor arriba y abajo, sin fondo ── */
+  .wl-alt-toggle{
+    background:transparent;border:0;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);
+    border-radius:0;padding:17px 0;color:var(--ink);font-size:15px;
+  }
+  .wl-alt-toggle:hover{background:transparent;color:var(--winland-orange);}
+  .wl-alt-panel + .wl-alt-toggle{border-top:0;}
+  .wl-alt-toggle.open{border-bottom-color:transparent;}
+  .wl-alta-toggle{margin-top:0;}
+  .wl-alt-toggle.is-locked{color:var(--text-gray);}
+  .wl-alt-toggle.is-locked:hover{color:var(--text-gray);}
+  .wl-alt-toggle svg:not(.wl-chev-down){width:16px;height:16px;}
+  .wl-alt-panel{
+    margin:0;padding:4px 0 22px;border:0;border-bottom:1px solid var(--line-soft);border-radius:0;
+    background:transparent;gap:16px;
+  }
+  .wl-alt-note{font-size:14px;line-height:1.6;}
+  .wl-alt-panel .clmc-user-documents-grid{margin-bottom:0;}
+
+  /* ── Tarjetas accionables: borde neutro y radio amplio ── */
+  .wl-truora-card{
+    border:1px solid var(--line);border-radius:20px;padding:24px;margin-bottom:28px;
+    box-shadow:0 1px 2px rgba(20,20,22,.04), 0 10px 28px rgba(20,20,22,.05);
+  }
+  .wl-truora-card h2{font-size:20px;letter-spacing:-0.015em;margin-bottom:8px;}
+  .wl-truora-card p{font-size:15px;}
+  .wl-truora-benefits span{font-size:15px;}
+  /* "Recomendado": pastilla tintada, sin estrella ni destello */
+  .wl-truora-card .badge{
+    background:var(--orange-tint);color:var(--orange-dark);font-weight:600;letter-spacing:0;
+    padding:5px 11px;border-radius:999px;
+  }
+  .wl-upgrade-card{
+    background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px 22px;margin-top:28px;
+    box-shadow:0 1px 2px rgba(20,20,22,.04), 0 10px 28px rgba(20,20,22,.05);
+  }
+  .wl-upgrade-card .t{font-size:15px;}
+  .wl-upgrade-card .s{font-size:14px;}
+  .wl-email-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:0;}
+  .wl-email-box.restricted{background:#fff;border-color:#F0D9C4;}
+  .wl-email-box .t{font-size:15px;}
+  .wl-email-box .s{font-size:14px;}
+
+  /* ── Nota de ayuda al pie ── */
+  .wl-faq-hint{margin-top:32px;padding-top:0;border-top:0;}
+
+  /* ═══ MODALES ═══ */
+  .wl-modal-overlay{background:rgba(12,12,14,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+  .clmc-dialog{border-radius:20px;box-shadow:0 24px 64px rgba(15,15,18,.28);}
+  .clmc-dialog h3{font-size:20px;letter-spacing:-0.015em;margin-bottom:10px;}
+  .clmc-dialog .lead{font-size:15px;line-height:1.6;margin-bottom:24px;}
+
+  /* Requisitos: lista con palomitas, sin franja gris */
+  .wl-req-line{
+    display:block;background:transparent;border-radius:0;padding:0;margin:0 0 24px;
+    font-size:14px;color:var(--text-gray);
+  }
+  .wl-req-line > b{display:block;font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px;}
+  .wl-req-line ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:9px 20px;}
+  .wl-req-line li{display:flex;align-items:flex-start;gap:8px;line-height:1.45;}
+  .wl-req-line li svg{width:18px;height:18px;color:var(--success-green);flex-shrink:0;}
+
+  /* Selector de tipo de documento */
+  .wl-doc-select{margin-bottom:24px;}
+  .wl-doc-select label{font-size:14px;}
+  .wl-doc-select select{border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:15px;}
+
+  /* Guía visual: miniatura protagonista, no "archivo adjunto" */
+  .wl-guia-cta{border-radius:16px;padding:10px 16px 10px 10px;gap:14px;margin-bottom:16px;}
+  .wl-guia-thumb{width:60px;height:60px;border-radius:12px;object-position:center top;}
+  .wl-guia-cta span{gap:3px;}
+  .wl-guia-cta span b{font-size:14px;}
+  .wl-guia-cta span small{font-size:13px;color:var(--text-gray);}
+
+  /* Zona de carga: sólida y clara, el ícono en color de marca */
+  .clmc-upload-documents-grid{gap:12px;}
+  .clmc-upload-document-drop-area{
+    border:1px solid var(--line);background:#FAFBFB;border-radius:16px;color:var(--ink);
+  }
+  .clmc-upload-document-drop-area svg{color:var(--winland-orange);}
+  .clmc-upload-document-drop-area:hover{border-color:var(--winland-orange);background:#FFF8F4;}
+  .clmc-upload-document-drop-area.loaded{border:1px solid var(--success-green);background:#F4FAF5;}
+  .clmc-upload-documents-format-box{font-size:13px;color:var(--text-gray);}
+
+  /* Truora: encabezado con presencia */
+  .wl-modal-truora-head{gap:16px;margin-bottom:20px;}
+  .wl-modal-truora-head .wl-truora-icon{width:48px;height:48px;border-radius:14px;}
+  .wl-modal-truora-head .wl-truora-icon img{width:24px !important;height:24px !important;}
+  .wl-modal-truora-head h3{font-size:20px;}
+
+  /* Canales de envío: ícono suelto, WhatsApp con su verde oficial */
+  .wl-channel-list .ch{padding:16px 6px;gap:16px;border-radius:12px;}
+  .wl-channel-list .ch-ic{width:26px;height:26px;background:transparent;color:var(--ink);}
+  .wl-channel-list .ch-ic svg{width:22px;height:22px;}
+  .wl-channel-list .ch[onclick*="WhatsApp"] .ch-ic{color:#25D366;}
+  .wl-channel-list .ch-meta .t{font-size:15px;}
+  .wl-channel-list .ch-meta .s{font-size:13px;}
+
+  /* Listas de comprobación dentro de modales */
+  .wl-t-checklist{gap:12px;margin:4px 0 24px;}
+  .wl-t-checklist span{font-size:15px;color:var(--ink);align-items:flex-start;line-height:1.45;}
+  .wl-t-checklist svg{width:18px;height:18px;}
+
+  /* ═══ ESCRITORIO ═══ */
+  @media (min-width:769px){
+    /* Tracker: barra de tres segmentos con su etiqueta debajo de cada uno */
+    .wl-tracker{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+    .wl-step,.wl-step.done,.wl-step.current,.wl-step.invite,.wl-step.alert{
+      display:block;position:relative;padding:18px 0 0;border:0;border-radius:0;background:transparent;box-shadow:none;
+    }
+    .wl-step::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;border-radius:3px;background:var(--line);}
+    .wl-step.done::before{background:var(--success-green);}
+    .wl-step.current::before{background:var(--winland-orange);}
+    .wl-step.alert::before{background:var(--error-red);}
+    .wl-step.invite::before{background:#F8CAB2;background:color-mix(in srgb, var(--winland-orange) 34%, #fff);}
+    .wl-step .meta .t{font-size:14px;color:var(--text-gray);}
+    .wl-step.done .meta .t,.wl-step.current .meta .t,.wl-step.alert .meta .t{color:var(--ink);}
+    .wl-step .meta .s{font-size:13px;margin-top:4px;}
+    .wl-step.done .meta .s{color:var(--success-green);}
+    .wl-step.clickable:hover .meta .t{color:var(--winland-orange);}
+
+    /* Documentos a dos columnas: el divisor superior va en la primera fila de cada una */
+    .clmc-user-documents-grid{column-gap:40px;row-gap:0;}
+    .clmc-user-documents-grid > .clmc-user-document-item:nth-child(-n+2){border-top:1px solid var(--line-soft);}
+  }
+
+  /* ═══ MÓVIL ═══ */
+  @media (max-width:768px){
+    .wl-w-content{padding:22px 18px 30px;}
+    .wl-vh-title{font-size:21px;line-height:1.25;}
+    .wl-vh-sub{margin-bottom:26px;}
+
+    /* Tracker: barra de progreso + etiqueta del paso que pide atención */
+    .wl-tracker{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+      position:relative;margin:0 0 28px;padding-bottom:28px;
+    }
+    .wl-step,.wl-step.done,.wl-step.current,.wl-step.invite,.wl-step.alert{
+      display:block;height:6px;padding:0;border:0;border-radius:3px;
+      background:var(--line);position:static;box-shadow:none;transform:none;
+    }
+    .wl-step.done{background:var(--success-green);}
+    .wl-step.current{background:var(--winland-orange);}
+    .wl-step.alert{background:var(--error-red);}
+    /* Paso invitación: el naranja de marca atenuado. Relleno sólido, sin patrón:
+       se distingue del gris de "pendiente" y del naranja pleno de "actual" sin
+       meter texturas. La diferencia la termina de contar la etiqueta. */
+    .wl-step.invite{background:#F8CAB2;background:color-mix(in srgb, var(--winland-orange) 34%, #fff);}
+    .wl-step .meta{display:none;position:absolute;left:0;right:0;top:16px;}
+    .wl-step.current .meta,.wl-step.alert .meta,.wl-step.invite .meta{
+      display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+    }
+    /* Solo una etiqueta a la vez: la del primer paso que requiere atención */
+    .wl-step.current ~ .wl-step .meta,.wl-step.alert ~ .wl-step .meta{display:none;}
+    .wl-step .meta .t{font-size:14px;font-weight:600;color:var(--ink);}
+    .wl-step .meta .s{display:block;font-size:14px;margin:0;color:var(--text-gray);}
+    .wl-step .meta .s::before{content:'· ';color:var(--mid-gray);}
+    .wl-step.invite .meta .s{color:var(--winland-orange);}
+    .wl-step.alert .meta .s{color:var(--error-red);}
+
+    .wl-status-banner{padding-left:14px;margin-bottom:28px;}
+
+    .clmc-user-documents-grid{display:block;border-top:1px solid var(--line-soft);}
+    .clmc-user-document-item{padding:15px 0;}
+
+    .wl-truora-card{padding:20px;border-radius:18px;}
+    .wl-truora-card h2{font-size:19px;}
+    .wl-truora-card .badge{
+      position:absolute;top:0;right:16px;border-radius:0 0 10px 10px;padding:4px 10px 5px;font-size:11px;
+    }
+    .wl-upgrade-card{flex-direction:column;align-items:stretch;gap:16px;padding:20px;}
+    .wl-upgrade-card .clmc-btn-primary{width:100%;}
+    .wl-email-box{flex-direction:column;align-items:stretch;gap:14px;}
+
+    /* Modales a pantalla completa: título con más presencia */
+    .clmc-dialog h3{font-size:22px;line-height:1.25;}
+    .wl-req-line ul{grid-template-columns:1fr;}
+    .wl-guia-thumb{width:56px;height:56px;}
+
+    /* Truora paso 1: ícono grande arriba, título debajo. Con el botón anclado
+       abajo, el espacio intermedio se lee como intención y no como hueco. */
+    .wl-modal-truora-head{flex-direction:column;align-items:flex-start;gap:16px;margin-bottom:16px;padding-right:0;}
+    .wl-modal-truora-head .wl-truora-icon{width:56px;height:56px;border-radius:16px;}
+    .wl-modal-truora-head .wl-truora-icon img{width:28px !important;height:28px !important;}
+    .wl-modal-truora-head h3{font-size:24px;margin-bottom:6px !important;}
+  }
+
+  /* ═══ MODALES DE DOCUMENTO · la tarea primero ═══
+     Orden: tipo de documento → archivos → formato; después la ayuda
+     (requisitos, guías, dudas). En móvil se apila en ese orden; en escritorio,
+     tarea a la izquierda y ayuda en un panel a la derecha. */
+  .wl-mm-task,.wl-mm-help{min-width:0;}
+  .wl-mm-task .wl-doc-select{margin-bottom:16px;}
+  .clmc-upload-documents-grid.wl-slots{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+  .clmc-upload-document-drop-area.wl-slot{
+    flex-direction:row;align-items:center;justify-content:flex-start;text-align:left;gap:14px;
+    min-height:0;padding:12px 14px 12px 12px;border:1px solid var(--line);border-radius:16px;background:#fff;
+    font-size:15px;font-weight:600;color:var(--ink);
+  }
+  .clmc-upload-document-drop-area.wl-slot:hover{border-color:var(--winland-orange);background:#fff;}
+  .wl-slot-thumb{
+    width:44px;height:44px;border-radius:12px;background:var(--page-bg);color:var(--winland-orange);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:background .2s var(--ease), color .2s var(--ease);
+  }
+  .clmc-upload-document-drop-area.wl-slot .wl-slot-thumb svg{width:22px;height:22px;color:inherit;}
+  .wl-slot-meta{flex:1;min-width:0;}
+  .wl-slot-t{font-size:15px;font-weight:600;color:var(--ink);line-height:1.3;}
+  .wl-slot-s{font-size:13px;font-weight:500;color:var(--success-green);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wl-slot-s:empty{display:none;}
+  .wl-slot-cta{font-size:14px;font-weight:600;color:var(--winland-orange);flex-shrink:0;padding:8px 4px;}
+  .clmc-upload-document-drop-area.wl-slot.loaded{border-color:var(--line);background:#fff;cursor:pointer;}
+  .clmc-upload-document-drop-area.wl-slot.loaded .wl-slot-thumb{background:#E6F2E8;color:var(--success-green);}
+  .clmc-upload-document-drop-area.wl-slot.loaded .wl-slot-cta{color:var(--text-gray);}
+  @keyframes slotFlash{0%{box-shadow:0 0 0 0 rgba(46,125,50,.35)}100%{box-shadow:0 0 0 10px rgba(46,125,50,0)}}
+  .wl-slot-flash{animation:slotFlash .6s ease-out;}
+  .wl-mm .clmc-upload-documents-format-box{margin-top:0;}
+  .wl-mm-help .wl-req-line{margin-bottom:20px;}
+  .wl-mm-help .wl-guia-cta{background:#fff;margin-bottom:12px;}
+  .wl-mm-help .wl-modal-faq-line{margin:16px 0 0;}
+
+  @media (min-width:769px){
+    .clmc-dialog.wl-doc-modal{max-width:860px;}
+    .wl-mm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.92fr);gap:28px;align-items:start;}
+    .wl-mm-help{background:#FAFBFB;border:1px solid var(--line-soft);border-radius:16px;padding:20px;}
+    .wl-mm-help .wl-req-line ul{grid-template-columns:1fr;}
+    /* Acciones a la derecha, a su ancho natural */
+    .wl-doc-modal .clmc-upload-documents-actions{justify-content:flex-end;}
+    .wl-doc-modal .clmc-upload-documents-actions > button{flex:0 0 auto;min-width:168px;}
+  }
+  /* Escritorio amplio: modal de 1040px y panel de ayuda fijo de 456px. El ancho
+     sale de medir el título más largo de las guías ("Cómo tomar tu selfie con la
+     identificación", 259px a 14px): miniatura 60 + márgenes y flecha suman 390px
+     de tarjeta, y así título y descripción caben cada uno en una sola línea. La
+     fuente es la web font del sitio, así que la medida es la misma en cualquier
+     equipo. Debajo de 960px se conserva el reparto proporcional. */
+  @media (min-width:960px){
+    .clmc-dialog.wl-doc-modal{max-width:1040px;}
+    .wl-mm{grid-template-columns:minmax(0,1fr) 456px;gap:32px;}
+  }
+  @media (max-width:768px){
+    /* Los modales que en teléfono van a pantalla completa no llevan esquinas ni
+       sombra: el radio de 20px de la capa v2 aplica solo a los que flotan. */
+    .clmc-dialog.wl-doc-modal,.clmc-dialog.wl-truora-wide,.clmc-dialog.wl-modal-center{border-radius:0;box-shadow:none;}
+    .wl-mm-help{margin-top:28px;}
+    /* Requisitos a dos columnas: son frases cortas y en una sola columna dejaban
+       media pantalla vacía. Si alguna no cabe, parte en dos líneas dentro de su celda. */
+    .wl-mm-help .wl-req-line ul{grid-template-columns:1fr 1fr;gap:10px 14px;}
+    /* Respiro antes de la barra del botón. Con contenido largo, el margin-top:auto
+       de la barra vale cero y el último texto quedaba pegado a ella. */
+    .wl-doc-modal .wl-mm{margin-bottom:32px;}
+    /* Una sola acción: la X ya cierra, "Cancelar" sobraba */
+    .wl-doc-modal .clmc-upload-documents-actions .clmc-btn-primary-white{display:none;}
+  }
+
+  /* ═══ Vista de infografía dentro del modal ═══
+     Escritorio: imagen algo más contenida y con aire arriba y abajo; botón a su
+     ancho natural, centrado bajo la imagen. Móvil: título arriba, la imagen
+     centrada en el espacio disponible y el botón anclado abajo a lo ancho. */
+  .wl-m-guia .g-title{margin:0 0 24px;}
+  .wl-m-guia .wl-g-img{max-height:min(50vh, 460px);border-radius:14px;}
+  .wl-m-guia .wl-g-cta{display:flex;width:auto;min-width:280px;margin:28px auto 0;}
+  @media (max-width:768px){
+    .wl-doc-modal .wl-m-guia:not(.hide){padding-bottom:calc(20px + env(safe-area-inset-bottom));}
+    .wl-m-guia .g-title{margin-bottom:24px;}  /* igual al margen del botón: centrado exacto */
+    .wl-m-guia .wl-g-img{max-height:none;width:100%;margin:auto 0;}
+    .wl-m-guia .wl-g-cta{width:100%;min-width:0;margin:24px 0 0;flex-shrink:0;}
+  }
+
+  /* ═══ Botón de cerrar ═══
+     El círculo (#f5f7f7, 5px de relleno) va en el propio <svg>, con la X
+     negra que pasa a naranja al pasar el cursor. El contenedor es
+     transparente (solo área de toque), así la barra translúcida de los
+     modales no lo tapa. Aplica también al visor de infografías. */
+  .clmc-dialog .clmc-closeIcon-popup,
+  .clmc-dialog .clmc-closeIcon-popup:hover{background:transparent;box-shadow:none;}
+  .clmc-dialog .clmc-closeIcon-popup > svg{
+    width:24px !important;height:24px !important;box-sizing:content-box;padding:5px;
+    background:#f5f7f7;border-radius:100%;color:#000;cursor:pointer;transition:all 250ms ease-in-out;
+  }
+  .clmc-dialog .clmc-closeIcon-popup > svg:hover{color:var(--clmc-color-primary);}
+
+  /* ═══ Móvil: hojas de pantalla completa que nunca dejan hueco ═══
+     El alto sigue a la pantalla visible (100dvh) aunque el navegador esconda o
+     muestre su barra. Y el fondo del overlay es blanco: si en algún navegador
+     quedara una franja durante la transición, se ve blanca, nunca la página. */
+  @media (max-width:768px){
+    .wl-modal-overlay:has(.wl-doc-modal),.wl-modal-overlay:has(.wl-truora-wide),.wl-modal-overlay:has(.wl-modal-center){
+      top:0;left:0;right:0;bottom:auto;height:100vh;height:100dvh;background:#fff;
+      backdrop-filter:none;-webkit-backdrop-filter:none;
+    }
+    /* Regresar: solo el chevron, del mismo tamaño y a la misma altura que el
+       tache de cerrar (área de 40px, glifo de 24), sin círculo ni texto. El
+       texto se conserva para lectores de pantalla con font-size:0. */
+    .wl-t-back{
+      top:16px;left:12px;width:40px;height:40px;justify-content:center;gap:0;
+      font-size:0;color:#000;
+    }
+    .wl-t-back svg{width:24px;height:24px;stroke-width:2;}
+    .wl-t-back:hover{color:var(--clmc-color-primary);}
+  }
+
+  /* "Ver guía visual" en preguntas frecuentes: en móvil es un botón y va a lo
+     ancho, como el resto de las acciones en teléfono. */
+  @media (max-width:768px){
+    .wl-faq-guia{display:flex;width:100%;justify-content:center;padding:12px 14px;}
+  }
+</style>
+</head>
+<body>
+<div id="device">
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           HEADER: MARCO DE LA DEMO, NO FORMA PARTE DEL MÓDULO
+           Solo enmarca el módulo para verlo en contexto. Único añadido para
+           la demo: el bloque de sesión iniciada (.wl-sesion).
+           ═══════════════════════════════════════════════════════════════ -->
+<header class="MuiPaper-root MuiPaper-elevation MuiPaper-elevation4 MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionFixed clmc-appBar clmc-flex clmc-justify-center clmc-align-center clmc-pl-large clmc-pr-large mui-fixed css-1rod9u0" style="--Paper-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2),0px 4px 5px 0px rgba(0,0,0,0.14),0px 1px 10px 0px rgba(0,0,0,0.12);"><div class="clmc-flex clmc-row clmc-justify-between clmc-align-center clmc-w100"><div class="clmc-flex clmc-row clmc-nowrap clmc-align-center clmc-justify-start"><div class="clmc-mr-medium"><img class="clmc-img-header-menu-casino clmc-mr-large clmc-cursor-pointer" alt="Menu lateral" title="Menu lateral" src="assets/sitio/Menu.svg"></div><a title="Ir al inicio de Winland" class="clmc-flex clmc-align-center clmc-justify-center" href="#"><img class="clmc-header-logo clmc-mr-large" alt="Winland" title="Winland" src="assets/sitio/logo_winland_white.png"></a></div><div class="clmc-main-menu clmc-flex clmc-row clmc-align-center clmc-justify-center"><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a Tu Liga Mexicana" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Tu Liga Mexicana</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a Deportes" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Deportes</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a En vivo" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">En vivo</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a Casino" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Casino</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a Casino en vivo" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Casino en vivo</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a Virtuales" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Virtuales</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div><div class="clmc-main-menu-item clmc-flex clmc-row "><a title="Ir a Promociones" class="clmc-main-menu-link clmc-text-nowrap clmc-text-decoration-none clmc-color-secondary clmc-ml-small clmc-mr-small " href="#">Promociones</a><div><hr class="MuiDivider-root MuiDivider-fullWidth clmc-divider css-9k49o2"></div></div></div><div class="clmc-flex clmc-align-center clmc-justify-end"><div class="clmc-flex clmc-align-center wl-sesion">
+        <div class="wl-deposit"><img src="assets/sitio/header/wallet.svg" alt="">Depositar</div>
+        <div class="wl-balance">$100.00 MXN <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="wl-circle"><img src="assets/sitio/header/Profile.svg" alt="Perfil" width="24" height="24"></div>
+        <div class="wl-circle"><img src="assets/sitio/header/MyBets.svg" alt="Mis apuestas" width="17" height="17"></div>
+      </div>
+    </div></div></header>
+
+      <main class="wl-contenido">
+      <!-- ═══════════════════════════════════════════════════════════════
+           ▼▼▼ MÓDULO ENTREGABLE: ESTO ES LO QUE SE IMPLEMENTA ▼▼▼
+           Contenedor: fondo #fff, padding 40px; tarjeta con radio 16px y
+           sombra. Este bloque va dentro del layout privado de Mi cuenta.
+           ═══════════════════════════════════════════════════════════════ -->
+      <div class="wl-w-body">
+        <div class="clmc-card">
+          <div class="wl-w-tabs">
+            <div class="wl-w-tab active" id="miCuentaTab" onclick="render('inicial')">Mi cuenta</div>
+            <div class="wl-w-tab">Historial</div>
+            <div class="wl-w-tab">Bonos</div>
+            <div class="wl-w-tab">Juego responsable</div>
+            <div class="wl-w-tab" id="faqTab" onclick="render('faq')">Preguntas frecuentes</div>
+          </div>
+          <div class="wl-w-subtabs" id="subtabsRow">
+            <div class="sub" data-sub="cuenta">Cuenta</div>
+            <div class="sub active" data-sub="verificacion" id="verifSub" onclick="render('inicial')">Verificación</div>
+            <div class="sub" data-sub="contrasena">Contraseña</div>
+          </div>
+
+          <div class="wl-w-content" style="position:relative;" id="content">
+            <!-- injected per state -->
+          </div>
+        </div>
+      </div>
+
+      </main><!-- /wl-contenido -->
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           FOOTER: MARCO DE LA DEMO, NO FORMA PARTE DEL MÓDULO
+           ═══════════════════════════════════════════════════════════════ -->
+<footer class="clmc-footer clmc-footer-dark"><div class="clmc-footer-inner clmc-pt-large clmc-pb-large"><div class="clmc-footer-logos"><div class="MuiBox-root css-h1rw7n"><div class="MuiBox-root css-137ehfp"><img width="110" class="clmc-footer-logos" height="50" alt="SPEI" title="SPEI" src="assets/sitio/footer/metodo_de_pago17_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Mastercard" title="Mastercard" src="assets/sitio/footer/metodo_de_pago18_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Visa" title="Visa" src="assets/sitio/footer/metodo_de_pago19_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="7 Eleven" title="7 Eleven" src="assets/sitio/footer/metodo_de_pago2_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Bodega Aurrera" title="Bodega Aurrera" src="assets/sitio/footer/metodo_de_pago1_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Soriana" title="Soriana" src="assets/sitio/footer/metodo_de_pago3_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Kiosko" title="Kiosko" src="assets/sitio/footer/metodo_de_pago4_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Circle K" title="Circle K" src="assets/sitio/footer/metodo_de_pago5_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Sams Club" title="Sams Club" src="assets/sitio/footer/metodo_de_pago6_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Walmart" title="Walmart" src="assets/sitio/footer/metodo_de_pago7_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Afirme" title="Afirme" src="assets/sitio/footer/metodo_de_pago8_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="BBVA" title="BBVA" src="assets/sitio/footer/metodo_de_pago9_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Telecomm" title="Telecomm" src="assets/sitio/footer/metodo_de_pago10_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Santander" title="Santander" src="assets/sitio/footer/metodo_de_pago11_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Banorte" title="Banorte" src="assets/sitio/footer/metodo_de_pago12_footer.png"><img width="70" class="clmc-footer-logos" height="50" alt="CFE" title="CFE" src="assets/sitio/footer/metodo_de_pago13_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Caja Popular" title="Caja Popular" src="assets/sitio/footer/metodo_de_pago14_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Alianza" title="Alianza" src="assets/sitio/footer/metodo_de_pago15_footer.png"><img width="90" class="clmc-footer-logos" height="50" alt="Otros" title="Otros" src="assets/sitio/footer/metodo_de_pago16_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="SPEI" title="SPEI" src="assets/sitio/footer/metodo_de_pago17_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Mastercard" title="Mastercard" src="assets/sitio/footer/metodo_de_pago18_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Visa" title="Visa" src="assets/sitio/footer/metodo_de_pago19_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="7 Eleven" title="7 Eleven" src="assets/sitio/footer/metodo_de_pago2_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Bodega Aurrera" title="Bodega Aurrera" src="assets/sitio/footer/metodo_de_pago1_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Soriana" title="Soriana" src="assets/sitio/footer/metodo_de_pago3_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Kiosko" title="Kiosko" src="assets/sitio/footer/metodo_de_pago4_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Circle K" title="Circle K" src="assets/sitio/footer/metodo_de_pago5_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Sams Club" title="Sams Club" src="assets/sitio/footer/metodo_de_pago6_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Walmart" title="Walmart" src="assets/sitio/footer/metodo_de_pago7_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Afirme" title="Afirme" src="assets/sitio/footer/metodo_de_pago8_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="BBVA" title="BBVA" src="assets/sitio/footer/metodo_de_pago9_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Telecomm" title="Telecomm" src="assets/sitio/footer/metodo_de_pago10_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Santander" title="Santander" src="assets/sitio/footer/metodo_de_pago11_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Banorte" title="Banorte" src="assets/sitio/footer/metodo_de_pago12_footer.png"><img width="70" class="clmc-footer-logos" height="50" alt="CFE" title="CFE" src="assets/sitio/footer/metodo_de_pago13_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Caja Popular" title="Caja Popular" src="assets/sitio/footer/metodo_de_pago14_footer.png"><img width="110" class="clmc-footer-logos" height="50" alt="Alianza" title="Alianza" src="assets/sitio/footer/metodo_de_pago15_footer.png"><img width="90" class="clmc-footer-logos" height="50" alt="Otros" title="Otros" src="assets/sitio/footer/metodo_de_pago16_footer.png"></div></div><style>
+						@keyframes clmc-marquee {
+							0% { transform: translateX(0); }
+							100% { transform: translateX(-50%); }
+						}
+					</style></div></div><div class="clmc-footer-divider"></div><div class="clmc-footer-inner clmc-pt-large clmc-pb-large"><div class="clmc-footer-grid"><div class="clmc-footer-column"><h3 class="clmc-footer-title">¿Necesitas ayuda?</h3><section><ul class="clmc-flex clmc-gap-small clmc-column" style="list-style: none; padding: 0px; margin: 0px;"><li><p class="clmc-link clmc-cursor-pointer clmc-text-small clmc-color-quinary">Nuestras salas</p></li><li><p class="clmc-link clmc-cursor-pointer clmc-text-small clmc-color-quinary">Chat de soporte</p></li><li><a class="clmc-color-primary clmc-text-small clmc-text-decoration-underline" href="mailto:clientes@winland.com.mx" title="Enviar correo a clientes@winland.com.mx">clientes@winland.com.mx</a></li><li><a title="Reglas" class="clmc-link clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Reglas</a></li></ul></section></div><div class="clmc-footer-column"><h3 class="clmc-footer-title">Legales</h3><section><ul class="clmc-flex clmc-gap-small clmc-column" style="list-style: none; padding: 0px; margin: 0px;"><li><a title="Aviso de privacidad" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Aviso de privacidad</a></li><li><a title="Términos y condiciones" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Términos y condiciones</a></li><li><a title="Juego responsable" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Juego responsable</a></li><li><a title="Política de cookies" class="clmc-link clmc-w50 clmc-text-nowrap clmc-color-quinary clmc-text-decoration-none clmc-text-small" href="#">Política de cookies</a></li></ul></section></div><div class="clmc-footer-column"><h4 class="clmc-footer-title">Ajustes</h4><div class="MuiFormControl-root clmc-select-label clmc-w100 clmc-footer-odds-control css-1qk38wv"><div class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-formControl MuiInputBase-sizeSmall clmc-footer-odds-select MuiSelect-root css-98ra8i"><div tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-labelledby="currency-select-label" class="MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input css-uxvpzc">Americano</div><input aria-invalid="false" aria-hidden="true" tabindex="-1" class="MuiSelect-nativeInput css-147e5lo" id="_r_6_" value="2"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium MuiSelect-icon css-1l3b12y" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"></path></svg><fieldset aria-hidden="true" class="MuiOutlinedInput-notchedOutline css-5v2ak0"><legend class="css-w4cd9x"><span class="notranslate" aria-hidden="true">​</span></legend></fieldset></div></div></div></div></div><div class="clmc-footer-divider"></div><div class="clmc-footer-inner clmc-pt-large clmc-pb-large"><details class="clmc-footer-details" open=""><summary class="clmc-footer-summary"><h3 class="clmc-mb-medium">Más información sobre Winland</h3><span class="clmc-footer-caret" aria-hidden="true">⌃</span></summary><div class="clmc-footer-info"><p class="clmc-color-quinary">Winland Online: La Casa de Apuestas</p><p class="clmc-color-quinary">Deportivas y Casino en Línea más Segura de México</p><p class="clmc-color-quinary">Experiencia y Trayectoria En Winland Casino, somos una empresa consolidada en el sector del entretenimiento en México, con una sólida trayectoria en la creación de experiencias de juego de alta calidad. Nuestra plataforma, Winland Online, representa la evolución natural de nuestro compromiso con la innovación, llevando la emoción del mundo físico a tu dispositivo móvil.</p><p class="clmc-color-quinary">Las Mejores Apuestas Deportivas Nuestro Sportsbook está diseñado para el aficionado mexicano. Ofrecemos los momios más competitivos para tus deportes favoritos: desde la pasión de la Liga MX y el fútbol internacional (Champions League, La Liga), hasta la intensidad de la NFL, NBA, MLB y Boxeo. Disfruta de nuestra plataforma de Apuestas En Vivo con estadísticas en tiempo real para jugar minuto a minuto.</p><p class="clmc-color-quinary">Casino en Línea y Juegos en Vivo Nuestro portafolio incluye una amplia gama de opciones de entretenimiento. Vive la adrenalina en nuestro Casino en Vivo con crupieres reales en Ruleta, Blackjack y Baccarat, o explora cientos de Slots (Tragamonedas), Jackpots y juegos virtuales con tecnología de última generación</p><p class="clmc-color-quinary">Seguridad, Regulación y Confianza A través de Winland Online, ofrecemos un entorno digital seguro y 100% regulado por la SEGOB. Nos enfocamos en brindar valor y confianza, facilitando depósitos rápidos y seguros vía SPEI, tarjetas bancarias y efectivo en tiendas de conveniencia (como 7-Eleven y Walmart), garantizando el pago de tus premios. Nuestra misión es consolidar a Winland como el referente del entretenimiento responsable, transparente y orientado al cliente en México.</p></div></details><div class="clmc-footer-divider"></div><div class="clmc-footer-bottom "><div class="clmc-footer-social"><a href="https://www.facebook.com/profile.php?id=61578614082947&amp;mibextid=wwXIfr&amp;rdid=0KIFuWybq5ttbVTk&amp;share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F17pzR3BBaz%2F%3Fmibextid%3DwwXIfr#" aria-label="Facebook" title="Visitar Facebook de Winland" target="_blank" class="clmc-footer-social-link"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-q7mezt" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"></path></svg></a><a href="https://www.instagram.com/winland.com.mx/" aria-label="Instagram" title="Visitar Instagram de Winland" target="_blank" class="clmc-footer-social-link"><svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-q7mezt" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"></path></svg></a></div><div class="clmc-footer-badges"><img height="120" alt="+18 Responsable" title="+18 Responsable" src="assets/sitio/footer/juego-responsable.png"><img height="64" alt="ssl_certified" title="ssl_certified" src="assets/sitio/footer/ssl_certified.webp"></div></div><div class="clmc-footer-legal"><p class="clmc-color-quinary clmc-w100"><a href="#" title="Ir al inicio de Winland" class="clmc-text-decoration-underline clmc-color-secondary clmc-footer-legal-link">www.winland.com.mx</a>  es operado en México por Operadora de Salas Fortune de México, S.A. de C.V., operador autorizado conforme al oficio No. DGJS/682/2018, bajo el Permiso Federal No.DGJS/DGAAD/DCRCA/P-01/2017 otorgado a Operadora de Coincidencias Numéricas, S.A. de C.V., y cuenta con la autorización específica del sitio mediante el oficio No.DGJS/DCRCA/0149/2023 de fecha 9 de febrero de 2023. Juega responsablemente. El juego con apuesta está prohibido para menores de 18 años. Su finalidad es el entretenimiento; juega con moderación y dentro de tus límites.</p></div></div></footer>
+
+      <!-- Menú inferior: marco de la demo, solo móvil -->
+      <div class="wl-solo-movil">
+<div class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation3 clmc-mobile-navigation css-1hv9hlh" style="--Paper-shadow: 0px 3px 3px -2px rgba(0,0,0,0.2),0px 3px 4px 0px rgba(0,0,0,0.14),0px 1px 8px 0px rgba(0,0,0,0.12);"><div class="MuiBottomNavigation-root clmc-mobile-navigation-content clmc-flex clmc-align-center clmc-justify-around clmc-text-nowrap css-r8tunr"><a href="#" title="Ir a Menú" class="clmc-mobile-menu-option clmc-text-decoration-none"><div class="clmc-mobile-navigation-element clmc-flex clmc-column clmc-align-center clmc-justify-center clmc-cursor-pointer"><img class="clmc-cursor-pointer" alt="Menú" title="Menú" src="assets/sitio/mobilenav/menu.svg"><p class="clmc-mt-small clmc-text-uppercase">Menú</p></div></a><a href="#" title="Ir a Deportes" class="clmc-mobile-menu-option clmc-text-decoration-none"><div class="clmc-mobile-navigation-element clmc-flex clmc-column clmc-align-center clmc-justify-center clmc-cursor-pointer"><img class="clmc-cursor-pointer" alt="Deportes" title="Deportes" src="assets/sitio/mobilenav/deportes.svg"><p class="clmc-mt-small clmc-text-uppercase">Deportes</p></div></a><a href="#" title="Ir a En vivo" class="clmc-mobile-menu-option clmc-text-decoration-none"><div class="clmc-mobile-navigation-element clmc-flex clmc-column clmc-align-center clmc-justify-center clmc-cursor-pointer"><img class="clmc-cursor-pointer" alt="En vivo" title="En vivo" src="assets/sitio/mobilenav/envivo.svg"><p class="clmc-mt-small clmc-text-uppercase">En vivo</p></div></a><a href="#" title="Ir a Mis apuestas" class="clmc-mobile-menu-option clmc-text-decoration-none"><div class="clmc-mobile-navigation-element clmc-flex clmc-column clmc-align-center clmc-justify-center clmc-cursor-pointer"><img class="clmc-cursor-pointer" alt="Mis apuestas" title="Mis apuestas" src="assets/sitio/mobilenav/misApuestas.svg"><p class="clmc-mt-small clmc-text-uppercase">Mis apuestas</p></div></a><a href="#" title="Ir a Casino" class="clmc-mobile-menu-option clmc-text-decoration-none"><div class="clmc-mobile-navigation-element clmc-flex clmc-column clmc-align-center clmc-justify-center clmc-cursor-pointer"><img class="clmc-cursor-pointer" alt="Casino" title="Casino" src="assets/sitio/mobilenav/casino.svg"><p class="clmc-mt-small clmc-text-uppercase">Casino</p></div></a></div></div>
+      </div>
+</div>
+
+<script>
+/* ===== Icon system: inline SVG, stroke-based (no emoji) ===== */
+const I = {
+  check:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>`,
+  mail:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7.5 8 5.5 8-5.5"/></svg>`,
+  clock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>`,
+  alertTriangle:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.6 2.9 17.5a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4M12 17h.01"/></svg>`,
+  lock:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>`,
+  upload:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4.5M7.5 9 12 4.5 16.5 9"/><path d="M4.5 15v2.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg>`,
+  selfie:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5a2 2 0 0 1 2-2h1.6l1.4-2h6l1.4 2H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.2"/></svg>`,
+  /* Cerrar: mismo glifo que el botón de cerrar del sitio */
+  x:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`,
+  chevronRight:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>`,
+  chevronDown:`<svg class="icon wl-chev-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+  plus:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  imagen:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m20.5 15.5-4.5-4.5L6 19.5"/></svg>`,
+  whatsapp:`<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.74-.86-2-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.15-.17.2-.34.22-.63.08-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.05-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.66-1.6-.9-2.18-.24-.57-.48-.5-.66-.5l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.63.71.22 1.36.2 1.87.12.57-.08 1.74-.71 1.98-1.4.25-.68.25-1.27.17-1.4-.07-.12-.27-.2-.57-.34zM12.05 21.5h-.02a9.4 9.4 0 0 1-4.8-1.32l-.34-.2-3.57.93.96-3.48-.22-.36a9.4 9.4 0 0 1-1.44-5.02c0-5.19 4.23-9.42 9.44-9.42 2.52 0 4.89.98 6.67 2.77a9.35 9.35 0 0 1 2.76 6.66c0 5.2-4.23 9.43-9.44 9.43zm8.03-17.46A11.32 11.32 0 0 0 12.05.7C5.8.7.72 5.78.72 12.02c0 2 .52 3.95 1.52 5.68L.62 23.3l5.73-1.5a11.28 11.28 0 0 0 5.7 1.45h.01c6.24 0 11.32-5.08 11.32-11.32 0-3.03-1.18-5.87-3.32-8.01z"/></svg>`,
+  message:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5h14A1.5 1.5 0 0 1 20.5 7v9a1.5 1.5 0 0 1-1.5 1.5H9l-4.5 3.5V7A1.5 1.5 0 0 1 5 5.5z"/></svg>`,
+  qr:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5M14 14v2.5M17.5 17.5H20V20M14 20h2.5M20 14v.01"/></svg>`,
+  monitor:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></svg>`,
+  /* Sello con palomita: "cuenta verificada", del mismo trazo que el resto del set */
+  badgeCheck:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76z"/><path d="m9 12 2 2 4-4"/></svg>`,
+  /* Disco sólido con palomita y halo (pop-up de éxito): una sola forma, sin
+     círculo contenedor que la encierre otra vez; lee al instante a cualquier tamaño. */
+  checkBadge:`<svg class="icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".14"/><circle cx="12" cy="12" r="8" fill="currentColor"/><path d="M8.6 12.2l2.3 2.3 4.5-4.9" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  /* Escudo con palomita: "cuenta pre-verificada", del mismo trazo que el resto del set */
+  shieldCheck:`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8l7.2 2.7v5.6c0 4.4-3 8.5-7.2 9.6-4.2-1.1-7.2-5.2-7.2-9.6V5.5z"/><path d="M8.9 12.1l2.2 2.2 4.1-4.6"/></svg>`,
+};
+
+/* ═══ Flujo Truora multi-paso ═══ */
+function truoraStep(n){
+  document.querySelectorAll('.wl-t-step').forEach(st=>st.classList.toggle('hide', st.dataset.step!=String(n)));
+  const box=document.getElementById('tPhoneBox'); if(box) box.classList.add('hide');
+  document.querySelectorAll('.wl-channel-list .ch.selected').forEach(c=>c.classList.remove('selected'));
+  if(n===3) qrStart();
+}
+function truoraChannel(row, name){
+  document.querySelectorAll('.wl-channel-list .ch').forEach(c=>c.classList.toggle('selected', c===row));
+  document.getElementById('tChannelName').textContent=name;
+  document.getElementById('tPhoneBox').classList.remove('hide');
+}
+/* QR de maqueta (patrón ilustrativo) + cuenta regresiva en vivo */
+function qrMockSVG(){
+  let r=42, rects='';
+  const rnd=()=>{ r=(r*1103515245+12345)%2147483648; return r/2147483648; };
+  for(let y=0;y<21;y++)for(let x=0;x<21;x++){
+    const finder=(x<7&&y<7)||(x>13&&y<7)||(x<7&&y>13);
+    if(finder) continue;
+    if(rnd()>.52) rects+=`<rect x="${x*8}" y="${y*8}" width="8" height="8"/>`;
+  }
+  const f=(ox,oy)=>`<rect x="${ox}" y="${oy}" width="56" height="56"/><rect x="${ox+8}" y="${oy+8}" width="40" height="40" fill="#fff"/><rect x="${ox+16}" y="${oy+16}" width="24" height="24"/>`;
+  return `<svg viewBox="0 0 168 168" xmlns="http://www.w3.org/2000/svg" fill="#15171B">${rects}${f(0,0)}${f(112,0)}${f(0,112)}</svg>`;
+}
+function qrStart(){
+  const box=document.getElementById('qrBox');
+  if(box && !box.innerHTML) box.innerHTML=qrMockSVG();
+  clearInterval(window.__qrInt);
+  let t=300;
+  window.__qrInt=setInterval(()=>{
+    const el=document.getElementById('qrTimer');
+    if(!el){ clearInterval(window.__qrInt); return; }
+    t--; if(t<0){ clearInterval(window.__qrInt); return; }
+    el.textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+  },1000);
+}
+
+/* ═══ Filas de documento ═══ */
+/* Íconos de documento: un archivo por documento y estado
+   (email/identify/bank/other × verified/pending/denied), en assets/sitio/. */
+const DOCICON={email:'email',identity:'identify',bank:'bank',home:'other'};
+const DOCESTADO={verified:'verified',rejected:'denied'};
+function docIcon(type,status){
+  if(status==='blocked') return I.lock;
+  const archivo = `${DOCICON[type]}_${DOCESTADO[status]||'pending'}`;
+  /* ?v=2: versión para que el navegador no sirva íconos anteriores desde caché */
+  return `<img src="assets/sitio/${archivo}.svg?v=2" alt="" style="width:17px;height:17px;display:block;">`;
+}
+function mkRow(type,title,status,sub,opts={}){
+  const scMap={verified:'s-verified',pending:'s-pending',progress:'s-progress',rejected:'s-rejected',blocked:'s-blocked'};
+  /* accionable y chevron se deciden juntos: si la fila promete que abre algo,
+     tiene que abrirlo. Validado y bloqueado no tienen nada que hacer; en
+     revisión tampoco, porque el documento ya se envió. */
+  const accionable = !['verified','blocked','progress'].includes(status) && opts.chev!==false;
+  const chev = accionable ? `<div class="wl-chev">${I.chevronRight}</div>` : '';
+  /* Validado: palomita al final de la fila */
+  const ok = status==='verified' ? `<div class="wl-row-ok">${I.check}</div>` : '';
+  return `<div class="clmc-user-document-item ${status==='blocked'?'disabled':''}" data-doc="${type}" data-estado="${status}"${accionable?' data-accionable="1"':''}><div class="clmc-user-document-icon st-${status}">${docIcon(type,status)}</div><div class="wl-doc-meta"><div class="t">${title}</div><div class="s ${scMap[status]}">${sub}</div></div>${chev}${ok}</div>`;
+}
+
+/* Guía visual del modal: imagen inline en desktop, tarjeta que abre visor en mobile */
+const guiaVisual = (img, titulo) => `
+  <div class="wl-guia-cta" onclick="openGuia(this,'${img}','${titulo}')">
+    <img class="wl-guia-thumb" src="assets/infografias/${img}" alt="">
+    <span><b>${titulo}</b><small>Consulta la guía visual antes de subir</small></span>
+    ${I.chevronRight}
+  </div>
+`;
+/* Cada infografía viene en dos versiones de Marketing: apaisada para escritorio
+   y vertical para móvil (mismo nombre con sufijo -movil). El <picture> elige
+   por viewport, con el mismo corte de 768px que el resto del módulo. */
+const guiaMovil = img => img.replace(/\.jpg$/,'-movil.jpg');
+const guiaPicture = (img, alt) => `<picture>
+          <source media="(max-width:768px)" srcset="${img?'assets/infografias/'+guiaMovil(img):''}">
+          <img src="${img?'assets/infografias/'+img:''}" alt="${alt}" class="wl-g-img">
+        </picture>`;
+/* Vista de guía DENTRO del mismo modal (sin apilar modales) */
+function openGuia(el,img,titulo){
+  const m=el.closest('.clmc-dialog');
+  m.querySelector('.wl-m-main').classList.add('hide');
+  const g=m.querySelector('.wl-m-guia');
+  g.querySelector('.g-title').textContent=titulo;
+  g.querySelector('source').srcset='assets/infografias/'+guiaMovil(img);
+  g.querySelector('img').src='assets/infografias/'+img;
+  g.querySelector('img').alt=titulo;
+  g.classList.remove('hide');
+  m.scrollTop=0;
+}
+function closeGuia(el){
+  const m=el.closest('.clmc-dialog');
+  m.querySelector('.wl-m-guia').classList.add('hide');
+  m.querySelector('.wl-m-main').classList.remove('hide');
+}
+/* FAQ: item con acordeón. Los interlinks van embebidos en la redacción con <a> */
+/* El texto de las respuestas es el autorizado por el cliente y no se altera.
+   `guia` es una capa aparte: agrega la infografía sin tocar ese copy. */
+const faqItem = (q, a, guia) => `
+  <div class="wl-faq-item">
+    <div class="wl-faq-q" onclick="faqOpen(this.parentElement)">${q} ${I.plus}</div>
+    <div class="wl-faq-a"><div class="wl-faq-a-in"><div class="wl-faq-a-tx">${a}${guia ? `
+      <a class="wl-faq-guia" onclick="event.stopPropagation();faqInfo('${guia[0]}','${guia[1]}')">${I.imagen}Ver guía visual</a>` : ''}</div></div></div>
+  </div>
+`;
+/* Fila de carga: un archivo por fila, con su estado. El cuadro de la izquierda
+   es el lugar del archivo: vacío muestra el tipo y, ya cargado, la palomita.
+   Conserva la clase .clmc-upload-document-drop-area. */
+const slot = (ic, label) => `
+  <div class="clmc-upload-document-drop-area wl-slot">
+    <div class="wl-slot-thumb">${ic}</div>
+    <div class="wl-slot-meta"><div class="wl-slot-t">${label}</div><div class="wl-slot-s"></div></div>
+    <span class="wl-slot-cta">Subir</span>
+  </div>`;
+/* Requisitos de un documento: lista escaneable con palomitas (antes, una sola
+   línea separada por puntos dentro de una franja gris) */
+const reqList = items => `<div class="wl-req-line"><b>Requisitos</b><ul>${items.map(x=>`<li>${I.check}${x}</li>`).join('')}</ul></div>`;
+/* Lista dentro de una respuesta: respeta los guiones con que vino el texto original */
+const faqLista = items => `<ul class="wl-faq-lista">${items.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+/* Acordeón exclusivo: solo una respuesta abierta a la vez */
+function faqOpen(item){
+  const wasOpen=item.classList.contains('open');
+  item.closest('.wl-faq-group').querySelectorAll('.wl-faq-item.open').forEach(i=>i.classList.remove('open'));
+  if(!wasOpen) item.classList.add('open');
+  item.closest('.wl-faq-group').querySelectorAll('.wl-faq-item').forEach(i=>
+    i.querySelector('.wl-faq-q').setAttribute('aria-expanded', i.classList.contains('open')));
+}
+let capasAbiertas = 0;
+let capaDeEstado = false;   /* si la pantalla actual dibuja una capa encima */
+/* Bloqueo del fondo mientras hay una capa encima. overflow:hidden en <html> no
+   basta en iOS: Safari y Chrome siguen desplazando el fondo y, al hacerlo,
+   esconden o muestran su barra inferior, lo que deja el modal más corto que la
+   pantalla. Fijar el <body> en su posición (position:fixed con top negativo)
+   es la técnica que iOS respeta; al soltarlo se devuelve el scroll exacto.
+   Se compensa el ancho de la barra de scroll para que el contenido no dé un
+   brinco lateral al bloquear. */
+function bloquearFondo(activar){
+  const h = document.documentElement, b = document.body;
+  if(activar){
+    if(capasAbiertas++) return;
+    const y = window.scrollY;
+    b.dataset.bloqueoY = y;
+    const barra = window.innerWidth - h.clientWidth;
+    if(barra > 0) b.style.paddingRight = barra + 'px';
+    h.style.overflow = 'hidden';
+    Object.assign(b.style, {position:'fixed', top:(-y)+'px', left:'0', right:'0', width:'100%'});
+  } else {
+    if(capasAbiertas === 0) return;
+    if(--capasAbiertas) return;
+    const y = parseInt(b.dataset.bloqueoY || '0', 10);
+    h.style.overflow = '';
+    Object.assign(b.style, {position:'', top:'', left:'', right:'', width:'', paddingRight:''});
+    window.scrollTo(0, y);
+  }
+}
+function cerrarVisor(){
+  const habia = document.querySelectorAll('.wl-visor').length;
+  document.querySelectorAll('.wl-visor').forEach(o=>o.remove());
+  document.removeEventListener('keydown', visorEscape);
+  if(habia) bloquearFondo(false);
+}
+function visorEscape(e){ if(e.key==='Escape') cerrarVisor(); }
+
+/* Vuelve al inicio de la pantalla. Se intenta con animación y se verifica: si
+   no se movió, se fuerza el salto directo. El respaldo cuesta nada y cubre los
+   casos donde la animación no corre (vistas incrustadas, pestaña en segundo
+   plano), para que el usuario nunca quede a media página sin aviso. */
+let tokenSubida = 0;
+function subirAlInicio(instantaneo){
+  const token = ++tokenSubida;
+  const animar = !instantaneo && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!animar){ window.scrollTo(0,0); return; }
+  /* Un cuadro después: si la pantalla nueva es más corta, el navegador recorta
+     el scroll al acomodarla y ese recorte cancela una animación ya iniciada. */
+  requestAnimationFrame(() => {
+    if(token !== tokenSubida) return;
+    try { window.scrollTo({top:0, behavior:'smooth'}); } catch(e) { window.scrollTo(0,0); }
+  });
+  /* Respaldo: solo se fuerza el salto si el scroll se quedó quieto entre dos
+     revisiones. Si la animación va en camino, se le deja terminar; y hay un
+     tope de 2 s por si algo la detiene a medio camino. */
+  let previo = window.scrollY;
+  const verificar = (intento) => setTimeout(() => {
+    if(token !== tokenSubida) return;      /* hubo otra navegación: ya no aplica */
+    const y = window.scrollY;
+    if(y <= 1) return;                     /* la animación llegó */
+    const quieto = Math.abs(y - previo) < 1;
+    previo = y;
+    if(!quieto && intento < 8) return verificar(intento+1);
+    window.scrollTo(0,0);                  /* no avanza: salto directo */
+  }, 250);
+  verificar(0);
+}
+function faqInfo(img, titulo){
+  cerrarVisor();   /* nunca apilar: si ya hay uno abierto, se reemplaza */
+  bloquearFondo(true);
+  const ov=document.createElement('div');
+  /* Reutiliza el mismo componente que la guía visual del modal de documentos
+     (.wl-doc-modal > .wl-m-guia): misma barra superior, mismo tache, mismo
+     acomodo en escritorio y móvil. Sin "Regresar" ni botón, porque aquí no
+     hay formulario al que volver. */
+  ov.className='wl-modal-overlay wl-visor';
+  ov.innerHTML=`<div class="clmc-dialog wl-doc-modal">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-m-guia">
+        <h3 class="g-title">${titulo}</h3>
+        ${guiaPicture(img, titulo)}
+      </div>
+    </div>`;
+  accesible(ov);
+  ov.addEventListener('click', e=>{ if(e.target===ov||e.target.closest('.clmc-closeIcon-popup')) cerrarVisor(); });
+  document.addEventListener('keydown', visorEscape);
+  document.body.appendChild(ov);
+}
+/* Entra a la pestaña de FAQ abriendo una categoría concreta. Útil cuando el
+   usuario llega desde el flujo de verificación: aterriza en el tema que traía. */
+function irAFaq(cat){
+  render('faq');
+  const chip = document.querySelector(`#faqCats .wl-faq-cat[data-cat="${cat}"]`);
+  if(chip) faqCat(chip);
+}
+function faqCat(el){
+  document.querySelectorAll('#faqCats .wl-faq-cat').forEach(c=>c.classList.toggle('active', c===el));
+  document.querySelectorAll('.wl-faq-group').forEach(g=>g.classList.toggle('hide', g.dataset.cat!==el.dataset.cat));
+  /* En mobile los chips hacen scroll horizontal: dejar el activo a la vista */
+  const cont=el.parentElement;
+  if(cont.scrollWidth>cont.clientWidth){
+    cont.scrollLeft = el.offsetLeft-(cont.clientWidth-el.offsetWidth)/2;
+  }
+}
+
+const headerHTML = (title, sub) => `
+  <h1 class="wl-vh-title">${title}</h1>
+  <div class="wl-vh-sub">${sub}</div>
+`;
+
+const tracker = (a,b,c) => `
+  <div class="wl-tracker">
+    <div class="wl-step ${a.cls}"><div class="meta"><div class="t">Paso 1: Identidad</div><div class="s">${a.s}</div></div></div>
+    <div class="wl-step ${b.cls}"><div class="meta"><div class="t">Paso 2: Domicilio</div><div class="s">${b.s}</div></div></div>
+    <div class="wl-step ${c.cls}"><div class="meta"><div class="t">Paso 3: Cuenta bancaria</div><div class="s">${c.s}</div></div></div>
+  </div>
+`;
+
+/* Ícono de Truora */
+const TRUORA_MARK = `<img src="assets/sitio/truora-icon-black.svg" alt="Truora" style="width:20px;height:20px;display:block;">`;
+
+const truoraHero = (ctaLabel) => `
+  <div class="wl-truora-card">
+    <div class="wl-truora-head">
+      <div class="wl-truora-id">
+        <div class="wl-truora-icon">${TRUORA_MARK}</div>
+        <div>
+          <div class="wl-truora-name">Truora</div>
+          <div class="wl-truora-tagline">Verificación instantánea en 2 minutos</div>
+        </div>
+      </div>
+      <span class="badge">Recomendado</span>
+    </div>
+    <h2>Verificación rápida con Truora</h2>
+    <p>Valida tu identidad desde tu celular en pocos minutos mediante un proceso guiado y seguro.</p>
+    <div class="wl-truora-benefits">
+      <span>${I.check}Proceso 100% digital, sin visita física</span><span>${I.check}Resultado disponible en minutos</span><span>${I.check}Seguridad certificada</span>
+    </div>
+    <button class="clmc-btn-primary">${ctaLabel || 'Iniciar verificación'}</button>
+  </div>
+`;
+
+const altAccordion = (open, identityState, emailRestricted=false) => `
+  <div class="wl-alt-toggle ${open?'open':''}" onclick="this.classList.toggle('open');this.setAttribute('aria-expanded',this.classList.contains('open'));document.getElementById('altPanel').classList.toggle('hide')">
+    <span>¿No puedes completar tu verificación con Truora? Ver opciones alternativas</span>${I.chevronDown}
+  </div>
+  <div class="wl-alt-panel ${open?'':'hide'}" id="altPanel">
+    <div class="wl-alt-note">También puedes usar la verificación manual o enviar tus documentos por correo. Estos métodos pueden tardar más tiempo en revisarse.</div>
+    ${docGrid(identityState)}
+    ${emailRestricted ? `
+    <div class="wl-email-box restricted">
+      <div><div class="t">${I.lock}Verificación por correo · disponible parcialmente</div><div class="s">Tu identidad se está validando con Truora, así que por ahora <b>solo puedes enviar comprobante de domicilio y estado de cuenta bancario</b> por este medio.</div></div>
+      <button class="clmc-btn-primary-white">${I.mail}Enviar domicilio y edo. de cuenta</button>
+    </div>` : `
+    <div class="wl-email-box">
+      <div><div class="t">Verificación por correo electrónico</div><div class="s">Manda tu documentación por email y recibirás respuesta en 24–48 horas.</div></div>
+      <button class="clmc-btn-primary-white">${I.mail}Abrir email</button>
+    </div>`}
+  </div>
+`;
+
+/* bankState permite estados distintos por documento (cuenta pre-verificada:
+   domicilio validado y cuenta bancaria todavía pendiente). Por omisión, ambos siguen docsState. */
+/* Formato de alta de cliente: módulo PARALELO al KYC (no es un cuarto paso del tracker).
+   Nace bloqueado y Back Office lo habilita por usuario; al activarse abre la firma digital.
+   API: bandera de activación desde BO + estado de firma (pendiente | firmado). */
+const altaAccordion = (active=false, open=false) => `
+  <div class="wl-alt-toggle wl-alta-toggle ${active?'':'is-locked'} ${open?'open':''}" onclick="this.classList.toggle('open');this.setAttribute('aria-expanded',this.classList.contains('open'));document.getElementById('altaPanel').classList.toggle('hide')">
+    <span>${active?'':I.lock}Formato de alta de cliente${active?'':' · próximamente'}</span>${I.chevronDown}
+  </div>
+  <div class="wl-alt-panel ${open?'':'hide'}" id="altaPanel">
+    <div class="wl-alt-note">Documento de alta que se firma de forma digital, sin imprimir ni escanear nada. Toma un par de minutos y queda guardado en tu cuenta.</div>
+    ${active ? `
+    <div class="wl-email-box">
+      <div><div class="t">Firma tu formato de alta de cliente</div><div class="s">Ya puedes completarlo. Al firmarlo queda registrado automáticamente en tu expediente.</div></div>
+      <button class="clmc-btn-primary-white">Firmar formato</button>
+    </div>` : `
+    <div class="wl-email-box restricted">
+      <div><div class="t">${I.lock}Disponible próximamente</div><div class="s">Estamos habilitando la firma digital de este formato. <b>Te avisaremos en cuanto puedas firmarlo</b>; no necesitas hacer nada por ahora.</div></div>
+      <button class="clmc-btn-primary-white" disabled>Firmar formato</button>
+    </div>`}
+  </div>
+`;
+
+function docGrid(identityState, docsState='pending', bankState){
+  const idDoneLabel = idMethod==='manual' ? 'Validado manualmente' : 'Validado por Truora';
+  const idMap={
+    pending: ['pending','0 de 3 documentos subidos'],
+    blocked: ['blocked','Deshabilitada temporalmente · biometría en proceso (~5 min)'],
+    done:    ['verified', idDoneLabel],
+    rejected:['rejected','Documento rechazado, vuelve a subirlo'],
+    progress:['blocked','Bloqueado temporalmente · validación biométrica en proceso (~5 min)'],
+  };
+  const [idStatus,idSub]=idMap[identityState];
+  const idDone = identityState==='done';
+  const homeDone = docsState==='done';
+  const bnkDone  = (bankState||docsState)==='done';
+  /* Con el domicilio ya validado, la cuenta bancaria se comunica por su beneficio (cobrar sin ir
+     a sala), NO como "opcional": etiquetarla así invita a saltarla y es el paso que más conviene. */
+  const bankSub = bnkDone ? 'Validado'
+                : homeDone ? 'Recibe tus retiros directo en tu banco'
+                : 'Pendiente de subir';
+  /* Domicilio y cuenta bancaria permanecen bloqueados hasta validar la identidad (por Truora o manual) */
+  const homeRow = idDone
+    ? mkRow('home','Domicilio',homeDone?'verified':'pending',homeDone?'Validado':'Pendiente de subir')
+    : mkRow('home','Domicilio','blocked','Disponible después de validar tu identidad');
+  const bankRow = idDone
+    ? mkRow('bank','Cuenta bancaria',bnkDone?'verified':'pending',bankSub)
+    : mkRow('bank','Cuenta bancaria','blocked','Disponible después de validar tu identidad');
+  return `
+  <div class="clmc-user-documents-grid">
+    ${mkRow('email','Email','verified','Verificado')}
+    ${mkRow('identity','Identidad',idStatus,idSub)}
+    ${homeRow}
+    ${bankRow}
+  </div>`;
+}
+
+const faqHint = `
+  <div class="wl-faq-hint">
+    <span>¿Tienes dudas sobre el proceso? <a onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></span>
+  </div>
+`;
+
+const states = {
+
+inicial: () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
+  ${tracker({cls:'current',s:'Pendiente'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
+  ${truoraHero()}
+  ${altAccordion(false,'pending')}
+  ${altaAccordion()}
+
+    ${faqHint}
+  `,
+
+'truora-modal': () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
+  ${tracker({cls:'current',s:'Iniciando verificación...'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
+  ${truoraHero()}
+  ${altAccordion(false,'blocked')}
+  ${altaAccordion()}
+  ${faqHint}
+
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-truora-wide">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+
+      <!-- Paso 1 · Consentimiento (equivalente al "Autorizo datos biométricos" de Truora) -->
+      <div class="wl-t-step" data-step="1">
+        <div class="wl-modal-truora-head">
+          <div class="wl-truora-icon">${TRUORA_MARK}</div>
+          <div>
+            <h3 style="margin-bottom:2px;">Verificaremos tu identidad</h3>
+            <p class="lead" style="margin-bottom:0;">Proceso guiado y seguro con Truora · toma ~2 minutos</p>
+          </div>
+        </div>
+        <p class="lead">Capturaremos fotos de tu identificación oficial y una prueba de vida. Para continuar necesitamos tu autorización.</p>
+        <label class="wl-consent-check">
+          <input type="checkbox" onchange="document.getElementById('tConsentBtn').disabled=!this.checked">
+          <span>Autorizo el uso de mis <b>datos biométricos</b> para verificar mi identidad.</span>
+        </label>
+        <button class="clmc-btn-primary" id="tConsentBtn" style="width:100%;" disabled onclick="truoraStep(2)">Continuar</button>
+        <div class="clmc-upload-documents-format-box">Consulta nuestra <a class="wl-faq-link">política de privacidad</a> · Impulsado por Truora</div>
+      </div>
+
+      <!-- Paso 2 · Canal: enlace al celular (número registrado precargado), QR o este dispositivo -->
+      <div class="wl-t-step hide" data-step="2">
+        <h3>Verifica tu identidad desde tu celular</h3>
+        <p class="lead">Te recomendamos continuar en tu celular para tomar fotos con mejor calidad. Elige cómo recibir el enlace:</p>
+        <div class="wl-channel-list">
+          <div class="ch" onclick="truoraChannel(this,'WhatsApp')"><div class="ch-ic">${I.whatsapp}</div><div class="ch-meta"><div class="t">WhatsApp</div><div class="s">Te enviamos un enlace a tu WhatsApp</div></div>${I.chevronRight}</div>
+          <div class="ch" onclick="truoraChannel(this,'SMS')"><div class="ch-ic">${I.message}</div><div class="ch-meta"><div class="t">SMS</div><div class="s">Recibe el enlace por mensaje de texto</div></div>${I.chevronRight}</div>
+          <div class="ch" onclick="truoraStep(3)"><div class="ch-ic">${I.qr}</div><div class="ch-meta"><div class="t">Código QR</div><div class="s">Escanéalo con la cámara de tu celular</div></div>${I.chevronRight}</div>
+          <div class="ch" onclick="truoraStep(4)"><div class="ch-ic">${I.monitor}</div><div class="ch-meta"><div class="t">Este dispositivo</div><div class="s">Continúa aquí mismo, sin cambiar de equipo</div></div>${I.chevronRight}</div>
+        </div>
+        <div class="wl-t-phone hide" id="tPhoneBox">
+          <div class="wl-tp-label">Enviaremos el enlace por <b id="tChannelName">WhatsApp</b> a tu número registrado:</div>
+          <div class="wl-tp-row">
+            <span class="wl-tp-flag">🇲🇽 +52</span>
+            <input type="tel" value="55 1234 5678" aria-label="Número de celular">
+          </div>
+          <div class="wl-tp-hint">Es el número de tu cuenta Winland. Puedes editarlo si lo necesitas.</div>
+          <!-- API: enviar enlace de verificación Truora al teléfono indicado -->
+          <button class="clmc-btn-primary" style="width:100%;" onclick="render('confirmando')">Enviar enlace</button>
+        </div>
+      </div>
+
+      <!-- Paso 3 · Código QR -->
+      <div class="wl-t-step hide" data-step="3">
+        <div class="wl-t-back" onclick="truoraStep(2)">${I.chevronRight}Regresar</div>
+        <h3 class="wl-qr-title">Escanea el código QR desde tu celular</h3>
+        <p class="lead wl-qr-lead">Válido por <b id="qrTimer">05:00</b> min</p>
+        <div class="wl-qr-box" id="qrBox"></div>
+        <div class="clmc-upload-documents-format-box">Al escanearlo, el proceso continúa en tu celular y esta pantalla se actualizará sola.<br><a class="wl-faq-link" onclick="render('confirmando')">Simular escaneo (demo)</a></div>
+      </div>
+
+      <!-- Paso 4 · Este dispositivo -->
+      <div class="wl-t-step hide" data-step="4">
+        <div class="wl-t-back" onclick="truoraStep(2)">${I.chevronRight}Regresar</div>
+        <h3>Continúa en este dispositivo</h3>
+        <p class="lead">Usaremos la cámara de este equipo para capturar tu identificación y tu prueba de vida. Antes de comenzar, asegúrate de:</p>
+        <div class="wl-t-checklist">
+          <span>${I.check}Tener tu INE, pasaporte o forma migratoria a la mano</span>
+          <span>${I.check}Contar con cámara disponible en este equipo</span>
+          <span>${I.check}Estar en un lugar bien iluminado</span>
+        </div>
+        <button class="clmc-btn-primary" style="width:100%;" onclick="render('confirmando')">Comenzar verificación</button>
+        <div class="clmc-upload-documents-format-box">Si cierras esta ventana antes de terminar, deberás reiniciar el proceso.</div>
+      </div>
+
+    </div>
+  </div>
+`,
+
+confirmando: () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
+  <div class="wl-status-banner info">
+    <div class="ic">${I.clock}</div>
+    <div><div class="t">Estamos confirmando tu identidad</div><div class="s">Tu proceso con Truora finalizó y estamos actualizando tu estado. Esto puede tardar unos minutos.</div>
+    <!-- API: re-consultar estado de la validación biométrica --><div class="cta"><a>Actualizar estado</a></div></div>
+  </div>
+  ${tracker({cls:'current',s:'Verificación en proceso'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
+  ${altAccordion(false,'progress',true)}
+  ${altaAccordion()}
+
+    ${faqHint}
+  `,
+
+'exito-biometria': () => `
+  ${headerHTML('Identidad validada correctamente','Ahora sube tu comprobante de domicilio para activar tus retiros.')}
+  ${tracker({cls:'done',s:'Validada con Truora'},{cls:'current',s:'Pendiente de subir'},{cls:'invite',s:'Cobra sin ir a sala'})}
+  ${docGrid('done')}
+  ${faqHint}
+
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-modal-center" style="text-align:center;">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-pop-check">${I.checkBadge}</div>
+      <h3 style="padding-right:0;">¡Validación biométrica exitosa!</h3>
+      <p class="lead">Tu identidad quedó confirmada. Solo falta subir tu comprobante de domicilio y tu estado de cuenta bancario.</p>
+      <button class="clmc-btn-primary" style="width:100%;" onclick="idMethod='truora';render('validada')">Adjuntar documentos</button>
+    </div>
+  </div>
+`,
+
+validada: () => `
+  ${headerHTML('Identidad validada correctamente','Ya completaste la validación de identidad. Ahora sube tu comprobante de domicilio para activar tus retiros.')}
+  <div class="wl-status-banner success">
+    <div class="ic">${I.check}</div>
+    <div><div class="t">Identidad validada ${idMethod==='manual'?'manualmente':'con Truora'}</div><div class="s">Continúa con los documentos pendientes para activar tus retiros.</div></div>
+  </div>
+  ${tracker({cls:'done',s:idMethod==='manual'?'Validada manualmente':'Validada por Truora'},{cls:'current',s:'Pendiente de subir'},{cls:'invite',s:'Cobra sin ir a sala'})}
+  ${docGrid('done','pending')}
+  ${altaAccordion()}
+
+    ${faqHint}
+  `,
+
+'docs-validacion': () => `
+  ${headerHTML('Estamos revisando tus documentos','Tu comprobante de domicilio está en revisión. Te avisaremos en cuanto quede validado.')}
+  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'current',s:'En revisión'},{cls:'invite',s:'Cobra sin ir a sala'})}
+  <div class="wl-status-banner info">
+    <div class="ic">${I.clock}</div>
+    <div><div class="t">Documento en revisión</div><div class="s">Normalmente toma menos de 24 horas. Te avisaremos por correo en cuanto tengamos el resultado.</div>
+    <!-- API: re-consultar el estado de la revisión documental -->
+    <div class="cta"><a>Actualizar estado</a></div></div>
+  </div>
+  <div class="clmc-user-documents-grid">
+    ${mkRow('email','Email','verified','Verificado')}
+    ${mkRow('identity','Identidad','verified','Validado por Truora')}
+    ${mkRow('home','Domicilio','progress','En revisión',{chev:false})}
+    ${mkRow('bank','Cuenta bancaria','pending','Recibe tus retiros directo en tu banco')}
+  </div>
+
+    ${faqHint}
+  `,
+
+/* pre-verificada: identidad + domicilio validados. El usuario YA PUEDE RETIRAR (en salas
+   físicas); la cuenta bancaria se ofrece como mejora del método de cobro, no como requisito. */
+'pre-verificada': () => `
+  ${headerHTML('¡Tu cuenta ya está pre-verificada!','Por ahora, tus retiros solo pueden ser cobrados en nuestras salas físicas.')}
+  <div class="wl-status-banner success">
+    <div class="ic">${I.shieldCheck}</div>
+    <div><div class="t">Identidad y domicilio validados</div><div class="s">Ya puedes cobrar tus retiros en cualquiera de nuestras salas físicas.</div></div>
+  </div>
+  ${tracker({cls:'done',s:idMethod==='manual'?'Validada manualmente':'Validada por Truora'},{cls:'done',s:'Validado'},{cls:'invite',s:'Cobra sin ir a sala'})}
+  ${docGrid('done','done','pending')}
+
+  <div class="wl-upgrade-card">
+    <div>
+      <div class="t">¿Prefieres recibir tu dinero por depósito directo?</div>
+      <div class="s">Sube tu información bancaria y olvídate de las filas.</div>
+    </div>
+    <button class="clmc-btn-primary">Subir mi cuenta bancaria</button>
+  </div>
+  ${altaAccordion()}
+
+    ${faqHint}
+  `,
+
+rechazado: () => `
+  ${headerHTML('Hay un documento que requiere acción','Uno de tus documentos no pudo validarse. Corrígelo para continuar con tu verificación.')}
+  ${tracker({cls:'done',s:'Validada por Truora'},{cls:'alert',s:'Requiere acción'},{cls:'invite',s:'Cobra sin ir a sala'})}
+  <div class="wl-status-banner error">
+    <div class="ic">${I.alertTriangle}</div>
+    <div><div class="t">Comprobante de domicilio rechazado</div><div class="s">El documento estaba ilegible. Sube nuevamente un comprobante claro, no mayor a 3 meses.</div>
+    <div class="cta"><a>Subir de nuevo</a></div></div>
+  </div>
+  <div class="clmc-user-documents-grid">
+    ${mkRow('email','Email','verified','Verificado')}
+    ${mkRow('identity','Identidad','verified','Validado por Truora')}
+    ${mkRow('home','Domicilio','rejected','Rechazado, requiere acción')}
+    ${mkRow('bank','Cuenta bancaria','pending','Recibe tus retiros directo en tu banco')}
+  </div>
+
+    ${faqHint}
+  `,
+
+verificada: () => `
+  ${headerHTML('Tu cuenta está verificada','Ya recibes tus retiros por depósito directo, sin pasar a sala.')}
+  ${tracker({cls:'done',s:'Validada'},{cls:'done',s:'Validada'},{cls:'done',s:'Validada'})}
+  <div class="wl-status-banner success">
+    <div class="ic">${I.badgeCheck}</div>
+    <div><div class="t">Cuenta verificada</div><div class="s">Identidad, comprobante de domicilio y cuenta bancaria fueron validados correctamente.</div></div>
+  </div>
+  ${docGrid('done','done')}
+  ${altaAccordion()}
+
+    ${faqHint}
+  `,
+
+interrumpida: () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
+  <div class="wl-status-banner error">
+    <div class="ic">${I.alertTriangle}</div>
+    <div><div class="t">Verificación interrumpida</div><div class="s">Cerraste el proceso de Truora. Para continuar con tu validación de identidad, inicia nuevamente.</div></div>
+  </div>
+  ${tracker({cls:'current',s:'Reiniciar proceso'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
+  ${truoraHero('Reiniciar verificación')}
+  ${altAccordion(false,'pending')}
+  ${altaAccordion()}
+
+    ${faqHint}
+  `,
+
+
+/* Firma digital del formato de alta de cliente, con el módulo ya habilitado desde BO */
+'modal-firma': () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
+  ${tracker({cls:'current',s:'Pendiente'},{cls:'',s:'Disponible después de validar identidad'},{cls:'',s:'Disponible después de validar identidad'})}
+  ${truoraHero()}
+  ${altAccordion(false,'pending')}
+  ${altaAccordion(true,true)}
+  ${faqHint}
+
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-truora-wide">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-t-step">
+        <h3>Firma tu formato de alta de cliente</h3>
+        <p class="lead">Vas a firmar digitalmente tu documento de alta. No necesitas imprimir ni escanear nada: se firma desde aquí y queda guardado en tu expediente.</p>
+        <div class="wl-t-checklist">
+          <span>${I.check}Revisa que tus datos personales sean correctos</span>
+          <span>${I.check}Firma con tu dedo o mouse, o con tu firma electrónica</span>
+          <span>${I.check}Recibirás una copia del documento firmado por correo</span>
+        </div>
+        <!-- API: abrir la sesión del proveedor de firma digital y devolver el acuse al expediente -->
+        <button class="clmc-btn-primary" style="width:100%;">Continuar a la firma</button>
+        <div class="clmc-upload-documents-format-box">Si cierras esta ventana puedes retomar la firma más tarde desde esta misma sección.</div>
+      </div>
+    </div>
+  </div>
+`,
+
+'modal-identidad': () => `
+  ${headerHTML('Verifica tu cuenta para poder retirar','Completa tu identidad y comprobante de domicilio para activar tus retiros. Agrega tu cuenta bancaria y recíbelos por depósito directo.')}
+  ${tracker({cls:'current',s:'Pendiente'},{cls:'',s:''},{cls:'',s:''})}
+  ${truoraHero()}
+  ${faqHint}
+
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-doc-modal">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-m-main">
+      <h3>Verificación manual de identidad</h3>
+      <p class="lead">Sube tu identificación oficial por ambos lados y una selfie sosteniéndola a la altura de la barbilla.</p>
+
+      <!-- La tarea primero (qué subir), la ayuda después o al lado (cómo debe verse) -->
+      <div class="wl-mm">
+        <div class="wl-mm-task">
+          <div class="wl-doc-select">
+            <label>Selecciona el tipo de documento</label>
+            <select><option>INE / IFE</option><option>Pasaporte</option><option>Forma migratoria</option></select>
+          </div>
+          <div class="clmc-upload-documents-grid wl-slots">
+            ${slot(I.upload,'Frontal')}
+            ${slot(I.upload,'Reverso')}
+            ${slot(I.selfie,'Selfie con documento')}
+          </div>
+          <div class="clmc-upload-documents-format-box" style="text-align:left;">Formatos: JPG, PNG, PDF · Máx. 5MB</div>
+        </div>
+        <div class="wl-mm-help">
+          ${reqList(['Vigente', 'Legible, sin reflejos', 'Sin alteraciones', 'Las 4 esquinas visibles'])}
+          ${guiaVisual('guia-identificacion.jpg','Documentos de identificación aceptados')}
+          ${guiaVisual('guia-selfie.jpg','Cómo tomar tu selfie con la identificación')}
+          <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
+        </div>
+      </div>
+      <div class="clmc-upload-documents-actions">
+        <button class="clmc-btn-primary-white">Cancelar</button>
+        <button class="clmc-btn-disabled">Subir documentos</button>
+      </div>
+      </div><!-- /m-main -->
+
+      <div class="wl-m-guia hide">
+        <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
+        <h3 class="g-title"></h3>
+        ${guiaPicture('', '')}
+        <button class="clmc-btn-primary wl-g-cta" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+      </div>
+    </div>
+  </div>
+`,
+
+'modal-bancaria': () => `
+  ${headerHTML('Identidad validada correctamente','Sube tu comprobante de domicilio y tu cuenta bancaria para completar tu verificación.')}
+  ${tracker({cls:'done',s:'Validada'},{cls:'current',s:'Pendiente de subir'},{cls:'invite',s:'Cobra sin ir a sala'})}
+  ${docGrid('done')}
+  ${faqHint}
+
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-doc-modal">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-m-main">
+      <h3>Estado de cuenta bancario</h3>
+      <p class="lead">Documento oficial de una institución bancaria tradicional, a nombre del titular de la cuenta en Winland.</p>
+
+      <div class="wl-mm">
+        <div class="wl-mm-task">
+          <div class="clmc-upload-documents-grid wl-slots">${slot(I.upload,'Estado de cuenta')}</div>
+          <div class="clmc-upload-documents-format-box" style="text-align:left;">Formato: PDF · Máx. 5MB · Puedes ocultar tus saldos si lo prefieres</div>
+        </div>
+        <div class="wl-mm-help">
+          ${reqList(['Banco tradicional (no fintech)', 'A tu nombre', 'Máx. 3 meses', 'Completo, sin recortes'])}
+          ${guiaVisual('guia-documentacion.jpg','Estados de cuenta aceptados')}
+          <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
+        </div>
+      </div>
+      <div class="clmc-upload-documents-actions">
+        <button class="clmc-btn-primary-white">Cancelar</button>
+        <button class="clmc-btn-disabled">Subir documento</button>
+      </div>
+      </div><!-- /m-main -->
+
+      <div class="wl-m-guia hide">
+        <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
+        <h3 class="g-title"></h3>
+        ${guiaPicture('', '')}
+        <button class="clmc-btn-primary wl-g-cta" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+      </div>
+    </div>
+  </div>
+`,
+
+'modal-domicilio': () => `
+  ${headerHTML('Identidad validada correctamente','Sube tu comprobante de domicilio y tu cuenta bancaria para completar tu verificación.')}
+  ${tracker({cls:'done',s:'Validada'},{cls:'current',s:'Pendiente de subir'},{cls:'invite',s:'Cobra sin ir a sala'})}
+  ${docGrid('done')}
+  ${faqHint}
+
+  <div class="wl-modal-overlay">
+    <div class="clmc-dialog wl-doc-modal">
+      <div class="clmc-closeIcon-popup">${I.x}</div>
+      <div class="wl-m-main">
+      <h3>Comprobante de domicilio</h3>
+      <p class="lead">Recibo de luz (CFE), gas natural o teléfono/internet (Telmex, Izzi, Totalplay, Megacable), con antigüedad máxima de 3 meses.</p>
+
+      <div class="wl-mm">
+        <div class="wl-mm-task">
+          <div class="clmc-upload-documents-grid wl-slots">${slot(I.upload,'Comprobante de domicilio')}</div>
+          <div class="clmc-upload-documents-format-box" style="text-align:left;">Formato: PDF · Máx. 5MB</div>
+        </div>
+        <div class="wl-mm-help">
+          ${reqList(['Luz, gas o teléfono/internet', 'Máx. 3 meses', 'Dirección y titular legibles'])}
+          ${guiaVisual('guia-documentacion.jpg','Comprobantes de domicilio aceptados')}
+          <div class="wl-modal-faq-line">¿Dudas con este documento? <a class="wl-faq-link" onclick="irAFaq('verificacion')">Consulta las preguntas frecuentes</a></div>
+        </div>
+      </div>
+      <div class="clmc-upload-documents-actions">
+        <button class="clmc-btn-primary-white">Cancelar</button>
+        <button class="clmc-btn-disabled">Subir comprobante</button>
+      </div>
+      </div><!-- /m-main -->
+
+      <div class="wl-m-guia hide">
+        <div class="wl-t-back" onclick="closeGuia(this)">${I.chevronRight}Regresar</div>
+        <h3 class="g-title"></h3>
+        ${guiaPicture('', '')}
+        <button class="clmc-btn-primary wl-g-cta" onclick="closeGuia(this)">Entendido, subir mis documentos</button>
+      </div>
+    </div>
+  </div>
+`,
+
+faq: () => `
+  ${headerHTML('Preguntas frecuentes','Resuelve tus dudas sin salir de tu cuenta. Elige un tema.')}
+  <div class="wl-faq-cats" id="faqCats">
+    <div class="wl-faq-cat active" data-cat="bonos" onclick="faqCat(this)">Bonos y promociones</div>
+    <div class="wl-faq-cat" data-cat="verificacion" onclick="faqCat(this)">Verificación de cuenta / KYC</div>
+    <div class="wl-faq-cat" data-cat="retiros-depositos" onclick="faqCat(this)">Consultas sobre retiros/depósitos</div>
+    <div class="wl-faq-cat" data-cat="juego-responsable" onclick="faqCat(this)">Juego responsable</div>
+    <div class="wl-faq-cat" data-cat="historial" onclick="faqCat(this)">Historial de jugador y privacidad</div>
+    <div class="wl-faq-cat" data-cat="cuenta" onclick="faqCat(this)">Cuenta</div>
+  </div>
+
+  <!-- Contenido autorizado por el cliente (tabla "Preguntas frecuentes autorizadas").
+       El texto de las respuestas se reproduce sin cambios de fondo; lo único añadido
+       es el enlace "Ver guía visual" donde existe una infografía que corresponde. -->
+
+  <div class="wl-faq-group" data-cat="bonos">
+    ${faqItem('¿Cuáles son las reglas y requisitos para un bono?','Cada promoción tiene sus propios Términos y Condiciones que puedes consultar a detalle directamente en el apartado de "Promociones" y "Leer más".')}
+    ${faqItem('¿Qué es el rollover?','Es la cantidad de veces que debes jugar el monto de un bono recibido antes de poder convertir las ganancias en saldo retirable.<p class="wl-faq-p">Ejemplo: con un bono de $100 MXN y rollover de x20, debes apostar un total de $2,000 MXN ($100 x 20) antes de poder convertir y retirar tu saldo.</p>')}
+    ${faqItem('¿Por qué se canceló o desapareció mi bono?','Los motivos más comunes son:' + faqLista([
+      'Venció el plazo límite de la oferta.',
+      'Se liberó y pasó a tu saldo real.',
+      'Se anuló al retirar saldo antes.',
+      'No se cumplieron los "términos y condiciones promocionales".'
+    ]))}
+    ${faqItem('¿Dónde puedo consultar el avance de mi rollover?','Ingresa a Perfil → Bonos → Promos personales. Al tener un bono activo, visualizarás una barra que indica el avance y el saldo restante por apostar.')}
+    ${faqItem('¿Cómo activo un bono disponible?','Dirígete a Perfil → Bonos → Promos personales. En la pestaña "Disponibles" verás las ofertas para activar, y en "Activas" podrás consultar la información del bono en curso.')}
+  </div>
+
+  <div class="wl-faq-group hide" data-cat="verificacion">
+    ${faqItem('¿Cuáles son los métodos de verificación?', faqLista([
+      '<b>Verificación por Truora (recomendada):</b> proceso automático que toma 2 minutos.',
+      '<b>Verificación manual:</b> carga de documentos a través de la página web (tiempo de respuesta de 24 a 72 horas).',
+      '<b>Correo electrónico:</b> envío de información a <a class="wl-faq-link" href="mailto:verificacion@winland.mx">verificacion@winland.mx</a>.'
+    ]))}
+    ${faqItem('¿Cuáles son las identificaciones oficiales aceptadas?', faqLista([
+      'INE vigente', 'Pasaporte mexicano vigente', 'Formato migratorio vigente'
+    ]), ['guia-identificacion.jpg','Identificaciones oficiales aceptadas'])}
+    ${faqItem('¿Cuáles son los comprobantes de domicilio aceptados?', faqLista([
+      'Recibo de agua, luz o teléfono.',
+      'El documento no debe tener una antigüedad mayor a 3 meses.'
+    ]), ['guia-documentacion.jpg','Comprobantes de domicilio aceptados'])}
+    ${faqItem('¿Cuáles son los comprobantes bancarios aceptados?',
+      'Aceptamos los estados de cuenta de bancos tradicionales.' + faqLista([
+      'No se aceptan estados de cuenta de tarjeta de crédito.',
+      'No se aceptan estados de cuentas Fintech.'
+    ]), ['guia-documentacion.jpg','Comprobantes bancarios aceptados'])}
+    ${faqItem('¿Cómo debo tomar mi selfie de verificación?',
+      'Para validar su identidad de forma segura, le solicitamos una fotografía sosteniendo su identificación oficial (INE, Pasaporte o FM) a la altura de la barbilla, considerando lo siguiente:' + faqLista([
+      '<b>Legibilidad:</b> tanto su rostro como los datos del documento deben apreciarse claramente.',
+      '<b>Sin ediciones ni accesorios:</b> la foto debe ser original, sin filtros, recortes, ni el uso de gorras o lentes.'
+    ]), ['guia-selfie.jpg','Cómo tomar tu selfie de verificación'])}
+    ${faqItem('¿Cuáles son los requisitos para la aceptación de mi INE?', faqLista([
+      'Capturar el documento por ambos lados donde se visualicen los 4 bordes.',
+      'Asegurarse de que toda la información sea completamente legible.'
+    ]), ['guia-identificacion.jpg','Requisitos de calidad de tu identificación'])}
+  </div>
+
+  <div class="wl-faq-group hide" data-cat="retiros-depositos">
+    <div class="wl-faq-sub">Retiros</div>
+    ${faqItem('¿En cuánto tiempo se procesa el retiro?','El tiempo de aprobación es de máximo 72 horas. Si ya pasó el tiempo comentado, favor de contactarse a nuestro chat de atención.')}
+    ${faqItem('¿Por qué no veo reflejado mi retiro?','El tiempo puede variar dependiendo de la institución bancaria.')}
+    ${faqItem('¿Cuál es el retiro mínimo?','El retiro mínimo es de $50 MXN.')}
+    ${faqItem('¿Cuáles son las opciones de retiro?','Contamos con 2 opciones:' + faqLista([
+      'SPEI (transferencia bancaria).',
+      'Directamente en punto físico.'
+    ]))}
+    ${faqItem('¿Cómo puedo retirar?','Para solicitar un retiro:' + faqLista([
+      'Contar con su verificación completa.',
+      'Presionar el botón de balance para desplegar el menú de saldos disponibles.',
+      'La cantidad indicada en "Retirable" es el saldo que puede solicitar.'
+    ]))}
+    <div class="wl-faq-sub">Depósito</div>
+    ${faqItem('¿Cuáles son los métodos de depósito?','Puedes consultar todas las opciones de pago disponibles ingresando a tu cuenta en la sección "Depósito".')}
+    ${faqItem('¿Qué puedo hacer si no se reflejó mi depósito?','Contacta a nuestro equipo de soporte, disponible 24/7; con gusto te apoyamos a revisar.')}
+    ${faqItem('¿Qué es el balance "Retirable"?','Son las ganancias obtenidas disponibles para retirar.')}
+    ${faqItem('¿Qué es el balance "Efectivo"?','Es el dinero depositado disponible para juego.')}
+  </div>
+
+  <div class="wl-faq-group hide" data-cat="juego-responsable">
+    ${faqItem('¿Dónde puedo recibir ayuda sobre Juego responsable y hábitos?','Te recomendamos ingresar al apartado "Juego responsable"; ahí podrás encontrar información de ayuda para su situación.')}
+  </div>
+
+  <div class="wl-faq-group hide" data-cat="historial">
+    ${faqItem('¿Puedo consultar mi historial?','Accede a Perfil → Historial, selecciona la pestaña "Operaciones" o "Depósitos y retiradas" e introduce el rango de fechas que deseas revisar.')}
+  </div>
+
+  <div class="wl-faq-group hide" data-cat="cuenta">
+    ${faqItem('¿Cómo recupero mi contraseña?','Da clic en "Ingresar" y selecciona "¿Olvidé mi contraseña?". Ingresa tu correo registrado y recibirás un enlace con las instrucciones para crear una nueva contraseña.')}
+    ${faqItem('¿Cómo contacto al soporte de Winland?', faqLista([
+      '<b>Chat en vivo:</b> disponible las 24 horas del día en el sitio web.',
+      '<b>Correo electrónico:</b> <a class="wl-faq-link" href="mailto:clientes@winland.com.mx">clientes@winland.com.mx</a>'
+    ]))}
+  </div>
+`,
+
+};
+
+/* ===== Recorrido guiado: historia en orden de presentación ===== */
+const TOUR = [
+  {g:'El flujo feliz (así se presenta)'},
+  {s:'inicial',        t:'El usuario llega sin verificar',           n:'Truora al frente como opción recomendada. Lo manual y el correo viven colapsados abajo para no distraer (Fase 1 del documento).'},
+  {s:'truora-modal',   t:'Toca "Iniciar verificación"',              n:'Elige por dónde continuar: WhatsApp, SMS, QR o este dispositivo. Sale al flujo seguro de Truora.'},
+  {s:'confirmando',    t:'Regresa de la biometría',                  n:'Mientras Truora confirma, el panel muestra estado "en proceso" y bloquea la carga manual para no duplicar datos.'},
+  {s:'exito-biometria',t:'Pop-up: ¡biometría exitosa!',              n:'Fase 2 del documento: el sistema celebra el éxito y pide los 2 documentos restantes.'},
+  {s:'validada',       t:'Se revelan los documentos pendientes',     n:'Solo hasta ahora aparecen domicilio (paso 2) y estado de cuenta (paso 3), justo debajo. Carga cognitiva mínima.'},
+  {s:'docs-validacion',t:'Documento enviado: en revisión',           n:'Feedback claro de qué está en revisión y tiempos estimados.'},
+  {s:'pre-verificada', t:'Cuenta pre-verificada',                    n:'Con identidad y domicilio validados el usuario YA puede cobrar en salas físicas. La cuenta bancaria se ofrece como mejora (depósito directo), no como requisito: recompensa a mitad del camino en vez de un candado.'},
+  {s:'verificada',     t:'Cuenta 100% verificada',                   n:'Cierre del flujo: retiros por depósito directo, sin pasar a sala.'},
+  {g:'Caminos alternos (si algo sale mal)'},
+  {s:'rechazado',      t:'Un documento fue rechazado',               n:'Se le dice exactamente cuál, por qué y cómo volver a subirlo. Ocurre tras la revisión del domicilio: es la rama que no lleva a cuenta pre-verificada.'},
+  {s:'interrumpida',   t:'Cerró Truora a medias',                    n:'Puede retomar donde se quedó, sin regaños.'},
+  {g:'Detalle de cada documento (modales)'},
+  {s:'modal-identidad',t:'Modal: identidad + prueba de vida',        n:'Infografía Do’s & Don’ts, incluye selfie con documento (sección 5 del documento, copys sujetos a Legal).'},
+  {s:'modal-bancaria', t:'Modal: estado de cuenta bancario',         n:'Sin capturas de neobancos, titular igual al de la cuenta, máx. 3 meses.'},
+  {s:'modal-domicilio',t:'Modal: comprobante de domicilio',          n:'Vigencia máx. 3 meses, legible y completo.'},
+  {g:'Nuevas secciones'},
+  {s:'modal-firma',    t:'Formato de alta de cliente (firma digital)',n:'Módulo paralelo al KYC, no un cuarto paso. Nace bloqueado ("próximamente") y Back Office lo habilita; al activarse abre este modal y el CTA entrega el control al proveedor de firma digital.'},
+  {s:'faq',            t:'Pestaña: Preguntas frecuentes',            n:'FAQ dentro del perfil para no sacar al usuario del embudo.'},
+];
+const TOUR_STEPS = TOUR.filter(x=>x.s);
+
+let currentState='inicial';
+let idMethod='truora'; /* 'truora' | 'manual' — cómo se validó la identidad */
+let returnState='inicial'; /* última pantalla NO modal: para regresar al cancelar */
+function render(stateKey){
+  if(!stateKey.startsWith('modal-') && !currentState.startsWith('modal-')) returnState=currentState;
+  if(!stateKey.startsWith('modal-')) returnState=stateKey;
+  currentState=stateKey;
+  cerrarVisor();   /* el visor cuelga de <body>: no debe sobrevivir a la navegación */
+  const idx = TOUR_STEPS.findIndex(x=>x.s===stateKey);
+  document.getElementById('content').innerHTML = states[stateKey]();
+  /* ¿Este estado dibuja una capa encima? Se mira el DOM, no el nombre del
+     estado: 'truora-modal' y 'exito-biometria' también la dibujan y no llevan
+     el prefijo 'modal-'. De esta misma señal dependen el bloqueo del fondo y
+     el salto al inicio, para que no se puedan contradecir. */
+  const conCapa = !!document.querySelector('#content .wl-modal-overlay');
+  /* Al abrir una capa, primero se sube el fondo (salto directo, no se ve) y
+     después se bloquea: así el bloqueo guarda la posición 0 y no la anterior. */
+  if(conCapa && !capaDeEstado && window.scrollY > 0) window.scrollTo(0,0);
+  if(conCapa !== capaDeEstado){ capaDeEstado = conCapa; bloquearFondo(conCapa); }
+  /* Cada cambio de pantalla empieza arriba. Si el usuario venía leyendo abajo y
+     aterriza a media página, parece que no pasó nada. Aplica también al abrir y
+     cerrar una capa: al abrirla el fondo no se ve, y al cerrarla conviene
+     devolverlo al principio de la pantalla y no a donde estaba antes.
+     Con una capa abierta el fondo está bloqueado al gesto, pero el scroll por
+     código sí corre, que es justo lo que se necesita aquí. */
+  if(window.scrollY > 0) subirAlInicio(conCapa);
+  document.getElementById('faqTab').classList.toggle('active', stateKey==='faq');
+  document.getElementById('miCuentaTab').classList.toggle('active', stateKey!=='faq');
+  /* En mobile los tabs hacen scroll horizontal: centrar el tab activo al navegar.
+     Diferido tras el render y con asignación directa (el scroll "smooth" programático
+     se cancela o no corre en algunos WebViews). */
+  const activeTab=document.querySelector('.wl-w-tabs .wl-w-tab.active');
+  if(activeTab){ const tc=activeTab.parentElement;
+    setTimeout(()=>{ tc.scrollLeft = activeTab.offsetLeft-(tc.clientWidth-activeTab.offsetWidth)/2; },80); }
+  document.getElementById('subtabsRow').style.display = stateKey==='faq' ? 'none' : 'flex';
+  document.querySelectorAll('#subtabsRow .sub').forEach(s=>{
+    s.classList.toggle('active', s.dataset.sub==='verificacion');
+  });
+  const nav=document.getElementById('stateNav');
+  if(nav){
+    nav.querySelector('.wl-sn-label').textContent = idx>=0 ? (idx+1)+' / '+TOUR_STEPS.length : '';
+    nav.querySelector('.sn-prev').disabled = idx<=0;
+    nav.querySelector('.sn-next').disabled = idx===TOUR_STEPS.length-1;
+  }
+  wireDemo(stateKey);
+  accesible(document.getElementById('content'));
+}
+
+/* Accesibilidad. Cada capa se anuncia como diálogo modal con su título, y los
+   controles que no son <button> ni <a href> (filas, pasos, chips, cajas de
+   carga, tache, chevron) se anuncian como botón, entran al orden de tabulación
+   y responden a Enter y Espacio. Con componentes nativos de diálogo y botón
+   esto viene incluido. */
+const CONTROLES = '.clmc-closeIcon-popup,.wl-t-back,.wl-faq-q,.wl-faq-cat,.wl-alt-toggle,'
+  + '.wl-guia-cta,.ch,.wl-slot,a:not([href]),[onclick]:not(button)';
+function accesible(raiz){
+  raiz.querySelectorAll('.clmc-dialog').forEach((d,i)=>{
+    d.setAttribute('role','dialog'); d.setAttribute('aria-modal','true');
+    const t=d.querySelector('h3');
+    if(t){ t.id = t.id || 'wl-dialogo-'+(raiz.id||'capa')+'-'+i; d.setAttribute('aria-labelledby', t.id); }
+  });
+  raiz.querySelectorAll(CONTROLES).forEach(el=>{
+    if(el.closest('button')) return;
+    el.setAttribute('role','button'); el.tabIndex=0;
+  });
+  raiz.querySelectorAll('.clmc-closeIcon-popup').forEach(x=>x.setAttribute('aria-label','Cerrar'));
+  raiz.querySelectorAll('.wl-t-back').forEach(x=>x.setAttribute('aria-label','Regresar'));
+  raiz.querySelectorAll('.wl-faq-q').forEach(q=>q.setAttribute('aria-expanded', q.parentElement.classList.contains('open')));
+  raiz.querySelectorAll('.wl-alt-toggle').forEach(q=>q.setAttribute('aria-expanded', q.classList.contains('open')));
+}
+
+/* ═══ Navegación de estados — AYUDA DE DEMO (no forma parte del módulo) ═══ */
+function tourGo(delta){
+  const idx = TOUR_STEPS.findIndex(x=>x.s===currentState);
+  const next = TOUR_STEPS[idx+delta];
+  if(next) render(next.s);
+}
+document.addEventListener('keydown', e=>{
+  if(e.target instanceof Element && e.target.matches('input,textarea,select')) return;
+  /* Enter y Espacio activan los controles que no son <button> */
+  if((e.key==='Enter'||e.key===' ') && e.target instanceof Element && e.target.matches('[role="button"]')){
+    e.preventDefault(); e.target.click(); return;
+  }
+  /* Escape cierra la capa abierta como si se tocara el tache (el visor de las
+     preguntas tiene su propio manejador) */
+  if(e.key==='Escape' && !document.querySelector('body > .wl-visor')){
+    document.querySelector('#content .clmc-dialog .clmc-closeIcon-popup')?.click(); return;
+  }
+  if(e.key==='ArrowRight') tourGo(1);
+  if(e.key==='ArrowLeft') tourGo(-1);
+});
+
+/* Interacción del prototipo (clic para avanzar el flujo) */
+function byText(txt, sel){
+  return [...document.getElementById('content').querySelectorAll(sel||'button,a,div')]
+    .filter(e=>e.textContent.trim().toLowerCase().includes(txt.toLowerCase()));
+}
+function go(el, state){ if(el){ el.style.cursor='pointer';
+  if(!el.matches('button,a[href]')){ el.setAttribute('role','button'); el.tabIndex=0; }
+  el.addEventListener('click', e=>{e.stopPropagation(); render(state);}); } }
+function wireDemo(state){
+  const c=document.getElementById('content');
+  c.querySelectorAll('.clmc-btn-primary').forEach(b=>{ if(!b.closest('.clmc-dialog') && b.textContent.match(/verificaci/i)) go(b,'truora-modal'); });
+  if(state==='truora-modal'){
+    c.querySelectorAll('.clmc-dialog .clmc-closeIcon-popup').forEach(x=>go(x,'interrumpida'));
+  }
+  if(state==='confirmando') byText('Actualizar estado','a').forEach(a=>go(a,'exito-biometria'));
+  if(state==='docs-validacion') byText('Actualizar estado','a').forEach(a=>go(a,'pre-verificada'));
+  if(state==='pre-verificada') byText('Subir mi cuenta bancaria','button').forEach(b=>go(b,'modal-bancaria'));
+  if(state==='exito-biometria') c.querySelectorAll('.clmc-dialog .clmc-closeIcon-popup').forEach(x=>go(x,'validada'));
+
+  /* Filas de documentos → su modal. Se usa el estado declarado por mkRow,
+     no el texto visible: así no se desincroniza al cambiar un copy. */
+  const MODAL_DE={identity:'modal-identidad', bank:'modal-bancaria', home:'modal-domicilio'};
+  c.querySelectorAll('.clmc-user-document-item[data-accionable]').forEach(r=>{
+    const dest=MODAL_DE[r.dataset.doc];
+    if(!dest) return;                                   /* el correo no abre modal */
+    const rechazada = r.dataset.estado==='rejected';
+    r.classList.add(rechazada ? 'wl-row-alert' : 'wl-row-action');
+    go(r,dest);
+  });
+
+  /* Pasos del tracker como accesos directos cuando tienen acción pendiente */
+  c.querySelectorAll('.wl-step').forEach(st=>{
+    const t=st.textContent;
+    const accionable=/Pendiente|pendiente|Requiere acción|Reiniciar|Cobra sin ir/.test(t) && !/Disponible después/i.test(t);
+    if(!accionable) return;
+    st.classList.add('clickable');
+    if(/Identidad/.test(t)) go(st,'truora-modal');
+    else if(/Cuenta bancaria/.test(t)) go(st,'modal-bancaria');
+    else if(/Domicilio/.test(t)) go(st,'modal-domicilio');
+  });
+
+  /* Rechazado: "Subir de nuevo" abre el modal del documento rechazado */
+  if(state==='rechazado') byText('Subir de nuevo','a').forEach(a=>go(a,'modal-domicilio'));
+
+  /* Modales de carga: zonas clickeables que habilitan "Subir" */
+  if(state.startsWith('modal-')){
+    c.querySelectorAll('.clmc-dialog .clmc-closeIcon-popup').forEach(x=>go(x,returnState));
+    byText('Cancelar','button').forEach(b=>go(b,returnState));
+    const boxes=[...c.querySelectorAll('.clmc-upload-document-drop-area')];
+    const subir=[...c.querySelectorAll('button')].find(b=>/Subir/.test(b.textContent));
+    const FILES=[['Frontal','ine_frontal.jpg'],['Reverso','ine_reverso.jpg'],['Selfie','selfie_con_ine.jpg'],['Estado de cuenta','estado_de_cuenta.pdf'],['Comprobante','comprobante_cfe.pdf']];
+    function habilitar(){
+      if(!boxes.every(b=>b.classList.contains('loaded'))) return;
+      subir.classList.add('wl-ready');
+      /* Domicilio (paso 2) → revisión · Cuenta bancaria (paso 3) → cuenta completa */
+      const submitTarget = state==='modal-identidad'
+        ? ()=>{ idMethod='manual'; render('validada'); }
+        : state==='modal-bancaria'
+          ? ()=>render('verificada')
+          : ()=>render('docs-validacion');
+      subir.addEventListener('click', submitTarget, {once:true});
+    }
+    boxes.forEach(b=>{
+      b.addEventListener('click',()=>{
+        /* Ya cargado: "Cambiar" simula reemplazar el archivo (destello de confirmación) */
+        if(b.classList.contains('loaded')){
+          b.classList.remove('wl-slot-flash'); void b.offsetWidth; b.classList.add('wl-slot-flash');
+          return;
+        }
+        const par=FILES.find(f=>b.textContent.includes(f[0]));
+        const fname=par?par[1]:'documento.pdf';
+        b.classList.add('loaded');
+        b.querySelector('.wl-slot-thumb').innerHTML=I.check;
+        b.querySelector('.wl-slot-s').textContent=fname;
+        b.querySelector('.wl-slot-cta').textContent='Cambiar';
+        habilitar();
+      });
+    });
+  }
+  byText('Probar Truora','a').forEach(a=>go(a,'truora-modal'));
+
+  /* Cerrar al tocar el fondo oscuro: dispara el mismo destino que la ✕ para que ambos
+     caminos nunca se desincronicen (documentos → pantalla previa, biometría de
+     Truora → "verificación interrumpida"). */
+  c.querySelectorAll('.wl-modal-overlay').forEach(ov=>{
+    ov.addEventListener('click', e=>{ if(e.target===ov) ov.querySelector('.clmc-closeIcon-popup')?.click(); });
+  });
+}
+
+/* Control flotante para recorrer los estados (solo demo) */
+(function(){
+  const nav=document.createElement('div');
+  nav.id='stateNav';
+  nav.innerHTML='<button class="sn-prev" aria-label="Estado anterior">&#8249;</button><span class="wl-sn-label"></span><button class="sn-next" aria-label="Siguiente estado">&#8250;</button>';
+  document.body.appendChild(nav);
+  nav.querySelector('.sn-prev').addEventListener('click',()=>tourGo(-1));
+  nav.querySelector('.sn-next').addEventListener('click',()=>tourGo(1));
+})();
+
+render('inicial');
+</script>
+
+</body>
+</html>
